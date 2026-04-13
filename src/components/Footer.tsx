@@ -1,0 +1,122 @@
+"use client";
+
+import { Mail, MapPin, Phone, Hash, Link as LinkIcon, AtSign } from "lucide-react";
+
+export default function Footer() {
+  return (
+    <footer id="kontak" className="relative z-10 mt-12 border-t border-slate-200 bg-white">
+      <div className="max-w-6xl mx-auto px-6 sm:px-10 py-16">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8">
+          {/* Brand */}
+          <div>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center font-bold text-lg text-white">
+                N
+              </div>
+              <div>
+                <h3
+                  className="font-bold text-lg text-slate-900"
+                  style={{ fontFamily: "var(--font-display)" }}
+                >
+                  NCC 2026
+                </h3>
+                <p className="text-xs text-slate-500">
+                  National Creativity Competition
+                </p>
+              </div>
+            </div>
+            <p className="text-sm text-slate-500 leading-relaxed max-w-xs">
+              Kompetisi kreativitas nasional yang menghadirkan panggung bagi
+              generasi muda Indonesia untuk berinovasi dan berprestasi.
+            </p>
+          </div>
+
+          {/* Links */}
+          <div>
+            <h4
+              className="text-sm font-bold text-slate-900 mb-4 uppercase tracking-wider"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              Tautan
+            </h4>
+            <div className="space-y-3">
+              {[
+                { label: "Beranda", href: "#beranda" },
+                { label: "Kategori", href: "#kategori" },
+                { label: "Jadwal", href: "#jadwal" },
+                { label: "Pendaftaran", href: "#daftar" },
+                { label: "FAQ", href: "#" },
+              ].map((link) => (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  className="block text-sm text-slate-500 hover:text-indigo-600 transition-colors duration-300"
+                >
+                  {link.label}
+                </a>
+              ))}
+            </div>
+          </div>
+
+          {/* Contact */}
+          <div>
+            <h4
+              className="text-sm font-bold text-slate-900 mb-4 uppercase tracking-wider"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              Kontak
+            </h4>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 text-sm text-slate-500">
+                <Mail size={14} className="text-indigo-500" />
+                <span>info@ncc2026.id</span>
+              </div>
+              <div className="flex items-center gap-3 text-sm text-slate-500">
+                <Phone size={14} className="text-indigo-500" />
+                <span>(0321) 860129</span>
+              </div>
+              <div className="flex items-center gap-3 text-sm text-slate-500">
+                <MapPin size={14} className="text-indigo-500" />
+                <span>
+                  Jl. KH. Romli Tamim No.15a, Peterongan, <br />
+                  Jombang, Jawa Timur 61481
+                </span>
+              </div>
+            </div>
+
+            {/* Social */}
+            <div className="flex items-center gap-3 mt-6">
+              {[
+                { icon: Hash, href: "#" },
+                { icon: LinkIcon, href: "#" },
+                { icon: AtSign, href: "#" },
+              ].map((social, i) => {
+                const Icon = social.icon;
+                return (
+                  <a
+                    key={i}
+                    href={social.href}
+                    className="w-9 h-9 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-500 hover:text-indigo-600 hover:bg-slate-100 transition-all duration-300 hover:scale-110"
+                  >
+                    <Icon size={16} />
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom bar */}
+        <div className="mt-12 pt-6 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-xs text-slate-400">
+            © 2026 National Creativity Competition. All rights reserved.
+          </p>
+          <p className="text-xs text-slate-400">
+            Dibangun dengan{" "}
+            <span className="text-slate-600 font-medium">Next.js</span>
+          </p>
+        </div>
+      </div>
+    </footer>
+  );
+}

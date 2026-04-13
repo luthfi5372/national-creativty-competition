@@ -1,0 +1,157 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --purple-deep: #4338ca;
+  --purple-mid: #6366f1;
+  --purple-light: #818cf8;
+  --blue-deep: #0369a1;
+  --blue-electric: #0ea5e9;
+  --cyan-accent: #06b6d4;
+  --cyan-glow: #67e8f9;
+  --glass-white: #ffffff;
+  --glass-border: #e2e8f0;
+  --glass-hover: #f1f5f9;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-purple-deep: var(--purple-deep);
+  --color-purple-mid: var(--purple-mid);
+  --color-purple-light: var(--purple-light);
+  --color-blue-deep: var(--blue-deep);
+  --color-blue-electric: var(--blue-electric);
+  --color-cyan-accent: var(--cyan-accent);
+  --color-cyan-glow: var(--cyan-glow);
+  --color-glass-white: var(--glass-white);
+  --color-glass-border: var(--glass-border);
+  --color-glass-hover: var(--glass-hover);
+  
+  /* NCC Required Themes */
+  --color-ncc-dark: #f8fafc;
+  --color-ncc-purple: #4338ca;
+  --color-ncc-blue: #0ea5e9;
+  
+  /* Category Colors */
+  --color-category-speech: #ef4444;
+  --color-category-lkti: #10b981;
+  --color-category-mtq: #f59e0b;
+  --color-category-mipa: #3b82f6;
+
+  --font-sans: var(--font-inter, 'Inter', system-ui, sans-serif);
+  --font-display: var(--font-display, 'Josefin Sans', sans-serif);
+}
+
+/* ========== GLOBAL RESET & BASE ========== */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans, 'Inter', system-ui, sans-serif);
+  overflow-x: hidden;
+}
+
+/* ========== SCROLLBAR ========== */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ========== SAAS CARDS (Formerly Glass) ========== */
+.glass-panel {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  transition: all 0.3s ease;
+}
+
+.glass-panel:hover {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+}
+
+.glass-nav {
+  background: rgba(255, 255, 255, 0.9);
+  border-bottom: 1px solid #e2e8f0;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* ========== GLOW EFFECTS (De-neonized) ========== */
+.glow-cyan {
+  box-shadow: 0 4px 14px 0 rgba(6, 182, 212, 0.39);
+}
+
+.glow-purple {
+  box-shadow: 0 4px 14px 0 rgba(99, 102, 241, 0.39);
+}
+
+.text-glow-cyan {
+  text-shadow: none;
+}
+
+.text-glow-purple {
+  text-shadow: none;
+}
+
+/* ========== ANIMATION KEYFRAMES ========== */
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  33% { transform: translateY(-12px) rotate(0.5deg); }
+  66% { transform: translateY(-6px) rotate(-0.3deg); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes drift {
+  0%, 100% { transform: translate(0px, 0px); }
+  25% { transform: translate(8px, -5px); }
+  50% { transform: translate(-3px, -10px); }
+  75% { transform: translate(-8px, -3px); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes ripple-out {
+  0% { transform: scale(0.3); opacity: 0.6; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+/* ========== SELECTION STYLE ========== */
+::selection {
+  background: rgba(109, 40, 217, 0.4);
+  color: #e2e0f0;
+}
+
+/* ========== NOISE OVERLAY ========== */
+.glass-grain {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+}

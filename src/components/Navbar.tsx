@@ -1,0 +1,181 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Home,
+  Layers,
+  Calendar,
+  UserPlus,
+  Mail,
+  Menu,
+  X,
+  LogIn,
+  ClipboardList,
+} from "lucide-react";
+import Link from "next/link";
+
+import MagneticWrapper from "./ui/MagneticWrapper";
+
+const navItems = [
+  { icon: Home, label: "Beranda", href: "#beranda" },
+  { icon: Layers, label: "Kategori", href: "#kategori" },
+  { icon: Calendar, label: "Jadwal", href: "#jadwal" },
+  { icon: UserPlus, label: "Pendaftaran", href: "#daftar" },
+  { icon: Mail, label: "Kontak", href: "#kontak" },
+];
+
+export default function Navbar() {
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [activeItem, setActiveItem] = useState("Beranda");
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 50);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  return (
+    <>
+      <motion.nav
+        initial={{ y: -100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
+        className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 px-2 py-2 transition-all duration-300 rounded-full border ${
+          scrolled 
+            ? "bg-white/90 backdrop-blur-md shadow-sm border-slate-200" 
+            : "bg-white/50 backdrop-blur-sm border-transparent"
+        }`}
+      >
+        {/* Desktop nav */}
+        <div className="hidden md:flex items-center gap-1">
+          {/* Brand */}
+          <MagneticWrapper>
+            <div className="px-4 py-2 mr-2 flex items-center gap-2 cursor-pointer transition-transform">
+              <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-sm text-white shadow-sm">
+                N
+              </div>
+              <span
+                className="font-bold text-base tracking-wide text-slate-900"
+                style={{ fontFamily: "var(--font-display, var(--font-space-grotesk))" }}
+              >
+                NCC
+              </span>
+            </div>
+          </MagneticWrapper>
+
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const active = activeItem === item.label;
+            return (
+              <MagneticWrapper key={item.label}>
+                <a
+                  href={item.href}
+                  onClick={() => setActiveItem(item.label)}
+                  className={`relative flex items-center gap-2 px-4 py-2.5 rounded-full text-sm transition-all duration-300 group ${
+                    active
+                      ? "text-indigo-600"
+                      : "text-slate-500 hover:text-slate-900"
+                  }`}
+                >
+                  <Icon
+                    size={16}
+                    className={`transition-all duration-300 ${
+                      active ? "text-indigo-600" : "group-hover:text-indigo-500"
+                    }`}
+                  />
+                  <span className="font-medium relative z-10">{item.label}</span>
+
+                  {/* Active indicator */}
+                  {active && (
+                    <motion.div
+                      layoutId="nav-active"
+                      className="absolute inset-0 rounded-full bg-indigo-50 border border-indigo-100"
+                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    />
+                  )}
+                </a>
+              </MagneticWrapper>
+            );
+          })}
+
+          {/* Auth buttons */}
+          <div className="flex items-center gap-2 ml-2 pl-2 border-l border-slate-100">
+            <MagneticWrapper>
+              <Link
+                href="/login"
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-full text-sm font-medium text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all"
+              >
+                <LogIn size={15} /> Masuk
+              </Link>
+            </MagneticWrapper>
+            <MagneticWrapper>
+              <Link
+                href="/daftar"
+                className="flex items-center gap-1.5 px-5 py-2.5 rounded-full text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-sm shadow-indigo-200"
+              >
+                <ClipboardList size={15} /> Daftar
+              </Link>
+            </MagneticWrapper>
+          </div>
+        </div>
+
+        {/* Mobile nav toggle */}
+        <div className="flex md:hidden items-center justify-between px-3 py-1 min-w-[280px]">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-xs text-white">
+              N
+            </div>
+            <span className="font-bold text-sm text-slate-900" style={{ fontFamily: "var(--font-display)" }}>
+              NCC
+            </span>
+          </div>
+          <button
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="p-2 rounded-lg hover:bg-slate-100 transition-colors text-slate-600"
+          >
+            {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
+      </motion.nav>
+
+      {/* Mobile menu */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-20 left-4 right-4 z-40 bg-white border border-slate-200 shadow-xl rounded-2xl p-4 flex flex-col gap-1 md:hidden"
+          >
+            {navItems.map((item, i) => {
+              const Icon = item.icon;
+              return (
+                <motion.a
+                  key={item.label}
+                  href={item.href}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  onClick={() => {
+                    setActiveItem(item.label);
+                    setMobileOpen(false);
+                  }}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-all ${
+                    activeItem === item.label
+                      ? "text-indigo-600 bg-indigo-50 font-bold"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                  }`}
+                >
+                  <Icon size={18} />
+                  <span>{item.label}</span>
+                </motion.a>
+              );
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
