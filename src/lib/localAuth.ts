@@ -446,8 +446,9 @@ export type Announcement = {
   id: string;
   title: string;
   date: string;
-  type: "Info" | "Alert" | "Event";
+  type: "Info" | "Alert" | "Event" | "INFO" | "WARNING" | "URGENT";
   content: string;
+  mediaUrl?: string;
 };
 
 // Messaging System
