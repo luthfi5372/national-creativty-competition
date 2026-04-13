@@ -65,7 +65,7 @@ type LocalAnnouncement = {
   date: string;
   type: string;
   content: string;
-  mediaUrl?: string;
+  assetUrl?: string;
 };
 
 import Link from "next/link";
@@ -728,9 +728,9 @@ export default function DashboardPage() {
           <div key={item.id} className="bg-white rounded-[2.5rem] border border-slate-200 overflow-hidden hover:shadow-2xl hover:shadow-slate-50 transition-all group relative">
             <div className="flex flex-col md:flex-row items-stretch">
               {/* Media Section: Dynamic Sync Check */}
-              {(item as any)["mediaUrl"] && (
+              {(item as any)["assetUrl"] && (
                 <div className="w-full md:w-64 lg:w-80 shrink-0 bg-slate-50 border-r border-slate-100 overflow-hidden relative">
-                   <img src={(item as any)["mediaUrl"]} alt="Announcement" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                   <img src={(item as any)["assetUrl"]} alt="Announcement" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
                 </div>
               )}
