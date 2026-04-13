@@ -14,6 +14,6 @@ export default function MagneticWrapper({ children, className }: MagneticWrapper
   return React.cloneElement(children, {
     // @ts-ignore - ref from hook
     ref: ref,
-    className: `${children.props.className || ""} ${className || ""}`.trim(),
+    className: `${(children.props as any).className || ""} ${className || ""}`.trim(),
   });
 }
