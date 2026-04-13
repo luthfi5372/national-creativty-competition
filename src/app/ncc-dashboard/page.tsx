@@ -74,7 +74,6 @@ import { useLiveStats } from "@/hooks/useLiveStats";
 type TabType = "Dashboard" | "Kompetisi Saya" | "Pengumuman" | "Pembayaran" | "Profil";
 
 export default function DashboardPage() {
-  const ERROR_TRIGGER = >>> SYNTAX ERROR FOR DEPLOYMENT VERIFICATION <<<;
   const [session, setSession] = useState<LocalSession | null>(null);
   const [userData, setUserData] = useState<LocalUser | null>(null);
   const [entries, setEntries] = useState<CompetitionEntry[]>([]);
