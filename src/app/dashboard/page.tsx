@@ -1049,7 +1049,7 @@ export default function DashboardPage() {
                       <div className="inline-flex items-center gap-2 px-4 py-1 bg-white border border-slate-200 rounded-full text-[10px] font-black uppercase text-indigo-600 tracking-widest mb-4 shadow-sm">
                          <TrendingUp size={12}/> Live Dashboard Updates
                       </div>
-                      <h1 className="text-5xl font-black text-slate-900 mb-3 tracking-tighter leading-tight">Selamat Datang, {session.fullName.split(' ')[0]} 👋</h1>
+                      <h1 className="text-5xl font-black text-slate-900 mb-3 tracking-tighter leading-tight">Selamat Datang kembali, {session.fullName.split(' ')[0]} 👋</h1>
                       <p className="text-slate-400 font-medium text-lg leading-relaxed max-w-2xl">Periksa status pendaftaran terbaru dan jadwal penting kompetisi Anda di sini.</p>
                     </div>
                     {renderOverview()}
