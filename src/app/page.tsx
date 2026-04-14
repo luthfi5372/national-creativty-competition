@@ -29,7 +29,7 @@ export default function Home() {
       
       <Navbar />
 
-      <main className="relative z-10 flex flex-col gap-0 overflow-hidden">
+      <main className="relative z-10 flex flex-col gap-0 overflow-x-hidden">
         {/* Each section now flows without excessive gaps for a 'one slide' feel */}
         <HeroSection />
         

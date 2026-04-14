@@ -37,6 +37,7 @@ export const metadata: Metadata = {
 };
 
 import SmoothScroll from "@/components/SmoothScroll";
+import PerformanceMonitor from "@/components/PerformanceMonitor";
 
 export default function RootLayout({
   children,
@@ -54,6 +55,7 @@ export default function RootLayout({
       >
         <div className="glass-grain" />
         <SmoothScroll>{children}</SmoothScroll>
+        <PerformanceMonitor />
       </body>
     </html>
   );
