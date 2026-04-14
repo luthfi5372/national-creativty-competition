@@ -4,5 +4,5 @@ export type Announcement = {
   date: string;
   type: string;
   content: string;
-  mediaUrl?: string; // RESTORED FROM mediaUrl AS PER GUIDE
+  mediaUrl?: string | null; // COMPLIANT WITH USER GUIDE
 };
