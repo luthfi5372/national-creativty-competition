@@ -1,8 +1,8 @@
-export type Announcement = {
+export type AnnouncementNode = {
   id: string;
   title: string;
   date: string;
   type: string;
   content: string;
-  mediaUrl?: string | null; // COMPLIANT WITH USER GUIDE
+  mediaUrl?: string | null;
 };

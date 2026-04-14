@@ -441,7 +441,7 @@ export async function getGlobalStats(): Promise<GlobalStats> {
   }
 }
 
-import { Announcement } from "@/types/announcement";
+import { AnnouncementNode  } from "@/types/announcement";
 
 // Announcements Mock (Source of Truth moved to @/types/announcement.ts)
 
@@ -499,7 +499,7 @@ export function deleteAdminMessage(id: string): { success: boolean } {
   }
 }
 
-export function getAnnouncements(): Announcement[] {
+export function getAnnouncements(): AnnouncementNode[] {
   // Existing announcements + admin messages
   const baseAnnouncements = [
     {

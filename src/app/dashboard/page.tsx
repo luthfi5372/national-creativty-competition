@@ -56,15 +56,15 @@ import {
   updateUserProfile,
   deleteCompetitionEntry,
   getCategoryPrice
-} from "@/lib/localAuth";
-import { Announcement } from "@/types/announcement";
+ } from "@/lib/localAuth";
+import { AnnouncementNode  } from "@/types/announcement";
 
 // FINAL FIX: FORCING ISOLATED TYPES FOR DEPLOYMENT SYNC
 // Renamed Announcement back to official naming as per guide.
 // Note: Type definition moved to @/types/announcement.ts
 
 import Link from "next/link";
-import { useLiveStats } from "@/hooks/useLiveStats";
+import { useLiveStats  } from "@/hooks/useLiveStats";
 
 type TabType = "Dashboard" | "Kompetisi Saya" | "Pengumuman" | "Pembayaran" | "Profil";
 
@@ -72,7 +72,7 @@ export default function DashboardPage() {
   const [session, setSession] = useState<LocalSession | null>(null);
   const [userData, setUserData] = useState<LocalUser | null>(null);
   const [entries, setEntries] = useState<CompetitionEntry[]>([]);
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [announcements, setAnnouncements] = useState<AnnouncementNode[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>("Dashboard");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -106,7 +106,7 @@ export default function DashboardPage() {
     
     const userEntries = getCompetitionEntries(currentSession.email);
     const userDetail = getUserData(currentSession.email);
-    const mockAnnouncements = getAnnouncements() as unknown as Announcement[];
+    const mockAnnouncements = getAnnouncements() as unknown as AnnouncementNode[];
     
     setEntries(userEntries);
     setUserData(userDetail);
@@ -719,7 +719,7 @@ export default function DashboardPage() {
            <p className="text-slate-400 font-medium">Semua berita dan update penting dari panitia akan muncul di sini.</p>
         </div>
       ) : (
-        announcements.map((item: Announcement) => (
+        announcements.map((item: AnnouncementNode) => (
           <div key={item.id} className="bg-white rounded-[2.5rem] border border-slate-200 overflow-hidden hover:shadow-2xl hover:shadow-slate-50 transition-all group relative">
             <div className="flex flex-col md:flex-row items-stretch">
               {/* Media Section: Professional Implementation */}
