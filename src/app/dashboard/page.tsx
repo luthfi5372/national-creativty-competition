@@ -725,7 +725,12 @@ export default function DashboardPage() {
               {/* Media Section: Dynamic Sync Check */}
               {item.mediaUrl && (
                 <div className="w-full md:w-64 lg:w-80 shrink-0 bg-slate-50 border-r border-slate-100 overflow-hidden relative">
-                   <img src={item.mediaUrl} alt="Announcement" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                   <img 
+                    src={item.mediaUrl} 
+                    alt={item.title || "Announcement"} 
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
+                    onError={(e) => (e.currentTarget.style.display = 'none')}
+                   />
                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
                 </div>
               )}

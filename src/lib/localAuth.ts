@@ -441,15 +441,9 @@ export async function getGlobalStats(): Promise<GlobalStats> {
   }
 }
 
-// Announcements Mock (Trigger Refresh for Vercel)
-export type Announcement = {
-  id: string;
-  title: string;
-  date: string;
-  type: "Info" | "Alert" | "Event" | "INFO" | "WARNING" | "URGENT";
-  content: string;
-  mediaUrl?: string;
-};
+import { Announcement } from "@/types/announcement";
+
+// Announcements Mock (Source of Truth moved to @/types/announcement.ts)
 
 // Messaging System
 export type AdminMessage = {
