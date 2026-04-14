@@ -92,6 +92,7 @@ export default function ParallaxBackground() {
       gsap.to(item, {
         y: () => -1 * window.innerHeight * depth,
         ease: "none",
+        force3D: true, // Force GPU acceleration
         scrollTrigger: {
           trigger: document.body,
           start: "top top",
@@ -103,6 +104,7 @@ export default function ParallaxBackground() {
       // Add a slight continuous rotation
       gsap.to(item, {
         rotation: "+=45",
+        force3D: true,
         ease: "none",
         scrollTrigger: {
           trigger: document.body,
@@ -137,7 +139,7 @@ export default function ParallaxBackground() {
             opacity: item.opacity,
             transform: `rotate(${item.rotate}deg)`,
             filter: item.blur, 
-            willChange: "transform",
+            willChange: "transform", // Hardware acceleration hint
           }}
         >
           <item.Icon size={item.size} strokeWidth={1.5} />
