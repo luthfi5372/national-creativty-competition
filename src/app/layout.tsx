@@ -38,6 +38,7 @@ export const metadata: Metadata = {
 
 import SmoothScroll from "@/components/SmoothScroll";
 import PerformanceMonitor from "@/components/PerformanceMonitor";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export default function RootLayout({
   children,
@@ -56,6 +57,7 @@ export default function RootLayout({
         <div className="glass-grain" />
         <SmoothScroll>{children}</SmoothScroll>
         <PerformanceMonitor />
+        <SpeedInsights />
       </body>
     </html>
   );
