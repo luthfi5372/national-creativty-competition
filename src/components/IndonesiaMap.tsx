@@ -90,6 +90,14 @@ class Particle {
     ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
     ctx.closePath();
     ctx.fill();
+    
+    // Subtle glow if highly active
+    if (this.opacity > 0.8) {
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = this.color;
+    } else {
+      ctx.shadowBlur = 0;
+    }
   }
 
   update(mouse: { x: number | null, y: number | null, radius: number }) {
