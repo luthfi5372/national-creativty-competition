@@ -12,6 +12,7 @@ import {
   Search,
   BookOpen,
   Calendar,
+  Camera,
   ChevronRight,
   TrendingUp,
   Settings,
@@ -60,6 +61,7 @@ import {
 import { AnnouncementNode  } from "@/types/announcement";
 import TimelineSection from "@/components/TimelineSection";
 import IndonesiaMap from "@/components/IndonesiaMap";
+import GallerySection from "@/components/GallerySection";
 
 // FINAL FIX: FORCING ISOLATED TYPES FOR DEPLOYMENT SYNC
 // Renamed Announcement back to official naming as per guide.
@@ -68,7 +70,7 @@ import IndonesiaMap from "@/components/IndonesiaMap";
 import Link from "next/link";
 import { useLiveStats  } from "@/hooks/useLiveStats";
 
-type TabType = "Dashboard" | "Kompetisi Saya" | "Jadwal" | "Statistik" | "Pengumuman" | "Pembayaran" | "Profil";
+type TabType = "Dashboard" | "Kompetisi Saya" | "Jadwal" | "Statistik" | "Dokumentasi" | "Pengumuman" | "Pembayaran" | "Profil";
 
 export default function DashboardPage() {
   const [session, setSession] = useState<LocalSession | null>(null);
@@ -253,6 +255,7 @@ export default function DashboardPage() {
     { label: "Kompetisi Saya", icon: Medal },
     { label: "Jadwal", icon: CalendarDays },
     { label: "Statistik", icon: MapPin },
+    { label: "Dokumentasi", icon: Camera },
     { label: "Pengumuman", icon: Megaphone },
     { label: "Pembayaran", icon: Wallet },
     { label: "Profil", icon: User },
@@ -1084,6 +1087,12 @@ export default function DashboardPage() {
               {activeTab === "Statistik" && (
                 <div className="bg-white rounded-[3.5rem] border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700">
                   <IndonesiaMap />
+                </div>
+              )}
+
+              {activeTab === "Dokumentasi" && (
+                <div className="bg-white rounded-[3.5rem] border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700">
+                  <GallerySection />
                 </div>
               )}
              </motion.div>
