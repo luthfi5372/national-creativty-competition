@@ -1,4 +1,3 @@
-// @ts-nocheck
 "use client";
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
@@ -58,10 +57,10 @@ import {
   deleteCompetitionEntry,
   getCategoryPrice
 } from "@/lib/localAuth";
-import { AnnouncementNode } from "@/types/announcement";
+import { Announcement } from "@/types/announcement";
 
 // FINAL FIX: FORCING ISOLATED TYPES FOR DEPLOYMENT SYNC
-// Renamed LocalAnnouncement to AnnouncementNode to match new isolated file
+// Renamed Announcement back to official naming as per guide.
 // Note: Type definition moved to @/types/announcement.ts
 
 import Link from "next/link";
@@ -73,7 +72,7 @@ export default function DashboardPage() {
   const [session, setSession] = useState<LocalSession | null>(null);
   const [userData, setUserData] = useState<LocalUser | null>(null);
   const [entries, setEntries] = useState<CompetitionEntry[]>([]);
-  const [announcements, setAnnouncements] = useState<AnnouncementNode[]>([]);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>("Dashboard");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -107,7 +106,7 @@ export default function DashboardPage() {
     
     const userEntries = getCompetitionEntries(currentSession.email);
     const userDetail = getUserData(currentSession.email);
-    const mockAnnouncements = getAnnouncements() as unknown as AnnouncementNode[];
+    const mockAnnouncements = getAnnouncements() as unknown as Announcement[];
     
     setEntries(userEntries);
     setUserData(userDetail);
@@ -720,13 +719,13 @@ export default function DashboardPage() {
            <p className="text-slate-400 font-medium">Semua berita dan update penting dari panitia akan muncul di sini.</p>
         </div>
       ) : (
-        announcements.map((item: AnnouncementNode) => (
+        announcements.map((item: Announcement) => (
           <div key={item.id} className="bg-white rounded-[2.5rem] border border-slate-200 overflow-hidden hover:shadow-2xl hover:shadow-slate-50 transition-all group relative">
             <div className="flex flex-col md:flex-row items-stretch">
               {/* Media Section: Dynamic Sync Check */}
-              {(item as any)["assetUrl"] && (
+              {item.mediaUrl && (
                 <div className="w-full md:w-64 lg:w-80 shrink-0 bg-slate-50 border-r border-slate-100 overflow-hidden relative">
-                   <img src={(item as any)["assetUrl"]} alt="Announcement" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                   <img src={item.mediaUrl} alt="Announcement" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
                 </div>
               )}

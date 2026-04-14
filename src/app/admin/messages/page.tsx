@@ -38,7 +38,7 @@ export default function AdminMessages() {
   const [content, setContent] = useState("");
   const [target, setTarget] = useState<"all" | string>("all");
   const [priority, setPriority] = useState<"info" | "warning" | "urgent">("info");
-  const [assetUrl, setMediaUrl] = useState<string>("");
+  const [mediaUrl, setMediaUrl] = useState<string>("");
 
   useEffect(() => {
     refreshData();
@@ -77,7 +77,7 @@ export default function AdminMessages() {
       target,
       sender: "System Admin",
       type: priority,
-      assetUrl: assetUrl || undefined
+      mediaUrl: mediaUrl || undefined
     });
 
     if (result.success) {
@@ -207,7 +207,7 @@ export default function AdminMessages() {
              <div className="space-y-8 flex flex-col">
                 <div className="space-y-2 flex-1 flex flex-col">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Media Attachment (Optional)</label>
-                  {!assetUrl ? (
+                  {!mediaUrl ? (
                     <label className="flex-1 flex flex-col items-center justify-center w-full bg-slate-50 border-2 border-dashed border-slate-200 rounded-[2.5rem] cursor-pointer hover:bg-slate-100 hover:border-indigo-300 transition-all group overflow-hidden">
                       <div className="flex flex-col items-center justify-center pt-5 pb-6">
                         <ImageIcon size={40} className="text-slate-200 group-hover:text-indigo-400 transition-colors mb-4" />
@@ -217,7 +217,7 @@ export default function AdminMessages() {
                     </label>
                   ) : (
                     <div className="relative flex-1 w-full rounded-[2.5rem] overflow-hidden border-2 border-indigo-100 group shadow-2xl">
-                      <img src={assetUrl} alt="Preview" className="w-full h-full object-cover" />
+                      <img src={mediaUrl} alt="Preview" className="w-full h-full object-cover" />
                       <div className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
                          <button 
                           type="button"
@@ -280,9 +280,9 @@ export default function AdminMessages() {
                                 <Trash2 size={16} />
                             </button>
 
-                            {msg.assetUrl ? (
+                            {msg.mediaUrl ? (
                               <div className="h-32 w-full overflow-hidden bg-slate-50 border-b border-slate-50">
-                                <img src={msg.assetUrl} className="w-full h-full object-cover opacity-50 contrast-125" alt="Thumbnail" />
+                                <img src={msg.mediaUrl} className="w-full h-full object-cover opacity-50 contrast-125" alt="Thumbnail" />
                               </div>
                             ) : (
                               <div className="h-4 bg-slate-50 w-full" />

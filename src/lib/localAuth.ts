@@ -448,7 +448,7 @@ export type Announcement = {
   date: string;
   type: "Info" | "Alert" | "Event" | "INFO" | "WARNING" | "URGENT";
   content: string;
-  assetUrl?: string;
+  mediaUrl?: string;
 };
 
 // Messaging System
@@ -459,7 +459,7 @@ export type AdminMessage = {
   content: string;
   sentAt: string;
   title: string;
-  assetUrl?: string;
+  mediaUrl?: string;
   type?: "info" | "warning" | "urgent";
 };
 
@@ -536,7 +536,7 @@ export function getAnnouncements(): Announcement[] {
       date: m.sentAt.split("T")[0],
       type: (m.type || "INFO").toUpperCase() as any,
       content: m.content,
-      assetUrl: m.assetUrl
+      mediaUrl: m.mediaUrl
     }));
 
   return [...personalized, ...baseAnnouncements];
