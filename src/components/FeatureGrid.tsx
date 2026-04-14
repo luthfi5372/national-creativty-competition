@@ -16,7 +16,7 @@ const itemVariants = {
 
 export default function FeatureGrid() {
   return (
-    <section className="relative z-10 max-w-7xl mx-auto px-6 py-24 flex flex-col gap-32">
+    <section className="relative z-10 max-w-7xl mx-auto px-6 py-12 flex flex-col gap-12 sm:gap-20">
       
       {/* 1. Split Layout: Text Right, Image Left */}
       <motion.div

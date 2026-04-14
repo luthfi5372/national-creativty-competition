@@ -62,9 +62,8 @@ export default function TimelineSection() {
   // Spring physics for smooth drawing and particle movement
   const smoothProgress = useSpring(scrollYProgress, { stiffness: 80, damping: 20 });
 
-  return (
-    <section ref={containerRef} id="jadwal" className="relative z-10 py-24 px-6 sm:px-10 bg-transparent border-t border-slate-100 overflow-hidden">
-      <div className="text-center mb-16 md:mb-24 max-w-2xl mx-auto">
+    <section ref={containerRef} id="jadwal" className="relative z-10 py-12 px-6 sm:px-10 bg-transparent overflow-hidden h-full flex flex-col justify-center">
+      <div className="text-center mb-10 md:mb-16 max-w-2xl mx-auto shrink-0">
         <h2
           className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 text-slate-900"
           style={{ fontFamily: "var(--font-display, var(--font-space-grotesk))" }}
@@ -77,14 +76,14 @@ export default function TimelineSection() {
       </div>
 
       {/* DESKTOP SVG MOTION PATH TIMELINE */}
-      <div className="max-w-4xl mx-auto relative h-[1100px] hidden md:block">
+      <div className="max-w-4xl mx-auto relative h-[650px] hidden md:block scale-90 lg:scale-100 origin-center">
         
         {/* SVG Drawing Canvas */}
         <div className="absolute inset-0 flex justify-center pointer-events-none">
           <svg viewBox="0 0 800 1100" className="w-full h-full" preserveAspectRatio="none">
             {/* Background Dashed Track */}
             <path
-              d="M 200 100 C 200 250, 600 250, 600 400 C 600 550, 200 550, 200 700 C 200 850, 600 850, 600 1000"
+              d="M 200 50 C 200 150, 600 150, 600 250 C 600 350, 200 350, 200 450 C 200 550, 600 550, 600 650"
               fill="transparent"
               stroke="#e2e8f0"
               strokeWidth="4"
@@ -93,7 +92,7 @@ export default function TimelineSection() {
             
             {/* Inner Glow Path (Secondary) */}
             <motion.path
-              d="M 200 100 C 200 250, 600 250, 600 400 C 600 550, 200 550, 200 700 C 200 850, 600 850, 600 1000"
+              d="M 200 50 C 200 150, 600 150, 600 250 C 600 350, 200 350, 200 450 C 200 550, 600 550, 600 650"
               fill="transparent"
               stroke="url(#gradient-path)"
               strokeWidth="15"
@@ -103,7 +102,7 @@ export default function TimelineSection() {
 
             {/* Animated Solid Gradient Path tied to Scroll! */}
             <motion.path
-              d="M 200 100 C 200 250, 600 250, 600 400 C 600 550, 200 550, 200 700 C 200 850, 600 850, 600 1000"
+              d="M 200 50 C 200 150, 600 150, 600 250 C 600 350, 200 350, 200 450 C 200 550, 600 550, 600 650"
               fill="transparent"
               stroke="url(#gradient-path)"
               strokeWidth="8"
@@ -148,7 +147,7 @@ export default function TimelineSection() {
         </div>
       </div>
 
-      {/* Registration CTA */}
+      {/* Registration CTA (Reduced for slide fit) */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}

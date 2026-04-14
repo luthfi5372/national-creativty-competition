@@ -273,7 +273,7 @@ export default function IndonesiaMap() {
   }, [dimensions, stats]);
 
   return (
-    <section className="relative py-24 px-6 overflow-hidden bg-transparent">
+    <section className="relative py-12 px-6 overflow-hidden bg-transparent h-full flex flex-col justify-center">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col lg:flex-row items-center gap-16">
           

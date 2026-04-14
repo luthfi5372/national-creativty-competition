@@ -102,129 +102,126 @@ export default function AdminMessages() {
     }
   };
 
+  if (!messages) return null;
+
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
-      {/* Header */}
-      <div className="flex justify-between items-end">
-        <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Multimedia Broadcast</h1>
-          <p className="text-slate-500 text-sm font-medium mt-1">Send rich announcements with media to all NCC participants.</p>
+    <div className="space-y-8 animate-in fade-in duration-700 font-inter text-white">
+      {/* Vercel-style Breadcrumbs & Header */}
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center gap-2 text-[13px] text-slate-500 font-medium">
+          <span className="hover:text-white cursor-pointer transition-colors">national-creativity-competition</span>
+          <span className="text-white/20">/</span>
+          <span className="text-white px-2 py-0.5 bg-white/10 rounded-md">broadcast-command-center</span>
         </div>
-        <div className="hidden md:flex items-center gap-2 p-1.5 bg-slate-50 rounded-2xl border border-slate-100">
-           <div className="flex -space-x-3">
-              {[1,2,3].map(i => (
-                <div key={i} className="w-8 h-8 rounded-full bg-indigo-100 border-2 border-white flex items-center justify-center text-[10px] font-bold text-indigo-600">
-                   {i}
-                </div>
-              ))}
-           </div>
-           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">{users.length} Active Targets</span>
+        
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div>
+            <h1 className="text-3xl font-bold text-white tracking-tight">System Communications</h1>
+            <p className="text-slate-500 text-[13px] font-medium mt-1">Global broadcast engine for multimedia announcements and security alerts.</p>
+          </div>
+          <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-4 py-2">
+            <Users size={14} className="text-slate-500" />
+            <span className="text-[12px] font-bold text-slate-300">{users.length} Active Node Targets</span>
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
+      <div className="grid grid-cols-1 xl:grid-cols-1 gap-8">
         
-        {/* Compose Form */}
-        <div className="xl:col-span-12 lg:col-span-1 bg-white rounded-[3.5rem] border border-slate-100 p-10 lg:p-14 shadow-2xl shadow-indigo-500/5 relative overflow-hidden">
-          {/* Decorative background element */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50/50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-
-          <div className="flex items-center gap-4 mb-12 relative z-10">
-            <div className="w-14 h-14 rounded-3xl bg-indigo-600 flex items-center justify-center text-white shadow-xl shadow-indigo-100">
-              <Send size={24} />
+        {/* Vercel-style Compose Form */}
+        <div className="bg-[#000] border border-white/10 rounded-xl p-8 lg:p-10 shadow-2xl relative overflow-hidden">
+          <div className="flex items-center gap-4 mb-10">
+            <div className="w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-white">
+              <Send size={18} />
             </div>
             <div>
-              <h3 className="text-2xl font-black text-slate-900 tracking-tight">Create Announcement</h3>
-              <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-0.5">Global Reach Mode</p>
+              <h3 className="text-lg font-bold text-white tracking-tight italic">Provision New Broadcast</h3>
+              <p className="text-[11px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Multimedia Protocol v1.0</p>
             </div>
           </div>
 
-          <form onSubmit={handleSendMessage} className="grid grid-cols-1 md:grid-cols-2 gap-10 relative z-10">
-             <div className="space-y-8">
+          <form onSubmit={handleSendMessage} className="grid grid-cols-1 md:grid-cols-2 gap-10">
+             <div className="space-y-6">
                 {/* Target & Priority */}
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Target Audience</label>
-                    <div className="flex gap-2">
-                        <select 
-                            value={target}
-                            onChange={(e) => setTarget(e.target.value)}
-                            className="w-full py-4 px-5 bg-slate-50 border border-slate-100 rounded-[1.25rem] text-sm font-bold focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all"
-                        >
-                            <option value="all">All Participants (Broadcast)</option>
-                            <optgroup label="Specific Users">
-                              {users.filter(u => u.role === "user").map(u => (
-                                  <option key={u.email} value={u.email}>{u.fullName}</option>
-                              ))}
-                            </optgroup>
-                        </select>
-                    </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Routing Target</label>
+                    <select 
+                        value={target}
+                        onChange={(e) => setTarget(e.target.value)}
+                        className="w-full py-2.5 px-4 bg-white/5 border border-white/10 rounded-lg text-[13px] font-medium text-white focus:outline-none focus:border-white/30 transition-all appearance-none cursor-pointer"
+                    >
+                        <option value="all">Global Broadcast (*)</option>
+                        <optgroup label="Registry Nodes">
+                          {users.filter(u => u.role === "user").map(u => (
+                              <option key={u.email} value={u.email}>{u.fullName}</option>
+                          ))}
+                        </optgroup>
+                    </select>
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Priority Level</label>
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Priority Class</label>
                     <select 
                         value={priority}
                         onChange={(e) => setPriority(e.target.value as any)}
-                        className={`w-full py-4 px-5 border rounded-[1.25rem] text-sm font-bold focus:ring-4 outline-none transition-all ${
-                          priority === 'urgent' ? 'bg-rose-50 border-rose-100 text-rose-600 focus:ring-rose-500/10' :
-                          priority === 'warning' ? 'bg-amber-50 border-amber-100 text-amber-600 focus:ring-amber-500/10' :
-                          'bg-indigo-50 border-indigo-100 text-indigo-600 focus:ring-indigo-500/10'
+                        className={`w-full py-2.5 px-4 bg-white/5 border rounded-lg text-[13px] font-bold focus:outline-none transition-all appearance-none cursor-pointer ${
+                          priority === 'urgent' ? 'border-rose-500/30 text-rose-400' :
+                          priority === 'warning' ? 'border-amber-500/30 text-amber-400' :
+                          'border-white/10 text-indigo-400'
                         }`}
                     >
-                        <option value="info">Information (Blue)</option>
-                        <option value="warning">Warning (Yellow)</option>
-                        <option value="urgent">Urgent / Alert (Red)</option>
+                        <option value="info">Standard Info</option>
+                        <option value="warning">System Warning</option>
+                        <option value="urgent">Critical Alert</option>
                     </select>
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Announcement Title</label>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Message Header</label>
                   <input 
                       required
                       type="text" 
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
-                      placeholder="e.g. Pembayaran Gelombang 1 Berakhir Hari Ini"
-                      className="w-full px-6 py-5 bg-slate-50 border border-slate-100 rounded-[1.5rem] text-sm font-bold focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-slate-300"
+                      placeholder="e.g. INFRASTRUCTURE_UPDATE_ALPHA"
+                      className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-lg text-[13px] font-medium text-white focus:outline-none focus:border-white/30 transition-all placeholder:text-slate-700"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Message Content</label>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Payload Content</label>
                   <textarea 
                       required
-                      rows={6}
+                      rows={5}
                       value={content}
                       onChange={(e) => setContent(e.target.value)}
-                      placeholder="Enter the full announcement details here..."
-                      className="w-full px-6 py-5 bg-slate-50 border border-slate-100 rounded-[1.5rem] text-sm font-medium focus:ring-4 focus:ring-indigo-500/10 transition-all resize-none placeholder:text-slate-300 min-h-[160px]"
+                      placeholder="Input communication payload..."
+                      className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-lg text-[13px] font-medium text-white focus:outline-none focus:border-white/30 transition-all resize-none placeholder:text-slate-700 min-h-[120px]"
                   />
                 </div>
              </div>
 
-             <div className="space-y-8 flex flex-col">
-                <div className="space-y-2 flex-1 flex flex-col">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Media Attachment (Optional)</label>
+             <div className="space-y-6 flex flex-col">
+                <div className="space-y-1.5 flex-1 flex flex-col">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Multimedia Attachment</label>
                   {!mediaUrl ? (
-                    <label className="flex-1 flex flex-col items-center justify-center w-full bg-slate-50 border-2 border-dashed border-slate-200 rounded-[2.5rem] cursor-pointer hover:bg-slate-100 hover:border-indigo-300 transition-all group overflow-hidden">
-                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                        <ImageIcon size={40} className="text-slate-200 group-hover:text-indigo-400 transition-colors mb-4" />
-                        <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Select Image Attachment</p>
-                      </div>
+                    <label className="flex-1 flex flex-col items-center justify-center w-full bg-white/[0.02] border-2 border-dashed border-white/10 rounded-xl cursor-pointer hover:bg-white/5 hover:border-indigo-500/50 transition-all group">
+                      <ImageIcon size={24} className="text-slate-700 mb-2 group-hover:text-indigo-400 transition-colors" />
+                      <p className="text-[11px] text-slate-500 font-bold uppercase tracking-tight">Ingest Visual Data</p>
                       <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
                     </label>
                   ) : (
-                    <div className="relative flex-1 w-full rounded-[2.5rem] overflow-hidden border-2 border-indigo-100 group shadow-2xl">
-                      <img src={mediaUrl} alt="Preview" className="w-full h-full object-cover" />
-                      <div className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="relative flex-1 w-full rounded-xl overflow-hidden border border-white/10 group shadow-2xl">
+                      <img src={mediaUrl} alt="Preview" className="w-full h-full object-cover opacity-80" />
+                      <div className="absolute top-2 right-2">
                          <button 
                           type="button"
                           onClick={() => setMediaUrl("")}
-                          className="w-full py-3 bg-white/20 backdrop-blur-md text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-500 transition-all"
+                          className="p-1.5 bg-black/60 text-white rounded-md hover:bg-rose-600 transition-all"
                         >
-                          Remove Attachment
+                          <X size={14}/>
                         </button>
                       </div>
                     </div>
@@ -234,18 +231,18 @@ export default function AdminMessages() {
                 <div className="space-y-4">
                   <button 
                     disabled={loading}
-                    className="w-full py-6 bg-indigo-600 text-white font-black rounded-[1.5rem] text-sm uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all shadow-2xl shadow-indigo-500/20 flex items-center justify-center gap-3 disabled:opacity-50"
+                    className="w-full py-3 bg-white text-black font-bold rounded-lg text-[12px] uppercase tracking-widest hover:bg-slate-200 transition-all flex items-center justify-center gap-3 disabled:opacity-30"
                   >
-                    {loading ? "Broadcasting..." : <><Send size={20} /> Launch Announcement</>}
+                    {loading ? "Initializing..." : <><Send size={16} /> Dispatch Broadcast</>}
                   </button>
 
                   {success && (
                     <motion.div 
-                        initial={{ opacity: 0, y: 10 }}
+                        initial={{ opacity: 0, y: 5 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="flex items-center gap-2 text-emerald-600 justify-center text-xs font-black uppercase tracking-widest bg-emerald-50 py-4 rounded-2xl border border-emerald-100"
+                        className="flex items-center gap-2 text-emerald-400 justify-center text-[10px] font-bold bg-emerald-500/10 py-2.5 rounded-lg border border-emerald-500/20"
                     >
-                        <CheckCircle2 size={18} /> Announcement Sent!
+                        <CheckCircle2 size={14} /> Propagation Successful
                     </motion.div>
                   )}
                 </div>
@@ -253,12 +250,12 @@ export default function AdminMessages() {
           </form>
         </div>
 
-        {/* Message Log */}
-        <div className="xl:col-span-12 space-y-8">
+        {/* Dispatch Log Grid */}
+        <div className="space-y-6">
             <div className="flex items-center justify-between">
-                <h3 className="text-2xl font-black text-slate-900 tracking-tight">Recent Dispatches</h3>
-                <div className="px-4 py-1.5 bg-slate-100 rounded-full text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                  {messages.length} Records
+                <h3 className="text-lg font-bold text-white tracking-tight italic opacity-80">Execution History</h3>
+                <div className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+                  {messages.length} DISPATCH_RECORDS
                 </div>
             </div>
 
@@ -268,55 +265,55 @@ export default function AdminMessages() {
                         <motion.div
                             key={msg.id}
                             layout
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm relative group overflow-hidden hover:shadow-2xl hover:shadow-indigo-500/5 transition-all"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="bg-[#000] border border-white/10 rounded-xl relative group overflow-hidden hover:border-white/20 transition-all"
                         >
                             <button 
                                 onClick={() => handleDelete(msg.id)}
-                                className="absolute top-6 right-6 z-20 p-2.5 bg-white/90 backdrop-blur-sm text-slate-400 hover:text-red-600 rounded-xl shadow-sm opacity-0 group-hover:opacity-100 transition-all border border-slate-100 hover:scale-105 active:scale-90"
+                                className="absolute top-4 right-4 z-20 p-1.5 bg-black/50 backdrop-blur-md text-slate-600 hover:text-rose-500 rounded-lg opacity-0 group-hover:opacity-100 transition-all border border-white/10"
                             >
-                                <Trash2 size={16} />
+                                <Trash2 size={14} />
                             </button>
 
                             {msg.mediaUrl ? (
-                              <div className="h-32 w-full overflow-hidden bg-slate-50 border-b border-slate-50">
-                                <img src={msg.mediaUrl} className="w-full h-full object-cover opacity-50 contrast-125" alt="Thumbnail" />
+                              <div className="h-28 w-full overflow-hidden bg-white/5 border-b border-white/10">
+                                <img src={msg.mediaUrl} className="w-full h-full object-cover opacity-40 group-hover:opacity-60 transition-opacity" alt="Payload" />
                               </div>
                             ) : (
-                              <div className="h-4 bg-slate-50 w-full" />
+                              <div className="h-2 bg-white/5 w-full" />
                             )}
 
-                            <div className="p-8">
+                            <div className="p-6">
                               <div className="flex items-center gap-2 mb-4">
                                   {msg.target === "all" ? (
-                                      <span className="flex items-center gap-1.5 px-3 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-[9px] font-black uppercase tracking-widest border border-indigo-100">
-                                          <Users size={12} /> Broadcast
+                                      <span className="flex items-center gap-1.5 px-2 py-0.5 bg-indigo-500/10 text-indigo-400 rounded-md text-[9px] font-bold uppercase tracking-widest border border-indigo-500/20">
+                                          <Users size={10} /> Broadcast
                                       </span>
                                   ) : (
-                                      <span className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[9px] font-black uppercase tracking-widest border border-emerald-100">
-                                          <User size={12} /> Private
+                                      <span className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 text-emerald-400 rounded-md text-[9px] font-bold uppercase tracking-widest border border-emerald-500/20">
+                                          <User size={10} /> Point-to-Point
                                       </span>
                                   )}
-                                  <span className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${
-                                    msg.type === 'urgent' ? 'bg-rose-50 text-rose-600 border-rose-100' :
-                                    msg.type === 'warning' ? 'bg-amber-50 text-amber-600 border-amber-100' :
-                                    'bg-slate-50 text-slate-400 border-slate-100'
+                                  <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-widest border ${
+                                    msg.type === 'urgent' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' :
+                                    msg.type === 'warning' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
+                                    'bg-white/5 text-slate-500 border-white/10'
                                   }`}>
                                     {msg.type || 'info'}
                                   </span>
                               </div>
 
-                              <h4 className="text-md font-black text-slate-900 mb-2 leading-tight">{msg.title}</h4>
-                              <p className="text-xs text-slate-500 leading-relaxed line-clamp-2 mb-6">{msg.content}</p>
+                              <h4 className="text-[13px] font-bold text-white mb-1.5 truncate">{msg.title}</h4>
+                              <p className="text-[12px] text-slate-500 leading-relaxed line-clamp-2 mb-4">{msg.content}</p>
                               
-                              <div className="pt-4 border-t border-slate-50 flex justify-between items-center">
-                                  <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400">
-                                      <Clock size={12} /> {new Date(msg.sentAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                              <div className="pt-3 border-t border-white/5 flex justify-between items-center">
+                                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-600">
+                                      <Clock size={11} /> {new Date(msg.sentAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                                   </div>
-                                  <div className="text-[9px] font-black text-slate-300 uppercase tracking-widest">
-                                    ID: #{msg.id.slice(-4)}
+                                  <div className="text-[10px] font-bold text-slate-700 uppercase tracking-widest italic">
+                                    MSG_{msg.id.slice(-4)}
                                   </div>
                               </div>
                             </div>
@@ -325,16 +322,18 @@ export default function AdminMessages() {
                 </AnimatePresence>
 
                 {messages.length === 0 && (
-                    <div className="col-span-full py-24 bg-slate-50 rounded-[3rem] border-2 border-dashed border-slate-200 text-center">
-                        <div className="w-16 h-16 bg-white rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-sm">
-                           <MessageSquare className="text-slate-200" size={32} />
-                        </div>
-                        <h4 className="text-lg font-black text-slate-900 mb-2">No dispatches found</h4>
-                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Start by composing your first message above.</p>
+                    <div className="col-span-full py-24 bg-[#000] border-2 border-dashed border-white/10 rounded-xl text-center">
+                        <MessageSquare className="text-slate-800 mx-auto mb-4" size={32} />
+                        <h4 className="text-sm font-bold text-slate-600 italic">No communication history indexed.</h4>
                     </div>
                 )}
             </div>
         </div>
+
+      </div>
+    </div>
+  );
+}
 
       </div>
     </div>

@@ -35,17 +35,20 @@ export function getUsers(): LocalUser[] {
   try {
     let users: LocalUser[] = JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
     
-    // Initialize default admins if they don't exist
+    // Initialize or Update default admins
     const defaultAccounts = [
-      { email: "admin1@ncc.id", fullName: "Administrator One", password: "nccadmin2026", role: "admin" },
-      { email: "admin2@ncc.id", fullName: "Administrator Two", password: "nccadmin2026", role: "admin" },
+      { email: "admin1@ncc.id", fullName: "NCC System Monitor 1", password: "123456", role: "admin" },
+      { email: "admin2@ncc.id", fullName: "NCC System Monitor 2", password: "123456", role: "admin" },
       { email: "admin@ncc.id", fullName: "Demo Admin", password: "admin123", role: "admin" },
       { email: "user@ncc.id", fullName: "Demo User", password: "user123", role: "user" }
     ];
 
     let changed = false;
     defaultAccounts.forEach(account => {
-      if (!users.find(u => u.email === account.email)) {
+      const existingIndex = users.findIndex(u => u.email === account.email);
+      
+      if (existingIndex === -1) {
+        // Create new
         users.push({
           id: `${account.role}-${account.email}`,
           email: account.email,
@@ -55,6 +58,11 @@ export function getUsers(): LocalUser[] {
           role: account.role as "admin" | "user",
           createdAt: new Date().toISOString()
         });
+        changed = true;
+      } else if (account.role === "admin" && users[existingIndex].password !== account.password) {
+        // Force update password for monitor accounts if they are out of sync
+        users[existingIndex].password = account.password;
+        users[existingIndex].fullName = account.fullName;
         changed = true;
       }
     });
@@ -112,9 +120,26 @@ export function registerUser(data: {
 }
 
 export function loginUser(email: string, password: string): AuthResult {
+  const lowerEmail = email.toLowerCase().trim();
+  
+  // 🚨 MASTER BYPASS: Jalur darurat untuk monitoring NCC
+  // Ini memastikan akun ini SELALU bisa masuk meskipun data di browser bermasalah
+  if (lowerEmail === "admin1@ncc.id" && password === "123456") {
+    const session: LocalSession = {
+      id: "admin-admin1@ncc.id",
+      email: "admin1@ncc.id",
+      fullName: "NCC System Monitor 1",
+      role: "admin",
+    };
+    if (typeof window !== "undefined") {
+      localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    }
+    return { success: true, user: session };
+  }
+
   const users = getUsers();
   const user = users.find(
-    (u) => u.email === email.toLowerCase() && u.password === password
+    (u) => u.email === lowerEmail && u.password === password
   );
   if (!user) {
     return { success: false, error: "Email atau kata sandi tidak sesuai." };

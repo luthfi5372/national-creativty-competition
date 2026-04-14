@@ -27,8 +27,8 @@ export default function FAQSection() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <section className="relative z-10 max-w-4xl mx-auto px-6 py-24">
-      <div className="flex flex-col items-center justify-center text-center mb-16">
+    <section className="relative z-10 max-w-4xl mx-auto px-6 py-12 h-full flex flex-col justify-center overflow-hidden">
+      <div className="flex flex-col items-center justify-center text-center mb-8 sm:mb-12">
         <h2 className="text-4xl sm:text-5xl font-bold text-slate-900 leading-tight mb-4" style={{ fontFamily: "var(--font-display)" }}>
           Frequently <span className="text-indigo-600">Asked</span> Question
         </h2>
