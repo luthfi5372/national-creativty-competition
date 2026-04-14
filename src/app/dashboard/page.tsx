@@ -59,6 +59,8 @@ import {
   getCategoryPrice
  } from "@/lib/localAuth";
 import { AnnouncementNode  } from "@/types/announcement";
+import IndonesiaMap from "@/components/IndonesiaMap";
+import TimelineSection from "@/components/TimelineSection";
 
 // FINAL FIX: FORCING ISOLATED TYPES FOR DEPLOYMENT SYNC
 // Renamed Announcement back to official naming as per guide.
@@ -659,6 +661,22 @@ export default function DashboardPage() {
              </div>
              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 blur-3xl -mr-16 -mt-16 rounded-full" />
            </div>
+        </div>
+      </div>
+
+      {/* NEW: Integrated Competition Tools (Single Flow) */}
+      <div className="space-y-12 mt-16 pt-12 border-t border-slate-100">
+        <div>
+           <h2 className="text-2xl font-black text-slate-900 mb-2">Informasi Kompetisi</h2>
+           <p className="text-slate-400 font-medium">Lihat peta sebaran peserta secara nasional dan jadwal penting perlombaan Anda.</p>
+        </div>
+
+        <div className="bg-white rounded-[3.5rem] border border-slate-100 overflow-hidden shadow-sm">
+           <IndonesiaMap />
+        </div>
+
+        <div className="bg-white rounded-[3.5rem] border border-slate-100 overflow-hidden shadow-sm">
+           <TimelineSection />
         </div>
       </div>
     </motion.div>
