@@ -36,29 +36,29 @@ const allIconsMapped = categoryIcons.flatMap(cat =>
 // Pre-generated positions to avoid hydration mismatch
 const generateElements = () => {
   const elements = [];
-  // Generate 150 elements to ensure the whole long page is populated
-  for (let i = 0; i < 150; i++) {
+  // Optimized for performance: Reduce to 45 quality elements
+  for (let i = 0; i < 45; i++) {
     const itemConfig = allIconsMapped[i % allIconsMapped.length];
     
-    // Spread vertically across 600vh (6 screen heights)
-    const factorLevel = (i * 29) % 650; // 0 to 650 vh
-    // Spread horizontally across 100vw
-    const factorX = (i * 13) % 100;
+    // Spread vertically across 1000vh (Height of the long landing page)
+    const factorLevel = (i * 22) % 1000; 
+    // Sparse horizontal distribution
+    const factorX = (i * 17) % 100;
     
-    const size = 32 + ((i * 7) % 100); // 32px to 132px
-    const depth = 1 + ((i * 19) % 4); // 1 to 4 parallax speed
-    const opacity = 0.20 + (((i * 11) % 25) / 100); 
+    const size = 32 + ((i * 13) % 80); // 32px to 112px
+    const depth = 0.5 + ((i * 3) % 3); // 0.5 to 3.5 parallax speed
+    const opacity = 0.15 + (((i * 7) % 20) / 100); 
     const rotate = (i * 45) % 360;
-    const blur = depth > 3 ? "blur(5px)" : depth > 2 ? "blur(2px)" : "blur(0px)";
+    const blur = depth > 3 ? "blur(4px)" : depth > 2 ? "blur(1.5px)" : "blur(0px)";
 
     elements.push({
       id: i,
       Icon: itemConfig.Icon,
       color: itemConfig.color,
-      x: factorX,        // vw
-      y: factorLevel,    // vh starting
+      x: factorX,
+      y: factorLevel,
       size,
-      depth,             // parallax speed multiplier
+      depth,
       opacity,
       rotate,
       blur
