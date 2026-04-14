@@ -12,17 +12,18 @@ import {
   X,
   LogIn,
   ClipboardList,
+  Image as ImageIcon
 } from "lucide-react";
 import Link from "next/link";
 
 import MagneticWrapper from "./ui/MagneticWrapper";
 
 const navItems = [
-  { icon: Home, label: "Beranda", href: "#beranda" },
-  { icon: Layers, label: "Kategori", href: "#kategori" },
-  { icon: Calendar, label: "Jadwal", href: "#jadwal" },
-  { icon: UserPlus, label: "Pendaftaran", href: "#daftar" },
-  { icon: Mail, label: "Kontak", href: "#kontak" },
+  { icon: Home, label: "Beranda", href: "/#beranda" },
+  { icon: Layers, label: "Kategori", href: "/#kategori" },
+  { icon: ImageIcon, label: "Galeri", href: "/gallery" },
+  { icon: Calendar, label: "Jadwal", href: "/#jadwal" },
+  { icon: Mail, label: "Kontak", href: "/#kontak" },
 ];
 
 export default function Navbar() {

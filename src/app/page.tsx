@@ -9,17 +9,13 @@ import FeatureGrid from "@/components/FeatureGrid";
 // Navbar, HeroSection, FeatureGrid
 
 // DYNAMICALLY LOADED (Below the fold)
-const GallerySection = dynamic(() => import("@/components/GallerySection"), { 
-  loading: () => <div className="h-96 animate-pulse bg-slate-50 rounded-3xl m-8" />
-});
 const CategoryCards = dynamic(() => import("@/components/CategoryCards"), { ssr: false });
 const PricingSection = dynamic(() => import("@/components/PricingSection"), { ssr: false });
-const IndonesiaMap = dynamic(() => import("@/components/IndonesiaMap"), { ssr: false });
-const TimelineSection = dynamic(() => import("@/components/TimelineSection"), { ssr: false });
 const FAQSection = dynamic(() => import("@/components/FAQSection"), { ssr: false });
 const Footer = dynamic(() => import("@/components/Footer"), { ssr: false });
 
-// ParallaxBackground removed for maximum performance
+// Gallery, IndonesiaMap, and Timeline removed as per restructuring request.
+// They are now moved to /gallery and Dashboard respectively.
 
 export default function Home() {
   return (
@@ -30,12 +26,9 @@ export default function Home() {
         <HeroSection />
         <FeatureGrid />
         
-        {/* These load only when reaching the scroll position */}
-        <GallerySection />
+        {/* Simplified Landing Page Flow */}
         <CategoryCards />
         <PricingSection />
-        <IndonesiaMap />
-        <TimelineSection />
         <FAQSection />
       </main>
 

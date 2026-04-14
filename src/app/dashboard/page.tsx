@@ -58,6 +58,8 @@ import {
   getCategoryPrice
  } from "@/lib/localAuth";
 import { AnnouncementNode  } from "@/types/announcement";
+import TimelineSection from "@/components/TimelineSection";
+import IndonesiaMap from "@/components/IndonesiaMap";
 
 // FINAL FIX: FORCING ISOLATED TYPES FOR DEPLOYMENT SYNC
 // Renamed Announcement back to official naming as per guide.
@@ -66,7 +68,7 @@ import { AnnouncementNode  } from "@/types/announcement";
 import Link from "next/link";
 import { useLiveStats  } from "@/hooks/useLiveStats";
 
-type TabType = "Dashboard" | "Kompetisi Saya" | "Pengumuman" | "Pembayaran" | "Profil";
+type TabType = "Dashboard" | "Kompetisi Saya" | "Jadwal" | "Statistik" | "Pengumuman" | "Pembayaran" | "Profil";
 
 export default function DashboardPage() {
   const [session, setSession] = useState<LocalSession | null>(null);
@@ -249,6 +251,8 @@ export default function DashboardPage() {
   const navItems = useMemo(() => [
     { label: "Dashboard", icon: LayoutGrid },
     { label: "Kompetisi Saya", icon: Medal },
+    { label: "Jadwal", icon: CalendarDays },
+    { label: "Statistik", icon: MapPin },
     { label: "Pengumuman", icon: Megaphone },
     { label: "Pembayaran", icon: Wallet },
     { label: "Profil", icon: User },
@@ -1070,6 +1074,18 @@ export default function DashboardPage() {
                 {activeTab === "Pengumuman" && renderAnnouncements()}
                 {activeTab === "Pembayaran" && renderPayments()}
                 {activeTab === "Profil" && renderProfile()}
+
+              {activeTab === "Jadwal" && (
+                <div className="bg-white rounded-[3.5rem] border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700">
+                  <TimelineSection />
+                </div>
+              )}
+
+              {activeTab === "Statistik" && (
+                <div className="bg-white rounded-[3.5rem] border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700">
+                  <IndonesiaMap />
+                </div>
+              )}
              </motion.div>
            </AnimatePresence>
         </div>
