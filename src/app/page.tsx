@@ -18,12 +18,12 @@ const IndonesiaMap = dynamic(() => import("@/components/IndonesiaMap"), { ssr: f
 const TimelineSection = dynamic(() => import("@/components/TimelineSection"), { ssr: false });
 const FAQSection = dynamic(() => import("@/components/FAQSection"), { ssr: false });
 const Footer = dynamic(() => import("@/components/Footer"), { ssr: false });
-const ParallaxBackground = dynamic(() => import("@/components/ParallaxBackground"), { ssr: false });
+
+// ParallaxBackground removed for maximum performance
 
 export default function Home() {
   return (
     <>
-      <ParallaxBackground />
       <Navbar />
 
       <main className="flex flex-col gap-12 sm:gap-24 overflow-hidden pt-12">

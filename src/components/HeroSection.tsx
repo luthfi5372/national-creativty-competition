@@ -88,13 +88,12 @@ export default function HeroSection() {
           </motion.div>
         </motion.div>
 
-        {/* RIGHT COLUMN: Connected Chains/Network Visualization */}
+        {/* RIGHT COLUMN: Connected Chains/Network Visualization (Static for Performance) */}
         <div className="relative w-full aspect-square md:aspect-[4/5] flex items-center justify-center">
           
           {/* Main Central Element: Trophy / Logo Placeholder */}
           <motion.div 
-            animate={{ y: [-10, 10, -10] }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+            initial={{ y: 0 }}
             className="absolute z-20 w-40 h-40 bg-white/70 backdrop-blur-xl border border-white/60 shadow-2xl rounded-full flex flex-col items-center justify-center p-6"
           >
             <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center mb-2 shadow-lg shadow-indigo-200">
@@ -102,11 +101,10 @@ export default function HeroSection() {
             </div>
             <span className="font-bold text-slate-800 text-sm tracking-widest text-center">NCC 13TH</span>
           </motion.div>
-
-          {/* Orbiting / Floating Category Cards */}
+ 
+          {/* Static Category Cards */}
           <motion.div 
-            animate={{ y: [-15, 15, -15], rotate: [-2, 2, -2] }}
-            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+            initial={{ y: 0, rotate: -2 }}
             className="absolute top-10 right-4 lg:-right-4 z-10 w-52 bg-white/90 backdrop-blur-md border border-slate-100 shadow-xl rounded-2xl p-4 flex items-center gap-3"
           >
             <div className="w-10 h-10 rounded-xl bg-blue-100 flex py-2 shrink-0 items-center justify-center text-blue-600">
@@ -117,10 +115,9 @@ export default function HeroSection() {
               <div className="text-sm font-bold text-slate-800">Olimpiade MIPA</div>
             </div>
           </motion.div>
-
+ 
           <motion.div 
-            animate={{ y: [15, -15, 15], rotate: [2, -2, 2] }}
-            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+            initial={{ y: 0, rotate: 2 }}
             className="absolute bottom-20 left-0 lg:-left-12 z-30 w-56 bg-white/90 backdrop-blur-md border border-slate-100 shadow-xl rounded-2xl p-4 flex items-center gap-3"
           >
             <div className="w-10 h-10 rounded-xl bg-emerald-100 flex py-2 shrink-0 items-center justify-center text-emerald-600">
@@ -131,10 +128,9 @@ export default function HeroSection() {
               <div className="text-sm font-bold text-slate-800">Speech Contest</div>
             </div>
           </motion.div>
-
+ 
           <motion.div 
-            animate={{ y: [-10, 10, -10], x: [-5, 5, -5] }}
-            transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+            initial={{ y: 0, x: 0 }}
             className="absolute top-1/2 -translate-y-1/2 -left-4 lg:-left-16 z-10 w-48 bg-white/90 backdrop-blur-md border border-slate-100 shadow-xl rounded-2xl p-4 flex items-center gap-3"
           >
             <div className="w-10 h-10 rounded-xl bg-purple-100 flex shrink-0 items-center justify-center text-purple-600">
@@ -145,11 +141,10 @@ export default function HeroSection() {
               <div className="text-sm font-bold text-slate-800">LKTI Nasional</div>
             </div>
           </motion.div>
-
+ 
           {/* Decorative Institution Badge */}
           <motion.div 
-             animate={{ y: [10, -10, 10] }}
-             transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+             initial={{ y: 0 }}
              className="absolute bottom-10 -right-4 lg:-right-12 z-20 bg-indigo-600 text-white px-5 py-3 rounded-2xl shadow-lg shadow-indigo-600/30 flex items-center gap-3"
           >
              <GraduationCap size={24} className="text-indigo-200" />
@@ -158,7 +153,7 @@ export default function HeroSection() {
                <div className="text-sm font-bold whitespace-nowrap">SMA Darul Ulum 1</div>
              </div>
           </motion.div>
-
+ 
         </div>
       </div>
     </section>
