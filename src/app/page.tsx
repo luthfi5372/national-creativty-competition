@@ -11,11 +11,13 @@ import FeatureGrid from "@/components/FeatureGrid";
 // DYNAMICALLY LOADED (Below the fold)
 const CategoryCards = dynamic(() => import("@/components/CategoryCards"), { ssr: false });
 const PricingSection = dynamic(() => import("@/components/PricingSection"), { ssr: false });
+const IndonesiaMap = dynamic(() => import("@/components/IndonesiaMap"), { ssr: false });
+const TimelineSection = dynamic(() => import("@/components/TimelineSection"), { ssr: false });
 const FAQSection = dynamic(() => import("@/components/FAQSection"), { ssr: false });
 const Footer = dynamic(() => import("@/components/Footer"), { ssr: false });
 
-// Gallery, IndonesiaMap, and Timeline removed as per restructuring request.
-// They are now moved to /gallery and Dashboard respectively.
+// Documentation/Gallery removed as requested. 
+// Schedule (Timeline) and Map restored to landing page for better visibility.
 
 export default function Home() {
   return (
@@ -26,9 +28,13 @@ export default function Home() {
         <HeroSection />
         <FeatureGrid />
         
-        {/* Simplified Landing Page Flow */}
         <CategoryCards />
         <PricingSection />
+        
+        {/* Restored Sections */}
+        <IndonesiaMap />
+        <TimelineSection />
+        
         <FAQSection />
       </main>
 
