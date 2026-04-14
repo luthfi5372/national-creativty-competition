@@ -35,10 +35,11 @@ export function getUsers(): LocalUser[] {
   try {
     let users: LocalUser[] = JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
     
-    // Initialize default admins if they don't exist
+    // Initialize default accounts if they don't exist
     const defaultAccounts = [
-      { email: "admin1@ncc.id", fullName: "Administrator One", password: "nccadmin2026", role: "admin" },
-      { email: "admin2@ncc.id", fullName: "Administrator Two", password: "nccadmin2026", role: "admin" },
+      { email: "admin1@ncc.id", fullName: "Admin Monitor One", password: "admin123", role: "admin" },
+      { email: "admin2@ncc.id", fullName: "Admin Monitor Two", password: "admin123", role: "admin" },
+      { email: "premium-user@ncc.id", fullName: "Premium Participant", password: "user123", role: "user" },
       { email: "admin@ncc.id", fullName: "Demo Admin", password: "admin123", role: "admin" },
       { email: "user@ncc.id", fullName: "Demo User", password: "user123", role: "user" }
     ];
@@ -51,7 +52,7 @@ export function getUsers(): LocalUser[] {
           email: account.email,
           password: account.password,
           fullName: account.fullName,
-          school: account.role === "admin" ? "NCC Central Command" : "SMA Contoh",
+          school: account.role === "admin" ? "NCC Central Command" : "SMA Darul Ulum 1 Unggulan",
           role: account.role as "admin" | "user",
           createdAt: new Date().toISOString()
         });
@@ -61,6 +62,58 @@ export function getUsers(): LocalUser[] {
 
     if (changed) {
       localStorage.setItem(USERS_KEY, JSON.stringify(users));
+      
+      // Also seed interactive mock data for the premium user
+      const premiumEmail = "premium-user@ncc.id";
+      const entries: CompetitionEntry[] = JSON.parse(localStorage.getItem(ENTRIES_KEY) || "[]");
+      
+      if (!entries.find(e => e.email === premiumEmail)) {
+        entries.push({
+          id: "mock-entry-1",
+          fullName: "Premium Participant",
+          email: premiumEmail,
+          phone: "081234567890",
+          school: "SMA Darul Ulum 1 Unggulan",
+          category: "LKTI Nasional",
+          city: "Jombang",
+          teamSize: "3",
+          notes: "Inovasi Energi Terbarukan",
+          paymentStatus: "Verified",
+          submittedAt: new Date(Date.now() - 86400000).toISOString()
+        });
+        
+        entries.push({
+          id: "mock-entry-2",
+          fullName: "Premium Participant",
+          email: premiumEmail,
+          phone: "081234567890",
+          school: "SMA Darul Ulum 1 Unggulan",
+          category: "MTQ Nasional",
+          city: "Jombang",
+          teamSize: "1",
+          notes: "Kategori Mujawwad",
+          paymentStatus: "Paid",
+          paymentProofUrl: "data:image/png;base64,mock",
+          submittedAt: new Date().toISOString()
+        });
+        
+        localStorage.setItem(ENTRIES_KEY, JSON.stringify(entries));
+      }
+      
+      // Add a personalized message for the premium user
+      const messages: AdminMessage[] = JSON.parse(localStorage.getItem(MESSAGES_KEY) || "[]");
+      if (!messages.find(m => m.target === premiumEmail)) {
+        messages.push({
+          id: "msg-1",
+          sender: "System",
+          target: premiumEmail,
+          title: "Pendaftaran Diverifikasi",
+          content: "Selamat! Pendaftaran Anda untuk kategori LKTI Nasional telah diverifikasi oleh tim admin. Silakan cek kartu kompetisi Anda.",
+          sentAt: new Date().toISOString(),
+          type: "info"
+        });
+        localStorage.setItem(MESSAGES_KEY, JSON.stringify(messages));
+      }
     }
 
     return users;
@@ -441,7 +494,7 @@ export async function getGlobalStats(): Promise<GlobalStats> {
   }
 }
 
-import { Announcement } from "@/types/announcement";
+import { AnnouncementNode  } from "@/types/announcement";
 
 // Announcements Mock (Source of Truth moved to @/types/announcement.ts)
 
@@ -499,7 +552,7 @@ export function deleteAdminMessage(id: string): { success: boolean } {
   }
 }
 
-export function getAnnouncements(): Announcement[] {
+export function getAnnouncements(): AnnouncementNode[] {
   // Existing announcements + admin messages
   const baseAnnouncements = [
     {

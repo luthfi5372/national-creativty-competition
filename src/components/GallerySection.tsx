@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Camera, PlaySquare, Image as ImageIcon, Users, BookOpen, Search, Trophy } from "lucide-react";
+import Image from "next/image";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -170,11 +171,16 @@ export default function GallerySection() {
                 hovered !== null && hovered !== item.id && "blur-sm scale-[0.98] opacity-60"
               )}
             >
-              {/* Image Rendering */}
-              <img 
+              {/* Image Rendering: Optimized with next/image */}
+              <Image 
                 src={item.src} 
                 alt={item.label} 
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                className="object-cover transition-transform duration-700 group-hover:scale-110"
+                loading="lazy"
+                placeholder="blur"
+                blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
               />
 
               {/* Focus Overlay */}

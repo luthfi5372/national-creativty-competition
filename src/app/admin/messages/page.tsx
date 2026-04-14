@@ -25,7 +25,7 @@ import {
   AdminMessage,
   addAdminLog,
   LocalUser
-} from "@/lib/localAuth";
+ } from "@/lib/localAuth";
 
 export default function AdminMessages() {
   const [messages, setMessages] = useState<AdminMessage[]>([]);

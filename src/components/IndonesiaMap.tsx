@@ -181,7 +181,7 @@ export default function IndonesiaMap() {
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
 
-    const spacing = 7; // Density of the dots
+    const spacing = 10; // Optimized Density: Increased from 7 to 10 for better performance
     const p: Particle[] = [];
 
     // Setup Projection
