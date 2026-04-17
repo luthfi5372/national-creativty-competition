@@ -131,60 +131,79 @@ export default function DashboardPage() {
     try {
       const { createClient } = await import("@/lib/supabase/client");
       const supabase = createClient();
-      const { data: { user: supabaseUser } } = await supabase.auth.getUser();
+      const { data: { user: supabaseUser }, error: userError } = await supabase.auth.getUser();
       
-      if (!supabaseUser) {
+      if (userError || !supabaseUser) {
+        console.warn("No active session found, redirecting...");
         router.push("/login?from=dashboard");
         return;
       }
 
       const currentSession = {
         id: supabaseUser.id,
-        email: supabaseUser.email,
-        fullName: supabaseUser.user_metadata.full_name || supabaseUser.user_metadata.fullName || "Peserta NCC",
-        username: supabaseUser.user_metadata.username || supabaseUser.email?.split('@')[0],
+        email: supabaseUser.email || "",
+        fullName: supabaseUser.user_metadata?.full_name || supabaseUser.user_metadata?.fullName || "Peserta NCC",
+        username: supabaseUser.user_metadata?.username || supabaseUser.email?.split('@')[0] || "user",
         role: "user"
       };
       setSession(currentSession as any);
       
-      // 1. Fetch Entries from Supabase
-      const { data: supabaseEntries } = await fetchCompetitionEntries(currentSession.email!);
-      if (supabaseEntries) {
-        const mappedEntries = supabaseEntries.map(e => ({
-          ...e,
-          fullName: e.full_name,
-          teamSize: e.team_size,
-          submittedAt: e.created_at
-        }));
-        setEntries(mappedEntries as any);
+      // 1. Fetch Entries from Supabase with safety
+      try {
+        const { data: supabaseEntries } = await fetchCompetitionEntries(currentSession.email);
+        if (supabaseEntries && Array.isArray(supabaseEntries)) {
+          const mappedEntries = supabaseEntries.map(e => ({
+            ...e,
+            fullName: e.full_name || "Peserta",
+            teamSize: e.team_size || "1",
+            submittedAt: e.created_at || new Date().toISOString()
+          }));
+          setEntries(mappedEntries as any);
+        } else {
+          setEntries([]);
+        }
+      } catch (entryErr) {
+        console.error("Failed to load entries:", entryErr);
+        setEntries([]);
       }
 
-      // 2. Fetch Detailed Profile (School, Phone) from Supabase
-      const { data: profileData } = await fetchProfile(supabaseUser.id);
-      if (profileData) {
-        setUserData(profileData as any);
-        setProfileForm({ 
-          fullName: profileData.full_name || currentSession.fullName, 
-          school: profileData.school || "", 
-          phone: profileData.phone || "" 
-        });
+      // 2. Fetch Detailed Profile with safety
+      try {
+        const { data: profileData } = await fetchProfile(supabaseUser.id);
+        if (profileData) {
+          setUserData(profileData as any);
+          setProfileForm({ 
+            fullName: profileData.full_name || currentSession.fullName, 
+            school: profileData.school || "", 
+            phone: profileData.phone || "" 
+          });
+        } else {
+          // Fallback to basic session info
+          setUserData({ fullName: currentSession.fullName } as any);
+          setProfileForm({ fullName: currentSession.fullName, school: "", phone: "" });
+        }
+      } catch (profErr) {
+        console.error("Failed to load profile:", profErr);
       }
 
       // 3. Announcements (Still mock for now)
-      const mockAnnouncements = getAnnouncements() as unknown as Announcement[];
-      setAnnouncements(mockAnnouncements);
-      
-      // Notification Badge Logic
-      if (mockAnnouncements.length > 0) {
-        const lastReadId = localStorage.getItem("ncc_last_read_announcement");
-        const latestId = mockAnnouncements[0].id;
-        if (lastReadId !== latestId) {
-          setHasUnreadAnnouncements(true);
+      try {
+        const mockAnnouncements = getAnnouncements() as unknown as Announcement[];
+        setAnnouncements(mockAnnouncements || []);
+        
+        if (mockAnnouncements && mockAnnouncements.length > 0) {
+          const lastReadId = localStorage.getItem("ncc_last_read_announcement");
+          const latestId = mockAnnouncements[0].id;
+          if (lastReadId !== latestId) {
+            setHasUnreadAnnouncements(true);
+          }
         }
+      } catch (annErr) {
+        console.error("Failed to load announcements:", annErr);
       }
     } catch (err) {
-      console.error("Dashboard session check failed:", err);
-      router.push("/login");
+      console.error("Dashboard critical error:", err);
+      // Don't just redirect if we have a session, maybe it was a transient error
     } finally {
       setLoading(false);
     }
