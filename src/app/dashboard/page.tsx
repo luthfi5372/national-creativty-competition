@@ -121,13 +121,16 @@ export default function DashboardPage() {
   const invoiceRef = useRef<HTMLDivElement>(null);
   const { stats } = useLiveStats();
 
-  const refreshData = useCallback(() => {
-    const currentSession = getSession();
+  const refreshData = useCallback(async () => {
+    // Audit: Use Supabase for accurate session
+    const { getLocalSession } = await import("@/app/actions/auth");
+    const currentSession = await getLocalSession();
+    
     if (!currentSession) {
       router.push("/login?from=dashboard");
       return;
     }
-    setSession(currentSession);
+    setSession(currentSession as any);
     
     const userEntries = getCompetitionEntries(currentSession.email);
     const userDetail = getUserData(currentSession.email);
@@ -158,7 +161,6 @@ export default function DashboardPage() {
   }, [router]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     refreshData();
   }, [refreshData]);
 
@@ -171,8 +173,10 @@ export default function DashboardPage() {
     return Sparkles;
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    const { logoutLocalUser } = await import("@/app/actions/auth");
+    await logoutLocalUser();
+    // Also clear secondary hint
     document.cookie = "ncc_hint=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
     router.push("/login");
   };

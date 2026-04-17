@@ -30,16 +30,19 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeItem, setActiveItem] = useState("Beranda");
   const [user, setUser] = useState<any>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener("scroll", onScroll, { passive: true });
     
-    // Check session
-    if (typeof window !== "undefined") {
-      const { getSession } = require("@/lib/localAuth");
-      setUser(getSession());
-    }
+    // Audit-Check: Use Supabase Server Action for accurate session
+    const checkAuth = async () => {
+      const { getLocalSession } = await import("@/app/actions/auth");
+      const session = await getLocalSession();
+      setUser(session);
+    };
+    checkAuth();
 
     return () => window.removeEventListener("scroll", onScroll);
   }, []);

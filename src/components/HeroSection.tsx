@@ -15,12 +15,15 @@ import MagneticWrapper from "./ui/MagneticWrapper";
 export default function HeroSection() {
     const [user, setUser] = useState<any>(null);
 
-    useEffect(() => {
-        if (typeof window !== "undefined") {
-            const { getSession } = require("@/lib/localAuth");
-            setUser(getSession());
-        }
-    }, []);
+  useEffect(() => {
+    // Audit: Sync with Supabase Session
+    const checkAuth = async () => {
+      const { getLocalSession } = await import("@/app/actions/auth");
+      const session = await getLocalSession();
+      setUser(session);
+    };
+    checkAuth();
+  }, []);
 
   return (
     <section

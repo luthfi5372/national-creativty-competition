@@ -10,10 +10,13 @@ export default function RegistrationSection() {
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const { getSession } = require("@/lib/localAuth");
-      setUser(getSession());
-    }
+    // Audit: Sync with Supabase Session
+    const checkAuth = async () => {
+      const { getLocalSession } = await import("@/app/actions/auth");
+      const session = await getLocalSession();
+      setUser(session);
+    };
+    checkAuth();
   }, []);
 
   return (

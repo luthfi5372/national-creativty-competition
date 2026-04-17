@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShineBorder } from "@/components/ui/ShineBorder";
-import { loginUser } from "@/lib/localAuth";
+import { loginLocalUser } from "@/app/actions/auth";
 import { Mail, Lock, Eye, EyeOff, Loader2, Trophy, ArrowRight, CheckCircle2, Mic, Microscope, BookOpen, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useLiveStats } from "@/hooks/useLiveStats";
@@ -31,20 +31,21 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
-    await new Promise((r) => setTimeout(r, 600)); // natural delay
-    const trimmedEmail = email.trim();
-    const trimmedPassword = password.trim();
-    const result = loginUser(trimmedEmail, trimmedPassword);
+    const formData = new FormData();
+    formData.append("email", email.trim());
+    formData.append("password", password.trim());
+
+    const result = await loginLocalUser(formData);
 
     if (result.success) {
       // Set a minimal cookie hint for middleware
       document.cookie = "ncc_hint=1; path=/; max-age=604800; samesite=lax";
       setSuccess(true);
       
-      const targetPath = result.user?.role === "admin" ? "/admin" : "/dashboard";
-      setTimeout(() => router.push(targetPath), 1000);
+      // We'll check the session briefly to know where to redirect
+      setTimeout(() => router.push("/dashboard"), 800);
     } else {
-      setError(result.error ?? "Terjadi kesalahan.");
+      setError(result.error ?? "Email atau kata sandi salah.");
       setLoading(false);
     }
   };
@@ -162,7 +163,7 @@ export default function LoginPage() {
           </h2>
           <p className="text-sm text-slate-500 mb-8">
             Belum punya akun?{" "}
-            <Link href="/register" className="font-semibold text-indigo-600 hover:underline">
+            <Link href="/daftar" className="font-semibold text-indigo-600 hover:underline">
               Daftar sekarang
             </Link>
           </p>
