@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useLiveStats } from "@/hooks/useLiveStats";
 import { Info, TrendingUp, Users, MousePointer2, Map as MapIcon } from "lucide-react";
 import * as d3 from "d3-geo";
