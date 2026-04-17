@@ -11,7 +11,7 @@ export default function SpeedMonitor() {
   const [status, setStatus] = useState<"optimal" | "warning" | "critical">("optimal");
   
   const frameCount = useRef(0);
-  const lastTime = useRef(performance.now());
+  const lastTime = useRef(typeof performance !== 'undefined' ? performance.now() : 0);
 
   useEffect(() => {
     // FPS Calculation logic
