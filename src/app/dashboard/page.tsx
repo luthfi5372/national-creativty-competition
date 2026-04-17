@@ -42,7 +42,8 @@ import {
   Mic,
   Microscope,
   Book,
-  Sparkles
+  Sparkles,
+  BookText
 } from "lucide-react";
 import { 
   CompetitionEntry, 
@@ -58,7 +59,6 @@ import {
   fetchProfile, 
   updateProfileInSupabase 
 } from "@/lib/supabase/service";
-
 const PROVINCES = [
   "DI. ACEH", "SUMATERA UTARA", "SUMATERA BARAT", "RIAU", "JAMBI", "SUMATERA SELATAN", "BENGKULU", "LAMPUNG", 
   "BANGKA BELITUNG", "KEPULAUAN RIAU", "DKI JAKARTA", "JAWA BARAT", "JAWA TENGAH", "DAERAH ISTIMEWA YOGYAKARTA", 
@@ -74,8 +74,6 @@ const CATEGORIES = [
   { id: "LKTI Nasional", icon: BookText, desc: "Karya Tulis Ilmiah" },
   { id: "MTQ Nasional", icon: Book, desc: "Tilawatil Qur'an" },
 ];
-
-import { BookText } from "lucide-react";
 
 type TabType = "Dashboard" | "Kompetisi Saya" | "Pengumuman" | "Pembayaran" | "Profil";
 
