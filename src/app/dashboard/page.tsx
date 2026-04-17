@@ -45,17 +45,8 @@ import {
   Sparkles
 } from "lucide-react";
 import { 
-  getGlobalStats, 
-  getSession, 
-  getCompetitionEntries, 
-  logout, 
   CompetitionEntry, 
-  LocalSession, 
   getAnnouncements, 
-  getUserData,
-  LocalUser,
-  updateUserProfile,
-  deleteCompetitionEntry,
   getCategoryPrice
 } from "@/lib/localAuth";
 import { Announcement } from "@/types/announcement";

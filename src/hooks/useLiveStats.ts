@@ -113,12 +113,13 @@ export function useLiveStats() {
   }, []); // Stable fetchStats
 
   useEffect(() => {
+    // Initial fetch
     fetchStats();
 
+    // 3. Simple Refresh Logic (avoid heavy real-time if leaking)
+    // Only subscribe once per mounting
     const supabase = createClient();
-    // 3. Real-time Subscription
-    // Use a random ID to avoid name collisions if useEffect runs twice (e.g. Strict Mode)
-    const channelId = `stats_${Math.random().toString(36).slice(2)}`;
+    const channelId = `ncc_stats_channel`;
     
     const channel = supabase
       .channel(channelId)
@@ -127,28 +128,21 @@ export function useLiveStats() {
         schema: 'public', 
         table: 'competition_entries' 
       }, () => {
-        // Debounce or just call fetchStats
         fetchStats();
       })
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          console.log('Successfully subscribed to real-time stats updates');
-        }
-      });
+      .subscribe();
 
     const handleStorage = (e: StorageEvent) => {
-      if (e.key === "ncc_competition_entries") {
-        fetchStats();
-      }
+      if (e.key === "ncc_competition_entries") fetchStats();
     };
     window.addEventListener("storage", handleStorage);
 
     return () => {
       window.removeEventListener("storage", handleStorage);
-      // Ensure we remove the specific channel
       supabase.removeChannel(channel);
     };
-  }, [fetchStats]); // fetchStats is stable due to useCallback
+  }, [fetchStats]);
+ // fetchStats is stable due to useCallback
 
   return { stats, loading, refresh: fetchStats };
 }

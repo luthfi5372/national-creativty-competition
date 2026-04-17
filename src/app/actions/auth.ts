@@ -1,5 +1,6 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
@@ -46,6 +47,10 @@ export async function registerLocalUser(formData: FormData): Promise<AuthResult>
 
     // 2. Create profile in profiles table
     if (authData.user) {
+      // Sync cookie so they can access dashboard immediately if logged in
+      const cookieStore = await cookies();
+      cookieStore.set("ncc_hint", "1", { path: "/", maxAge: 60 * 60 * 24 * 7 });
+
       const { error: profileError } = await supabase
         .from('profiles')
         .insert({
@@ -56,8 +61,6 @@ export async function registerLocalUser(formData: FormData): Promise<AuthResult>
 
       if (profileError) {
         console.error("Profile creation error:", profileError);
-        // We don't fail registration if profile creation fails, 
-        // as the user can update it later.
       }
     }
 
@@ -86,6 +89,10 @@ export async function loginLocalUser(formData: FormData): Promise<AuthResult> {
 
     if (error) throw error;
 
+    // Set cookie for middleware sync
+    const cookieStore = await cookies();
+    cookieStore.set("ncc_hint", "1", { path: "/", maxAge: 60 * 60 * 24 * 7 });
+
     return { success: true };
   } catch (error: any) {
     console.error("Login error:", error);
@@ -97,6 +104,11 @@ export async function loginLocalUser(formData: FormData): Promise<AuthResult> {
 export async function logoutLocalUser() {
   const supabase = await createClient();
   await supabase.auth.signOut();
+  
+  // Clear middleware hint cookie
+  const cookieStore = await cookies();
+  cookieStore.delete("ncc_hint");
+  
   redirect("/login");
 }
 
