@@ -14,11 +14,12 @@ export type AuthResult = {
 
 /** Mendaftarkan user baru ke Supabase Auth & Tabel Profiles */
 export async function registerLocalUser(formData: FormData): Promise<AuthResult> {
+  const username = formData.get("username")?.toString().trim();
   const fullName = formData.get("fullName")?.toString().trim();
   const email = formData.get("email")?.toString().trim().toLowerCase();
   const password = formData.get("password")?.toString();
 
-  if (!fullName || !email || !password) {
+  if (!username || !fullName || !email || !password) {
     return { success: false, error: "Semua kolom wajib diisi." };
   }
 
@@ -35,6 +36,7 @@ export async function registerLocalUser(formData: FormData): Promise<AuthResult>
       password,
       options: {
         data: {
+          username: username,
           full_name: fullName,
         }
       }
@@ -48,6 +50,7 @@ export async function registerLocalUser(formData: FormData): Promise<AuthResult>
         .from('profiles')
         .insert({
           id: authData.user.id,
+          username: username,
           full_name: fullName,
         });
 
@@ -109,6 +112,7 @@ export async function getLocalSession() {
     return {
       id: user.id,
       email: user.email!,
+      username: user.user_metadata.username || user.email?.split('@')[0],
       fullName: user.user_metadata.full_name || "Peserta NCC",
     };
   } catch {

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
   User, 
   Mail, 
@@ -11,7 +11,8 @@ import {
   ChevronRight,
   Sparkles,
   ShieldCheck,
-  AlertCircle
+  AlertCircle,
+  Type
 } from "lucide-react";
 import { registerLocalUser } from "@/app/actions/auth";
 import Link from "next/link";
@@ -19,6 +20,7 @@ import Link from "next/link";
 export default function RegisterMinimalist() {
   const [form, setForm] = useState({
     username: "",
+    fullName: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -47,7 +49,7 @@ export default function RegisterMinimalist() {
     setError(null);
 
     // 1. Validation
-    if (!form.username || !form.email || !form.password || !form.confirmPassword) {
+    if (!form.username || !form.fullName || !form.email || !form.password || !form.confirmPassword) {
       setError("Semua kolom wajib diisi.");
       return;
     }
@@ -62,9 +64,9 @@ export default function RegisterMinimalist() {
 
     setLoading(true);
     try {
-      // Create FormData exactly as expected by the Server Action
       const formData = new FormData();
-      formData.append("fullName", form.username); // 'fullName' is the internal DB key for Identity
+      formData.append("username", form.username);
+      formData.append("fullName", form.fullName);
       formData.append("email", form.email);
       formData.append("password", form.password);
 
@@ -87,7 +89,7 @@ export default function RegisterMinimalist() {
 
   if (submitted) {
     return (
-      <main className="min-h-screen bg-[#fafafa] flex items-center justify-center p-6 font-[family-name:var(--font-geist-sans)]">
+      <main className="min-h-screen bg-[#fafafa] flex items-center justify-center p-6 font-sans">
         <motion.div 
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -114,7 +116,7 @@ export default function RegisterMinimalist() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f8f9fc] flex items-center justify-center p-6 font-[family-name:var(--font-geist-sans)] relative overflow-hidden">
+    <main className="min-h-screen bg-[#f8f9fc] flex items-center justify-center p-6 font-sans relative overflow-hidden">
       {/* Background Decor */}
       <div className="absolute top-0 right-0 w-[50%] h-[50%] bg-indigo-100/30 blur-[150px] -mr-[10%] -mt-[10%] rounded-full opacity-60 pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[40%] h-[40%] bg-purple-100/30 blur-[120px] -ml-[10%] -mb-[10%] rounded-full opacity-60 pointer-events-none" />
@@ -122,7 +124,7 @@ export default function RegisterMinimalist() {
       <motion.div 
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        className="max-w-lg w-full z-10"
+        className="max-w-xl w-full z-10"
       >
         <div className="text-center mb-10">
           <motion.div 
@@ -133,28 +135,52 @@ export default function RegisterMinimalist() {
             <Sparkles size={12} />
             National Creativity Competition
           </motion.div>
-          <h1 className="text-5xl font-black text-slate-900 mb-4 tracking-tight">Daftar Akun</h1>
-          <p className="text-slate-400 font-medium max-w-sm mx-auto text-sm leading-relaxed">
+          <h1 
+            className="text-4xl md:text-5xl font-black text-slate-900 mb-3 tracking-tight"
+            style={{ fontFamily: 'var(--font-display, var(--font-space-grotesk))' }}
+          >
+            Daftar Akun
+          </h1>
+          <p className="text-slate-500 text-sm max-w-xs mx-auto leading-relaxed font-medium">
             Buat akun baru untuk mengakses dashboard pendaftaran dan kompetisi NCC.
           </p>
         </div>
 
-        <div className="bg-white/90 backdrop-blur-2xl rounded-[3.5rem] p-10 lg:p-14 shadow-2xl border border-white relative">
+        <div className="bg-white/90 backdrop-blur-2xl rounded-[3.5rem] p-10 lg:p-14 shadow-2xl border border-white relative overflow-hidden">
           <form onSubmit={handleSubmit} className="space-y-6">
             
-            {/* Username */}
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Username / Nama Lengkap</label>
-              <div className="relative group">
-                <User size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
-                <input
-                  type="text"
-                  required
-                  value={form.username}
-                  onChange={(e) => update("username", e.target.value)}
-                  className="w-full pl-16 pr-6 py-5 bg-white border border-slate-100 rounded-[2rem] text-sm font-bold text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all shadow-sm"
-                  placeholder="Ketik username Anda..."
-                />
+            {/* Grid for User Info */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {/* Username */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 text-center md:text-left block">Username</label>
+                <div className="relative group">
+                  <User size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
+                  <input
+                    type="text"
+                    required
+                    value={form.username}
+                    onChange={(e) => update("username", e.target.value)}
+                    className="w-full pl-16 pr-6 py-5 bg-white border border-slate-100 rounded-[2rem] text-sm font-bold text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all shadow-sm"
+                    placeholder="luthfi5372"
+                  />
+                </div>
+              </div>
+
+              {/* Full Name */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 text-center md:text-left block">Nama Lengkap</label>
+                <div className="relative group">
+                  <Type size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
+                  <input
+                    type="text"
+                    required
+                    value={form.fullName}
+                    onChange={(e) => update("fullName", e.target.value)}
+                    className="w-full pl-16 pr-6 py-5 bg-white border border-slate-100 rounded-[2rem] text-sm font-bold text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all shadow-sm"
+                    placeholder="Nama Lengkap Anda"
+                  />
+                </div>
               </div>
             </div>
 
@@ -207,16 +233,19 @@ export default function RegisterMinimalist() {
             </div>
 
             {/* Error Message */}
-            {error && (
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="p-4 bg-rose-50 border border-rose-100 rounded-2xl flex items-center gap-3 text-rose-600 text-xs font-bold"
-              >
-                <AlertCircle size={16} />
-                {error}
-              </motion.div>
-            )}
+            <AnimatePresence>
+              {error && (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                  className="p-4 bg-rose-50 border border-rose-100 rounded-2xl flex items-center gap-3 text-rose-600 text-xs font-bold"
+                >
+                  <AlertCircle size={16} />
+                  {error}
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Submit Button */}
             <button

@@ -6,7 +6,8 @@ export type LocalUser = {
   id: string;
   email: string;
   password: string;
-  fullName: string;
+  username: string; // [Added] For display/handle
+  fullName: string; // For formal identity
   school?: string;
   role: "user" | "admin";
   phone?: string;
@@ -17,6 +18,7 @@ export type LocalUser = {
 export type LocalSession = {
   id: string;
   email: string;
+  username: string; // [Added]
   fullName: string;
   role: "user" | "admin";
 };
@@ -52,6 +54,7 @@ export function getUsers(): LocalUser[] {
         users.push({
           id: `${account.role}-${account.email}`,
           email: account.email,
+          username: account.email.split('@')[0], // Default username from email
           password: account.password,
           fullName: account.fullName,
           school: account.role === "admin" ? "NCC Central Command" : "SMA Contoh",
@@ -86,6 +89,7 @@ function generateId() {
 }
 
 export function registerUser(data: {
+  username: string;
   fullName: string;
   email: string;
   password: string;
@@ -99,6 +103,7 @@ export function registerUser(data: {
   const newUser: LocalUser = {
     id: generateId(),
     email: data.email.toLowerCase(),
+    username: data.username.trim(),
     password: data.password,
     fullName: data.fullName.trim(),
     school: (data.school || "").trim(),
@@ -112,6 +117,7 @@ export function registerUser(data: {
   const session: LocalSession = {
     id: newUser.id,
     email: newUser.email,
+    username: newUser.username,
     fullName: newUser.fullName,
     role: newUser.role,
   };
@@ -148,6 +154,7 @@ export function loginUser(email: string, password: string): AuthResult {
   const session: LocalSession = {
     id: user.id,
     email: user.email,
+    username: user.username,
     fullName: user.fullName,
     role: user.role,
   };
