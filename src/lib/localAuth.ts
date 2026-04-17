@@ -603,6 +603,22 @@ export function setRegistrationStatus(isOpen: boolean): { success: boolean } {
   }
 }
 
+export function setMaintenanceStatus(isEnabled: boolean): { success: boolean } {
+  const session = getSession();
+  if (!session || session.role !== "admin") return { success: false };
+
+  try {
+    const settings = getSystemSettings();
+    settings.maintenanceMode = isEnabled;
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    
+    addAdminLog(`Toggled Maintenance Mode to: ${isEnabled ? "ON" : "OFF"}`);
+    return { success: true };
+  } catch {
+    return { success: false };
+  }
+}
+
 export function addAdminLog(action: string) {
   const session = getSession();
   if (!session || session.role !== "admin") return;
