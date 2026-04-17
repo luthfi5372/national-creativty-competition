@@ -43,6 +43,15 @@ export default function AdminOverview() {
     setLogs(getAdminLogs());
   };
 
+  const handleToggleRegistration = (isOpen: boolean) => {
+    setLoadingAction(true);
+    const res = setRegistrationStatus(isOpen);
+    if (res.success) {
+      refreshData();
+    }
+    setLoadingAction(false);
+  };
+
   const handleToggleMaintenance = (isEnabled: boolean) => {
     setLoadingAction(true);
     const res = setMaintenanceStatus(isEnabled);
