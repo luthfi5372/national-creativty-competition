@@ -258,12 +258,15 @@ export type CompetitionEntry = {
 
 const ENTRIES_KEY = "ncc_competition_entries";
 
+// VERSION: STABLE-V2-CERTIFIED
 export function submitCompetitionEntry(data: any): { success: boolean; error?: string } {
   if (typeof window === "undefined") return { success: false, error: "Browser required." };
+  
   try {
     const entries: CompetitionEntry[] = JSON.parse(
       localStorage.getItem(ENTRIES_KEY) || "[]"
     );
+
     // Check duplicate email per category
     if (entries.find((e) => e.email === data.email && e.category === data.category)) {
       return {
@@ -271,7 +274,13 @@ export function submitCompetitionEntry(data: any): { success: boolean; error?: s
         error: "Email ini sudah mendaftar untuk kategori yang sama.",
       };
     }
-    entries.push({ ...data, id: generateId(), submittedAt: new Date().toISOString() });
+
+    entries.push({ 
+      ...data, 
+      id: generateId(), 
+      submittedAt: new Date().toISOString() 
+    });
+    
     localStorage.setItem(ENTRIES_KEY, JSON.stringify(entries));
     return { success: true };
   } catch {
