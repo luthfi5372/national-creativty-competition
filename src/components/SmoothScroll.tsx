@@ -1,17 +1,38 @@
 "use client";
 
-import { ReactLenis } from "lenis/react";
+import { useEffect } from "react";
 
+// Lenis is imported DYNAMICALLY inside useEffect
+// This ensures it NEVER runs on the server (lenis accesses window at module level)
 export default function SmoothScroll({ children }: { children: React.ReactNode }) {
-  return (
-    <ReactLenis root options={{ 
-      lerp: 0.05, 
-      duration: 1.2, 
-      smoothWheel: true,
-      wheelMultiplier: 1.1,
-      touchMultiplier: 2,
-    }}>
-      {children}
-    </ReactLenis>
-  );
+  useEffect(() => {
+    let lenis: any;
+    let rafId: number;
+
+    const initLenis = async () => {
+      const { default: Lenis } = await import("lenis");
+      lenis = new Lenis({
+        lerp: 0.05,
+        duration: 1.2,
+        smoothWheel: true,
+        wheelMultiplier: 1.1,
+        touchMultiplier: 2,
+      });
+
+      function raf(time: number) {
+        lenis.raf(time);
+        rafId = requestAnimationFrame(raf);
+      }
+      rafId = requestAnimationFrame(raf);
+    };
+
+    initLenis();
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      lenis?.destroy();
+    };
+  }, []);
+
+  return <>{children}</>;
 }
