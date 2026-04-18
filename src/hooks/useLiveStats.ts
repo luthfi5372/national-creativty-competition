@@ -1,8 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { getGlobalStats, GlobalStats } from "@/lib/localAuth";
-import { createClient } from "@/lib/supabase/client";
 
-// Mapping helper for regions (matching IndonesiaMap.tsx and GeoJSON names)
 const PROVINCE_TO_REGION: Record<string, string> = {
   "DI. ACEH": "Sumatera", "SUMATERA UTARA": "Sumatera", "SUMATERA BARAT": "Sumatera", "RIAU": "Sumatera", "JAMBI": "Sumatera", "SUMATERA SELATAN": "Sumatera", "BENGKULU": "Sumatera", "LAMPUNG": "Sumatera", "BANGKA BELITUNG": "Sumatera", "KEPULAUAN RIAU": "Sumatera",
   "DKI JAKARTA": "Jawa", "JAWA BARAT": "Jawa", "JAWA TENGAH": "Jawa", "DAERAH ISTIMEWA YOGYAKARTA": "Jawa", "JAWA TIMUR": "Jawa", "PROBANTEN": "Jawa",
@@ -18,131 +15,88 @@ export interface GlobalStats {
   categories: number;
   categoryBreakdown: Record<string, number>;
   regionStats: Record<string, number>;
-  detailedProvinceStats: Record<string, number>; // New field for map
+  detailedProvinceStats: Record<string, number>;
 }
 
+const defaultStats: GlobalStats = {
+  totalParticipants: 0,
+  provinces: 0,
+  categories: 4,
+  categoryBreakdown: { "Olimpiade MIPA": 0, "Speech Contest": 0, "LKTI Nasional": 0, "MTQ Nasional": 0 },
+  regionStats: { "Sumatera": 0, "Jawa": 0, "Kalimantan": 0, "Sulawesi": 0, "Papua": 0, "Bali & Nusa Tenggara": 0 },
+  detailedProvinceStats: {}
+};
+
 export function useLiveStats() {
-  const [stats, setStats] = useState<GlobalStats>({
-    totalParticipants: 0,
-    provinces: 0,
-    categories: 4,
-    categoryBreakdown: {
-      "Olimpiade MIPA": 0,
-      "Speech Contest": 0,
-      "LKTI Nasional": 0,
-      "MTQ Nasional": 0,
-    },
-    regionStats: {
-      "Sumatera": 0,
-      "Jawa": 0,
-      "Kalimantan": 0,
-      "Sulawesi": 0,
-      "Papua": 0,
-      "Bali & Nusa Tenggara": 0
-    },
-    detailedProvinceStats: {} // Initialize empty
-  });
+  const [stats, setStats] = useState<GlobalStats>(defaultStats);
   const [loading, setLoading] = useState(true);
 
   const fetchStats = useCallback(async () => {
-    const supabase = createClient();
-    // 1. Fetch real data from Supabase
-    const { data: entries, error } = await supabase
-      .from('competition_entries')
-      .select('category, city');
+    if (typeof window === "undefined") return;
+    try {
+      const { createClient } = await import("@/lib/supabase/client");
+      const supabase = createClient();
+      const { data: entries, error } = await supabase
+        .from("competition_entries")
+        .select("category, city");
 
-    if (error) {
-      console.error("Error fetching live stats:", error);
-      // Fallback
-      setLoading(false);
-      return;
-    }
+      if (error) { setLoading(false); return; }
 
-    // 2. Process data
-    const breakdown: Record<string, number> = {
-      "Olimpiade MIPA": 0,
-      "Speech Contest": 0,
-      "LKTI Nasional": 0,
-      "MTQ Nasional": 0,
-    };
+      const breakdown = { "Olimpiade MIPA": 0, "Speech Contest": 0, "LKTI Nasional": 0, "MTQ Nasional": 0 };
+      const regionStats = { "Sumatera": 0, "Jawa": 0, "Kalimantan": 0, "Sulawesi": 0, "Papua": 0, "Bali & Nusa Tenggara": 0 };
+      const detailedStats: Record<string, number> = {};
+      const activeProvinces = new Set<string>();
 
-    const regionStats: Record<string, number> = {
-      "Sumatera": 0,
-      "Jawa": 0,
-      "Kalimantan": 0,
-      "Sulawesi": 0,
-      "Papua": 0,
-      "Bali & Nusa Tenggara": 0
-    };
-
-    const detailedStats: Record<string, number> = {};
-    const activeProvinces = new Set<string>();
-
-    entries?.forEach(entry => {
-      // Category Breakdown
-      if (breakdown[entry.category] !== undefined) {
-        breakdown[entry.category]++;
-      }
-
-      // Region & Province Stats
-      const provName = entry.city?.toUpperCase();
-      if (provName) {
-        activeProvinces.add(provName);
-        
-        // Count per province (Exact name for map)
-        detailedStats[provName] = (detailedStats[provName] || 0) + 1;
-
-        // Count per region (Grouped)
-        const region = PROVINCE_TO_REGION[provName] || "Jawa";
-        if (regionStats[region] !== undefined) {
-          regionStats[region]++;
+      entries?.forEach(entry => {
+        if ((breakdown as any)[entry.category] !== undefined) (breakdown as any)[entry.category]++;
+        const prov = entry.city?.toUpperCase();
+        if (prov) {
+          activeProvinces.add(prov);
+          detailedStats[prov] = (detailedStats[prov] || 0) + 1;
+          const region = PROVINCE_TO_REGION[prov] || "Jawa";
+          if ((regionStats as any)[region] !== undefined) (regionStats as any)[region]++;
         }
-      }
-    });
+      });
 
-    setStats({
-      totalParticipants: entries?.length || 0,
-      provinces: activeProvinces.size,
-      categories: 4,
-      categoryBreakdown: breakdown,
-      regionStats: regionStats,
-      detailedProvinceStats: detailedStats
-    });
-    
-    setLoading(false);
-  }, []); // Stable fetchStats
+      setStats({
+        totalParticipants: entries?.length || 0,
+        provinces: activeProvinces.size,
+        categories: 4,
+        categoryBreakdown: breakdown,
+        regionStats,
+        detailedProvinceStats: detailedStats
+      });
+    } catch (err) {
+      console.error("useLiveStats error:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    // Initial fetch
+    if (typeof window === "undefined") return;
     fetchStats();
-
-    // 3. Simple Refresh Logic (avoid heavy real-time if leaking)
-    // Only subscribe once per mounting
-    const supabase = createClient();
-    const channelId = `ncc_stats_channel`;
-    
-    const channel = supabase
-      .channel(channelId)
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: 'competition_entries' 
-      }, () => {
-        fetchStats();
-      })
-      .subscribe();
 
     const handleStorage = (e: StorageEvent) => {
       if (e.key === "ncc_competition_entries") fetchStats();
     };
     window.addEventListener("storage", handleStorage);
 
+    let cleanup: (() => void) | undefined;
+    import("@/lib/supabase/client").then(({ createClient }) => {
+      const supabase = createClient();
+      const channel = supabase
+        .channel("ncc_stats_channel")
+        .on("postgres_changes", { event: "*", schema: "public", table: "competition_entries" }, fetchStats)
+        .subscribe();
+      cleanup = () => { supabase.removeChannel(channel); };
+    }).catch(() => {});
+
     return () => {
       window.removeEventListener("storage", handleStorage);
-      supabase.removeChannel(channel);
+      cleanup?.();
     };
   }, [fetchStats]);
- // fetchStats is stable due to useCallback
 
   return { stats, loading, refresh: fetchStats };
 }
