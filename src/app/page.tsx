@@ -1,3 +1,5 @@
+"use client";
+
 import dynamic from "next/dynamic";
 
 // ALL interactive components are loaded dynamically client-side only
