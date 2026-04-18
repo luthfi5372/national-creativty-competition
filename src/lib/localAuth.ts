@@ -253,9 +253,7 @@ export type CompetitionEntry = {
 
 const ENTRIES_KEY = "ncc_competition_entries";
 
-export function submitCompetitionEntry(
-  data: Omit<CompetitionEntry, "id" | "submittedAt">
-): { success: boolean; error?: string } {
+  if (typeof window === "undefined") return { success: false, error: "Browser required." };
   try {
     const entries: CompetitionEntry[] = JSON.parse(
       localStorage.getItem(ENTRIES_KEY) || "[]"
@@ -276,6 +274,7 @@ export function submitCompetitionEntry(
 }
 
 export function deleteCompetitionEntry(id: string): { success: boolean; error?: string } {
+  if (typeof window === "undefined") return { success: false };
   try {
     const entries: CompetitionEntry[] = JSON.parse(
       localStorage.getItem(ENTRIES_KEY) || "[]"
@@ -345,6 +344,7 @@ export function adminUpdateCompetitionEntry(id: string, data: Partial<Competitio
 
 // User Action: Upload proof of payment
 export function userUploadPaymentProof(id: string, proofUrl: string): { success: boolean; error?: string } {
+  if (typeof window === "undefined") return { success: false };
   try {
     const entries: CompetitionEntry[] = JSON.parse(
       localStorage.getItem(ENTRIES_KEY) || "[]"
@@ -501,6 +501,7 @@ const MESSAGES_KEY = "ncc_admin_messages";
 export function sendAdminMessage(data: Omit<AdminMessage, "id" | "sentAt">): { success: boolean } {
   const session = getSession();
   if (!session || session.role !== "admin") return { success: false };
+  if (typeof window === "undefined") return { success: false };
 
   try {
     const messages: AdminMessage[] = JSON.parse(localStorage.getItem(MESSAGES_KEY) || "[]");
@@ -528,6 +529,7 @@ export function getAdminMessages(): AdminMessage[] {
 export function deleteAdminMessage(id: string): { success: boolean } {
   const session = getSession();
   if (!session || session.role !== "admin") return { success: false };
+  if (typeof window === "undefined") return { success: false };
   try {
     const messages: AdminMessage[] = JSON.parse(localStorage.getItem(MESSAGES_KEY) || "[]");
     const filtered = messages.filter(m => m.id !== id);
@@ -604,6 +606,7 @@ export function getSystemSettings(): SystemSettings {
 export function setRegistrationStatus(isOpen: boolean): { success: boolean } {
   const session = getSession();
   if (!session || session.role !== "admin") return { success: false };
+  if (typeof window === "undefined") return { success: false };
 
   try {
     const settings = getSystemSettings();
@@ -636,6 +639,7 @@ export function setMaintenanceStatus(isEnabled: boolean): { success: boolean } {
 export function addAdminLog(action: string) {
   const session = getSession();
   if (!session || session.role !== "admin") return;
+  if (typeof window === "undefined") return;
 
   try {
     const logs: AdminLog[] = JSON.parse(localStorage.getItem(LOGS_KEY) || "[]");
