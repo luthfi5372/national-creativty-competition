@@ -227,10 +227,15 @@ export function adminGetFullUserDetail(email: string): { user: LocalUser | null;
   const users = getUsers();
   const user = users.find(u => u.email === email.toLowerCase()) || null;
   
-  const entries: CompetitionEntry[] = JSON.parse(localStorage.getItem(ENTRIES_KEY) || "[]");
-  const userEntries = entries.filter(e => e.email === email.toLowerCase());
+  if (typeof window === "undefined") return { user, entries: [] };
   
-  return { user, entries: userEntries };
+  try {
+    const entries: CompetitionEntry[] = JSON.parse(localStorage.getItem(ENTRIES_KEY) || "[]");
+    const userEntries = entries.filter(e => e.email === email.toLowerCase());
+    return { user, entries: userEntries };
+  } catch {
+    return { user, entries: [] };
+  }
 }
 
 
@@ -253,6 +258,7 @@ export type CompetitionEntry = {
 
 const ENTRIES_KEY = "ncc_competition_entries";
 
+export function submitCompetitionEntry(data: any): { success: boolean; error?: string } {
   if (typeof window === "undefined") return { success: false, error: "Browser required." };
   try {
     const entries: CompetitionEntry[] = JSON.parse(
