@@ -371,5 +371,98 @@ export async function adminUpdateCompetitionEntry(id: string | number, entry: an
   }
 }
 
+/** JURI MODULE: Fetch Entries for Evaluation */
+export async function fetchJuryEntries(category?: string) {
+  const supabase = createClient();
+  try {
+    let query = supabase
+      .from('competition_entries')
+      .select('*')
+      .eq('payment_status', 'Paid') // Only evaluate paid entries
+      .order('created_at', { ascending: true });
+    
+    if (category) {
+      query = query.eq('category', category);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return { data, error: null };
+  } catch (err: any) {
+    console.error("Fetch jury entries error:", err);
+    return { data: null, error: err.message };
+  }
+}
+
+/** JURI MODULE: Submit Score */
+export async function submitJuryScore(scoreData: {
+  entryId: number | string;
+  juriEmail: string;
+  totalScore: number;
+  criteriaScores: any;
+  comments: string;
+}) {
+  const supabase = createClient();
+  try {
+    const { data, error } = await supabase
+      .from('jury_scores')
+      .upsert({
+        entry_id: scoreData.entryId,
+        juri_email: scoreData.juriEmail,
+        total_score: scoreData.totalScore,
+        criteria_scores: scoreData.criteriaScores,
+        comments: scoreData.comments,
+      }, { onConflict: 'entry_id, juri_email' }) // One score per judge per entry
+      .select();
+
+    if (error) throw error;
+    return { success: true, data };
+  } catch (err: any) {
+    console.error("Submit score error:", err);
+    return { success: false, error: err.message };
+  }
+}
+
+/** JURI MODULE: Fetch Scores for Entry */
+export async function fetchEntryScores(entryId: number | string) {
+  const supabase = createClient();
+  try {
+    const { data, error } = await supabase
+      .from('jury_scores')
+      .select('*')
+      .eq('entry_id', entryId);
+    
+    if (error) throw error;
+    return { data, error: null };
+  } catch (err: any) {
+    console.error("Fetch entry scores error:", err);
+    return { data: null, error: err.message };
+  }
+}
+
+/** ADMIN MODULE: Fetch All Scores for Leaderboard */
+export async function adminFetchAllScores() {
+  const supabase = createClient();
+  try {
+    const { data, error } = await supabase
+      .from('jury_scores')
+      .select(`
+        *,
+        competition_entries (
+          full_name,
+          category,
+          school
+        )
+      `)
+      .order('total_score', { ascending: false });
+    
+    if (error) throw error;
+    return { data, error: null };
+  } catch (err: any) {
+    console.error("Admin fetch all scores error:", err);
+    return { data: null, error: err.message };
+  }
+}
+
 
 

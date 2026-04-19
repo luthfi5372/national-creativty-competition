@@ -17,11 +17,19 @@ export default function LoginForm() {
     setError(null);
 
     const formData = new FormData(e.currentTarget);
+    const email = formData.get("email")?.toString().toLowerCase() || "";
+    const isAdminDomain = email.includes("admin") || email.endsWith("@ncc.id") || email === "halo.ncc@gmail.com";
+
     const result = await loginLocalUser(formData);
 
     if (result.success) {
-      router.push("/dashboard");
-      router.refresh();
+      // Set hint cookies for consistency
+      document.cookie = "ncc_hint=1; path=/; max-age=604800; samesite=lax";
+      if (isAdminDomain) {
+        document.cookie = "ncc_admin_hint=1; path=/; max-age=604800; samesite=lax";
+      }
+
+      window.location.href = isAdminDomain ? "/hq" : "/dashboard";
     } else {
       setError(result.error ?? "Terjadi kesalahan.");
       setIsLoading(false);

@@ -28,50 +28,41 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // 🔥 TAKTIK 3: BYPASS KHUSUS ADMIN (HACKER MODE)
-    if (email.trim() === 'admin1@ncc.id' && password.trim() === '123456') {
-      document.cookie = "ncc_hint=1; path=/; max-age=604800; samesite=lax";
-      document.cookie = "ncc_admin_hint=1; path=/; max-age=604800; samesite=lax";
-      setSuccess(true);
-      // 🔥 TAKTIK 2: HARD NAVIGATE (Bypass Race Condition)
-      setTimeout(() => {
-        window.location.href = "/hq";
-      }, 800);
-      return;
-    }
-
     setLoading(true);
     setError(null);
 
+    const activeEmail = email.trim().toLowerCase();
+    
+    // ─── KETENTUAN REDIRECTION (PHASE 10) ───
+    // 1. Jika mengandung 'admin', domain '@ncc.id', atau email khusus halo.ncc@gmail.com -> Masuk ke HQ
+    // 2. Jika '@gmail.com' lainnya -> Masuk ke Dashboard Peserta
+    const isAdminDomain = activeEmail.includes("admin") || activeEmail.endsWith("@ncc.id") || activeEmail === "halo.ncc@gmail.com";
+
     const formData = new FormData();
-    formData.append("email", email.trim());
+    formData.append("email", activeEmail);
     formData.append("password", password.trim());
 
-
+    // Eksekusi Login via Server Action
     const result = await loginLocalUser(formData);
 
     if (result.success) {
-      // Set a minimal cookie hint for middleware
+      // Set hint cookies untuk Middleware
       document.cookie = "ncc_hint=1; path=/; max-age=604800; samesite=lax";
       
-      // Dynamic Redirect & Admin Hint Synchronization
-      const isAdmin = email.trim().toLowerCase() === "admin1@ncc.id";
-      if (isAdmin) {
+      if (isAdminDomain) {
         document.cookie = "ncc_admin_hint=1; path=/; max-age=604800; samesite=lax";
       }
 
       setSuccess(true);
       
-      // 🔥 TAKTIK 2 & 🚦 POLISI LALU LINTAS: HARD NAVIGATE (Ensure Middleware sees cookies)
+      // Redirect halus setelah animasi sukses
       setTimeout(() => {
-        window.location.href = isAdmin ? "/hq" : "/dashboard";
-      }, 800);
+        window.location.href = isAdminDomain ? "/hq" : "/dashboard";
+      }, 1000);
     } else {
       setError(result.error ?? "Email atau kata sandi salah.");
       setLoading(false);
     }
-
   };
 
   return (

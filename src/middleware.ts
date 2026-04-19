@@ -62,19 +62,28 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const path = request.nextUrl.pathname;
-  const isDashboard = path.startsWith("/dashboard");
-  const isAdminArea = path.startsWith("/admin") || path.startsWith("/hq");
-
-  // 1. Cek Area Admin (Prioritas Tertinggi)
-  if (isAdminArea) {
-    const isHardcodedAdmin = user?.email === "admin1@ncc.id";
-    if (!user || (!isHardcodedAdmin && user.user_metadata?.role !== "admin")) {
-      // Jika bukan admin, arahkan ke dashboard peserta atau login
+  // 1. Cek Area Admin & Juri (Prioritas Tertinggi)
+  if (path.startsWith("/hq") || path.startsWith("/juri")) {
+    const adminEmails = ["admin@ncc.id", "admin1@ncc.id", "admin2@ncc.id"];
+    const juryEmails = ["juri1@ncc.id", "juri2@ncc.id", "juri3@ncc.id"];
+    
+    const isHardcodedAdmin = user?.email && adminEmails.includes(user.email.toLowerCase());
+    const isHardcodedJury = user?.email && juryEmails.includes(user.email.toLowerCase());
+    
+    // Admin boleh masuk ke mana saja (HQ & Juri)
+    // Juri HANYA boleh masuk ke area /juri
+    if (path.startsWith("/hq") && !isHardcodedAdmin && user?.user_metadata?.role !== "admin") {
       const url = request.nextUrl.clone();
       url.pathname = user ? "/dashboard" : "/login";
       return NextResponse.redirect(url);
     }
+
+    if (path.startsWith("/juri") && !isHardcodedAdmin && !isHardcodedJury && user?.user_metadata?.role !== "juri" && user?.user_metadata?.role !== "admin") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      return NextResponse.redirect(url);
+    }
+
     return response;
   }
 
@@ -91,5 +100,5 @@ export async function middleware(request: NextRequest) {
 
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*", "/hq/:path*"],
+  matcher: ["/dashboard/:path*", "/admin/:path*", "/hq/:path*", "/juri/:path*"],
 };

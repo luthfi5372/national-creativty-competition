@@ -126,6 +126,7 @@ export default function DashboardPage() {
   const [regError, setRegError] = useState<string | null>(null);
   const [regSuccess, setRegSuccess] = useState<string | null>(null);
   const [isRegOpen, setIsRegOpen] = useState(true);
+  const [siteSettings, setSiteSettings] = useState<any>(null);
 
   const router = useRouter();
   const invoiceRef = useRef<HTMLDivElement>(null);
@@ -240,6 +241,7 @@ export default function DashboardPage() {
         const { data: settings } = await fetchSiteSettings();
         if (settings) {
           setIsRegOpen(settings.is_registration_open);
+          setSiteSettings(settings);
         }
       } catch (err) {
         console.error("Failed to fetch settings:", err);
@@ -721,10 +723,10 @@ export default function DashboardPage() {
                 <div className="pt-4 border-t border-slate-100">
                   <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Transfer Ke:</div>
                   <div className="flex justify-between items-center text-sm font-black text-slate-700">
-                    <span>MANDIRI NCC Central</span>
-                    <span className="font-mono text-indigo-600">1410-00-1234-567</span>
+                    <span>{siteSettings?.bank_name || "MANDIRI NCC Central"}</span>
+                    <span className="font-mono text-indigo-600">{siteSettings?.bank_number || "1410-00-1234-567"}</span>
                   </div>
-                  <div className="text-[10px] text-slate-400 font-bold uppercase mt-1 tracking-wider opacity-60">A/N National Creativity Competition</div>
+                  <div className="text-[10px] text-slate-400 font-bold uppercase mt-1 tracking-wider opacity-60">A/N {siteSettings?.bank_holder || "National Creativity Competition"}</div>
                 </div>
               </div>
 
