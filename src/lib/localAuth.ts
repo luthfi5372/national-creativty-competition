@@ -253,6 +253,8 @@ export type CompetitionEntry = {
   paymentStatus: "Wait" | "Verified" | "Paid" | "None";
   paymentProofUrl?: string; // Base64 string for local demo
   submittedAt: string;
+  submissionUrl?: string;
+  submissionStatus?: string;
 };
 
 

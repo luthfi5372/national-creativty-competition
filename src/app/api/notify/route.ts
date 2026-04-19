@@ -3,6 +3,28 @@ import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY || 're_dummy_fallback');
 
+// Simple In-Memory Rate Limiter to guard against generic bot spam
+const rateLimitCache = new Map<string, { count: number, resetAt: number }>();
+
+function isRateLimited(ip: string): boolean {
+  const WINDOW_MS = 60 * 1000; // 1 minute
+  const MAX_REQUESTS = 5;
+  const now = Date.now();
+  const record = rateLimitCache.get(ip);
+
+  if (!record || now > record.resetAt) {
+    rateLimitCache.set(ip, { count: 1, resetAt: now + WINDOW_MS });
+    return false;
+  }
+
+  if (record.count >= MAX_REQUESTS) {
+    return true;
+  }
+
+  record.count += 1;
+  return false;
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -10,6 +32,12 @@ export async function POST(req: Request) {
 
     if (!email || !fullName || !id || !actionType) {
       return NextResponse.json({ error: 'Missing required payload parameters' }, { status: 400 });
+    }
+
+    const ip = req.headers.get('x-forwarded-for') || 'unknown';
+    if (isRateLimited(ip)) {
+      console.warn(`[Anti-Spam] Rate limit exceeded for IP: ${ip}`);
+      return NextResponse.json({ error: 'Terlalu banyak permintaan, coba lagi dalam 1 menit.' }, { status: 429 });
     }
 
     if (!process.env.RESEND_API_KEY) {

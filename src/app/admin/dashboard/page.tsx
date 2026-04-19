@@ -76,7 +76,9 @@ export default function AdminDashboard() {
             teamSize: payload.new.team_size?.toString() || "1",
             notes: payload.new.notes,
             paymentStatus: payload.new.payment_status || "Wait",
-            submittedAt: payload.new.created_at || new Date().toISOString()
+            submittedAt: payload.new.created_at || new Date().toISOString(),
+            submissionUrl: payload.new.submission_url,
+            submissionStatus: payload.new.submission_status || "Belum Mengumpulkan"
           };
           
           setEntries((prev) => [newEntry as any, ...prev]); 
@@ -411,6 +413,7 @@ export default function AdminDashboard() {
                 <th className="px-6 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-widest">Competition</th>
                 <th className="px-6 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-widest">Status</th>
                 <th className="px-6 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-widest text-center">Docs</th>
+                <th className="px-6 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-widest text-center">Submission</th>
                 <th className="px-6 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-widest">Date</th>
                 <th className="px-8 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-widest text-right">Settings</th>
               </tr>
@@ -453,6 +456,21 @@ export default function AdminDashboard() {
                         </button>
                       ) : (
                         <span className="text-slate-700"><FileText size={14} className="mx-auto opacity-20" /></span>
+                      )}
+                    </td>
+                    <td className="px-6 py-5 text-center">
+                      {(entry.submission_url || entry.submissionUrl) ? (
+                        <a 
+                          href={entry.submission_url || entry.submissionUrl} 
+                          target="_blank" 
+                          rel="noreferrer"
+                          className="inline-flex p-2 bg-indigo-500/10 text-indigo-400 rounded-lg hover:bg-indigo-500/20 hover:text-indigo-300 transition-all border border-indigo-500/20"
+                          title="Download Karya"
+                        >
+                          <Download size={14} />
+                        </a>
+                      ) : (
+                        <span className="text-slate-700 font-bold text-[10px] uppercase tracking-tighter opacity-30">None</span>
                       )}
                     </td>
                     <td className="px-6 py-5">

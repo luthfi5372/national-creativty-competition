@@ -43,7 +43,13 @@ import {
   Microscope,
   Book,
   Sparkles,
-  BookText
+  BookText,
+  FolderArchive,
+  UploadCloud,
+  Lock,
+  FileCheck,
+  CheckCircle,
+  FileText
 } from "lucide-react";
 import { 
   CompetitionEntry, 
@@ -76,7 +82,7 @@ const CATEGORIES = [
   { id: "MTQ Nasional", icon: Book, desc: "Tilawatil Qur'an" },
 ];
 
-type TabType = "Dashboard" | "Kompetisi Saya" | "Pengumuman" | "Pembayaran" | "Profil";
+type TabType = "Dashboard" | "Kompetisi Saya" | "Pengumuman" | "Pembayaran" | "Pengumpulan Karya" | "Profil";
 
 export default function DashboardPage() {
   const [session, setSession] = useState<LocalSession | null>(null);
@@ -96,6 +102,7 @@ export default function DashboardPage() {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [paymentPreview, setPaymentPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   // Profile Form States
   const [updateMsg, setUpdateMsg] = useState({ type: "", text: "" });
@@ -147,7 +154,9 @@ export default function DashboardPage() {
             ...e,
             fullName: e.full_name || e.fullName || "Peserta",
             teamSize: e.team_size || e.teamSize || "1",
-            submittedAt: e.created_at || e.submittedAt || new Date().toISOString()
+            submittedAt: e.created_at || e.submittedAt || new Date().toISOString(),
+            submissionUrl: e.submission_url || e.submissionUrl || null,
+            submissionStatus: e.submission_status || e.submissionStatus || "Belum Mengumpulkan"
           }));
           setEntries(mappedEntries as any);
         } else {
@@ -401,6 +410,7 @@ export default function DashboardPage() {
   const navItems = useMemo(() => [
     { label: "Dashboard", icon: LayoutGrid },
     { label: "Kompetisi Saya", icon: Medal },
+    { label: "Pengumpulan Karya", icon: FolderArchive },
     { label: "Pengumuman", icon: Megaphone },
     { label: "Pembayaran", icon: Wallet },
     { label: "Profil", icon: User },
@@ -1228,6 +1238,179 @@ export default function DashboardPage() {
     </motion.div>
   );
 
+  const handleUploadKarya = async (e: React.ChangeEvent<HTMLInputElement>, entry: CompetitionEntry) => {
+    e.preventDefault();
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    // Validations (Limit 15MB)
+    if (file.size > 15 * 1024 * 1024) {
+      alert("Uh oh! File terlalu besar. Maksimal ukuran berkas adalah 15MB.");
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadProgress(10);
+    
+    try {
+      const { createClient } = await import("@/lib/supabase/client");
+      const supabase = createClient();
+      
+      const fileExt = file.name.split('.').pop();
+      const safeUserName = session?.fullName.replace(/[^a-zA-Z0-9]/g, '');
+      const filePath = `${safeUserName}-${entry.id}-${Date.now()}.${fileExt}`;
+      
+      setUploadProgress(40);
+      
+      const { data, error } = await supabase.storage
+        .from('ncc_submissions')
+        .upload(filePath, file, { cacheControl: '3600', upsert: true });
+        
+      if (error) {
+        console.error("Storage upload failed:", error);
+        alert(error.message || "Gagal mengunggah file ke Supabase.");
+        setIsUploading(false);
+        setUploadProgress(0);
+        return;
+      }
+      
+      setUploadProgress(70);
+
+      const { data: pbData } = supabase.storage.from('ncc_submissions').getPublicUrl(filePath);
+      
+      const { error: dbError } = await supabase
+        .from('competition_entries')
+        .update({
+          submission_url: pbData.publicUrl,
+          submission_status: "Sudah Dinilai/Terkumpul"
+        })
+        .eq('id', entry.id);
+
+      if (dbError) throw dbError;
+      
+      setUploadProgress(100);
+      alert("Berkas perlombaan berhasil terkirim ke panel juri!");
+      refreshData();
+    } catch (err: any) {
+      console.error(err);
+      alert("Terjadi masalah saat mengatur link penyimpanan.");
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+    }
+  };
+
+  const renderPengumpulanKarya = () => (
+    <div className="space-y-8 animate-in fade-in duration-700 max-w-4xl">
+      <div className="flex flex-col gap-2 relative">
+        <div className="absolute -top-10 -left-10 w-40 h-40 bg-indigo-500/10 blur-[50px] rounded-full pointer-events-none" />
+        <h2 className="text-2xl font-black tracking-tight text-slate-900 group">
+          Pengumpulan <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-500">Karya</span>
+        </h2>
+        <p className="text-slate-500 text-[13px] font-medium max-w-2xl">
+          Brankas Penyimpanan Cloud Sentral. Seluruh berkas yang terkirim di sini secara finalis akan dieksekusi langsung oleh panel penilai nasional.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6">
+        {entries.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 bg-white/50 border border-slate-200/50 rounded-3xl backdrop-blur-sm">
+            <FolderArchive className="text-slate-300 w-16 h-16 mb-4" />
+            <p className="text-slate-500 text-sm font-medium">Anda belum mendaftar perlombaan.</p>
+          </div>
+        ) : (
+          entries.map((entry) => {
+            const isApproved = entry.paymentStatus === "Verified" || entry.paymentStatus === "Paid";
+            
+            return (
+              <motion.div 
+                key={entry.id}
+                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm overflow-hidden relative"
+              >
+                {!isApproved && (
+                  <div className="absolute inset-0 z-10 backdrop-blur-[2px] bg-white/60 flex flex-col items-center justify-center">
+                    <Lock className="w-10 h-10 mb-3 text-slate-400" />
+                    <h3 className="font-bold text-slate-800 tracking-tight">Karya Terkunci</h3>
+                    <p className="text-[12px] font-medium text-slate-500 text-center max-w-[250px] mt-1">
+                      Komite Pusat hanya mengizinkan pengunggahan berkas pasca Verifikasi Keuangan berhasil.
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex justify-between items-start mb-6">
+                  <div className="flex items-center gap-3">
+                     <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shadow-sm">
+                        <FileText size={18} />
+                     </div>
+                     <div>
+                        <h4 className="font-bold text-slate-900 leading-none">{entry.category}</h4>
+                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1 block">ID: NCC-{String(entry.id).slice(0,8)}</span>
+                     </div>
+                  </div>
+                  {entry.submissionUrl ? (
+                    <span className="px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600 text-[10px] font-bold flex items-center gap-1.5 uppercase tracking-wide">
+                      <CheckCircle size={12} /> Terkirim
+                    </span>
+                  ) : (
+                    <span className="px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-600 text-[10px] font-bold flex items-center gap-1.5 uppercase tracking-wide">
+                      <AlertCircle size={12} /> Menunggu File
+                    </span>
+                  )}
+                </div>
+
+                {entry.submissionUrl ? (
+                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 mb-2">
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 bg-white shadow-sm border border-slate-200 rounded-xl">
+                        <FileCheck className="text-emerald-500" size={24} />
+                      </div>
+                      <div>
+                        <div className="text-[13px] font-bold text-slate-800">Berkas Perlombaan Diterima</div>
+                        <a href={entry.submissionUrl} target="_blank" rel="noreferrer" className="text-[12px] font-bold text-indigo-600 hover:text-indigo-700 underline underline-offset-2">
+                          Lihat Bukti Upload
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-4">
+                    <label className={"relative flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-2xl cursor-pointer transition-all hover:bg-slate-50 " + (isApproved ? "border-indigo-200 hover:border-indigo-400" : "border-slate-200")}>
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        <UploadCloud className={"w-8 h-8 mb-3 " + (isApproved ? "text-indigo-500" : "text-slate-400")} />
+                        <p className="mb-2 text-[13px] font-bold text-slate-700">
+                          {isUploading ? "Mengunggah ke Supabase..." : "Klik untuk mencari File"}
+                        </p>
+                        <p className="text-[11px] font-bold text-slate-400 bg-slate-100 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                          Maks 15MB (PDF/ZIP)
+                        </p>
+                      </div>
+                      <input 
+                        type="file" 
+                        className="hidden" 
+                        disabled={!isApproved || isUploading} 
+                        onChange={(e) => handleUploadKarya(e, entry)}
+                      />
+                    </label>
+                    {isUploading && (
+                      <div className="mt-3 w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                        <motion.div 
+                          initial={{ width: 0 }}
+                          animate={{ width: `${uploadProgress}%` }} 
+                          className="bg-indigo-600 h-1.5 rounded-full" 
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </motion.div>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex font-sans antialiased text-slate-900 overflow-x-hidden selection:bg-indigo-100 selection:text-indigo-900">
       
@@ -1358,6 +1541,7 @@ export default function DashboardPage() {
                    </>
                 )}
                 {activeTab === "Kompetisi Saya" && renderCompetitions()}
+                {activeTab === "Pengumpulan Karya" && renderPengumpulanKarya()}
                 {activeTab === "Pengumuman" && renderAnnouncements()}
                 {activeTab === "Pembayaran" && renderPayments()}
                 {activeTab === "Profil" && renderProfile()}
