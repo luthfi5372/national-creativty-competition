@@ -1,37 +1,93 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
 
-// Middleware minimal - proteksi dashboard via cookie hint
-// Auth utama menggunakan localStorage (client-side)
-export function proxy(request: NextRequest) {
-  const isLoggedIn = request.cookies.get("ncc_hint")?.value === "1";
-  const isAdmin = request.cookies.get("ncc_admin_hint")?.value === "1";
+/**
+ * Middleware untuk proteksi dashboard dan area admin.
+ * Memverifikasi sesi dan role user langsung dari data Supabase (Server-Side Authority).
+ */
+export async function proxy(request: NextRequest) {
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  });
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return request.cookies.get(name)?.value;
+        },
+        set(name: string, value: string, options: any) {
+          request.cookies.set({
+            name,
+            value,
+            ...options,
+          });
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          });
+          response.cookies.set({
+            name,
+            value,
+            ...options,
+          });
+        },
+        remove(name: string, options: any) {
+          request.cookies.set({
+            name,
+            value: "",
+            ...options,
+          });
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          });
+          response.cookies.set({
+            name,
+            value: "",
+            ...options,
+          });
+        },
+      },
+    }
+  );
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const path = request.nextUrl.pathname;
-  
   const isDashboard = path.startsWith("/dashboard");
   const isAdminArea = path.startsWith("/admin");
 
-  // 🔥 TAKTIK 3: PRIORITY ADMIN CHECK
+  // 1. Cek Area Admin (Prioritas Tertinggi)
   if (isAdminArea) {
-    if (!isLoggedIn || !isAdmin) {
+    if (!user || user.user_metadata?.role !== "admin") {
+      // Jika bukan admin, arahkan ke dashboard peserta atau login
       const url = request.nextUrl.clone();
-      url.pathname = "/dashboard"; 
+      url.pathname = user ? "/dashboard" : "/login";
       return NextResponse.redirect(url);
     }
-    // Jika admin & login, silakan lewat tanpa gangguan
-    return NextResponse.next();
+    return response;
   }
 
-  // 2. Logika untuk peserta biasa
-  if (isDashboard && !isLoggedIn) {
+  // 2. Cek Dashboard Peserta Umum
+  if (isDashboard && !user) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("from", path);
     return NextResponse.redirect(url);
   }
 
-
-  return NextResponse.next();
+  return response;
 }
+
 
 export const config = {
   matcher: ["/dashboard/:path*", "/admin/:path*"],
