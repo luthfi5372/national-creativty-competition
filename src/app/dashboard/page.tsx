@@ -250,8 +250,12 @@ export default function DashboardPage() {
   const handleCompetitionRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!session || !userData) return;
-    if (!regForm.category || !regForm.city) {
-      setRegError("Harap pilih kategori dan provinsi.");
+    if (!regForm.category) {
+      setRegError("Harap pilih kategori lomba terlebih dahulu.");
+      return;
+    }
+    if (!regForm.city) {
+      setRegError("Harap pilih domisili/provinsi asal.");
       return;
     }
 
