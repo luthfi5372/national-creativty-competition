@@ -55,10 +55,11 @@ import Link from "next/link";
 import { useLiveStats } from "@/hooks/useLiveStats";
 import { 
   submitCompetitionEntryToSupabase, 
-  fetchCompetitionEntries, 
+  fetchHybridEntries, 
   fetchProfile, 
   updateProfileInSupabase 
 } from "@/lib/supabase/service";
+
 const PROVINCES = [
   "DI. ACEH", "SUMATERA UTARA", "SUMATERA BARAT", "RIAU", "JAMBI", "SUMATERA SELATAN", "BENGKULU", "LAMPUNG", 
   "BANGKA BELITUNG", "KEPULAUAN RIAU", "DKI JAKARTA", "JAWA BARAT", "JAWA TENGAH", "DAERAH ISTIMEWA YOGYAKARTA", 
@@ -137,15 +138,15 @@ export default function DashboardPage() {
       };
       setSession(currentSession as any);
       
-      // 1. Fetch Entries from Supabase with safety
+      // 1. Fetch Entries using Hybrid logic (Supabase + Local)
       try {
-        const { data: supabaseEntries } = await fetchCompetitionEntries(currentSession.email);
-        if (supabaseEntries && Array.isArray(supabaseEntries)) {
-          const mappedEntries = supabaseEntries.map(e => ({
+        const { data: hybridEntries } = await fetchHybridEntries(currentSession.email);
+        if (hybridEntries && Array.isArray(hybridEntries)) {
+          const mappedEntries = hybridEntries.map(e => ({
             ...e,
-            fullName: e.full_name || "Peserta",
-            teamSize: e.team_size || "1",
-            submittedAt: e.created_at || new Date().toISOString()
+            fullName: e.full_name || e.fullName || "Peserta",
+            teamSize: e.team_size || e.teamSize || "1",
+            submittedAt: e.created_at || e.submittedAt || new Date().toISOString()
           }));
           setEntries(mappedEntries as any);
         } else {
@@ -155,6 +156,7 @@ export default function DashboardPage() {
         console.error("Failed to load entries:", entryErr);
         setEntries([]);
       }
+
 
       // 2. Fetch Detailed Profile with safety
       try {
@@ -265,7 +267,8 @@ export default function DashboardPage() {
         category: regForm.category,
         teamSize: regForm.teamSize,
         notes: regForm.notes
-      });
+      }, session.id);
+
 
       if (!error) {
         // Success: Refresh entries and set tab

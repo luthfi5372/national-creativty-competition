@@ -13,7 +13,7 @@ export type CompetitionEntry = {
   paymentStatus?: "Wait" | "Verified" | "Paid" | "None";
 };
 
-export async function submitCompetitionEntryToSupabase(entry: CompetitionEntry) {
+export async function submitCompetitionEntryToSupabase(entry: CompetitionEntry, userId?: string) {
   const supabase = createClient();
   
   // Check if Supabase is configured
@@ -45,24 +45,114 @@ export async function submitCompetitionEntryToSupabase(entry: CompetitionEntry) 
           category: entry.category,
           team_size: entry.teamSize,
           notes: entry.notes,
+          user_id: userId // CRITICAL: Fix for RLS Violation 42501
         }
       ])
       .select();
 
-    if (error) throw error;
+    if (error) {
+      console.error("Supabase insert error details:", error);
+      throw error;
+    }
     return { data, error: null };
   } catch (err: any) {
     console.error("Supabase interaction failed, falling back to local:", err);
+    // Explicitly check for RLS violation to inform the developer
+    if (err.code === "42501") {
+      console.error("CRITICAL: RLS Policy violation detected. Check Supabase 'competition_entries' insert policy.");
+    }
+    
     const result = submitCompetitionEntry({
       ...entry,
       paymentStatus: entry.paymentStatus || "None"
     });
     return { 
       data: result.success ? [entry] : null, 
-      error: result.success ? null : { message: "Gagal menyimpan data." } 
+      error: result.success ? null : { message: result.error || "Gagal menyimpan data." } 
     };
   }
 }
+
+
+/** 
+ * NEW: Hybrid fetcher that merges Supabase data with Local Storage data.
+ * This is the critical fix for "Integration to ALL data".
+ */
+export async function fetchHybridEntries(email: string) {
+  const supabase = createClient();
+  let supabaseEntries: any[] = [];
+  
+  // 1. Try Supabase
+  try {
+    const { data } = await supabase
+      .from('competition_entries')
+      .select('*')
+      .eq('email', email)
+      .order('created_at', { ascending: false });
+    supabaseEntries = data || [];
+  } catch (err) {
+    console.error("Supabase fetch failed, using local only:", err);
+  }
+
+  // 2. Try Local
+  let localEntries: any[] = [];
+  if (typeof window !== "undefined") {
+    try {
+      const { getCompetitionEntries } = await import('@/lib/localAuth');
+      localEntries = getCompetitionEntries(email);
+    } catch (err) {
+      console.error("Local fetch failed:", err);
+    }
+  }
+
+  // 3. Merge (Simple deduplication by category if both exist)
+  const combined = [...supabaseEntries];
+  localEntries.forEach(local => {
+    const exists = combined.find(s => s.category === local.category);
+    if (!exists) combined.push(local);
+  });
+
+  return { data: combined, error: null };
+}
+
+/** 
+ * NEW: Hybrid fetcher for Admin to see EVERYTHING.
+ */
+export async function fetchAllEntriesHybrid() {
+  const supabase = createClient();
+  let supabaseEntries: any[] = [];
+  
+  try {
+    const { data } = await supabase
+      .from('competition_entries')
+      .select('*')
+      .order('created_at', { ascending: false });
+    supabaseEntries = data || [];
+  } catch (err) {
+    console.error("Admin Supabase fetch failed:", err);
+  }
+
+  let localEntries: any[] = [];
+  if (typeof window !== "undefined") {
+    try {
+      const { getAllCompetitionEntries } = await import('@/lib/localAuth');
+      localEntries = getAllCompetitionEntries();
+    } catch (err) {
+      console.error("Admin Local fetch failed:", err);
+    }
+  }
+
+  // Merge entries
+  const combined = [...supabaseEntries];
+  localEntries.forEach(local => {
+    // Avoid duplicates if a user registered on both (rare but possible in hybrid mode)
+    const exists = combined.find(s => s.email === local.email && s.category === local.category);
+    if (!exists) combined.push(local);
+  });
+
+  return combined;
+}
+
 export async function getSupabaseStats() {
   const supabase = createClient();
   

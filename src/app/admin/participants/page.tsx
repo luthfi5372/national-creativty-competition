@@ -29,6 +29,8 @@ import {
   addAdminLog,
   adminFinalizePayment
 } from "@/lib/localAuth";
+import { fetchAllEntriesHybrid } from "@/lib/supabase/service";
+
 
 export default function AdminParticipants() {
   const [entries, setEntries] = useState<CompetitionEntry[]>([]);
@@ -56,9 +58,17 @@ export default function AdminParticipants() {
     refreshData();
   }, []);
 
-  const refreshData = () => {
-    setEntries(getAllCompetitionEntries());
+  const refreshData = async () => {
+    try {
+      const allEntries = await fetchAllEntriesHybrid();
+      setEntries(allEntries);
+    } catch (err) {
+      console.error("Admin refresh error:", err);
+      // Fallback if service fails
+      setEntries(getAllCompetitionEntries());
+    }
   };
+
 
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
