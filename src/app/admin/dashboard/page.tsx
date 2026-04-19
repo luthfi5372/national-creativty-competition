@@ -150,6 +150,20 @@ export default function AdminDashboard() {
     
     const res = await adminUpdatePaymentStatusToSupabase(id, "Verified");
     if (res.success) {
+      if (viewProof) {
+        // Fire and forget email notification
+        fetch("/api/notify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: viewProof.email,
+            fullName: viewProof.fullName,
+            id: viewProof.id,
+            category: viewProof.category
+          })
+        }).catch(err => console.error("Email notification failed silently:", err));
+      }
+
       setViewProof(null);
       refreshData();
     } else {
