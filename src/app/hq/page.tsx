@@ -55,9 +55,6 @@ const COLORS = {
 };
 
 export default function HQPage() {
-  const [isLocked, setIsLocked] = useState(true);
-  const [pin, setPin] = useState("");
-  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [settings, setSettings] = useState<any>(null);
   const [entries, setEntries] = useState<any[]>([]);
@@ -68,10 +65,8 @@ export default function HQPage() {
 
   // Load Initial Data
   useEffect(() => {
-    if (!isLocked) {
-      loadData();
-    }
-  }, [isLocked]);
+    loadData();
+  }, []);
 
   async function loadData() {
     setIsLoading(true);
@@ -83,16 +78,6 @@ export default function HQPage() {
     if (entriesData) setEntries(entriesData);
     setIsLoading(false);
   }
-
-  const handleUnlock = () => {
-    if (pin === "123456") {
-      setIsLocked(false);
-      setError("");
-    } else {
-      setError("PIN SALAH. AKSES DITOLAK.");
-      setPin("");
-    }
-  };
 
   const handleToggleRegistration = async () => {
     const newVal = !settings.is_registration_open;
@@ -124,51 +109,6 @@ export default function HQPage() {
     }
   };
 
-  // --- RENDER PIN LOCK ---
-  if (isLocked) {
-    return (
-      <div className="min-h-screen bg-[#020617] flex items-center justify-center p-6 font-sans">
-        <motion.div 
-           initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-           className="w-full max-w-md bg-white/5 border border-white/10 backdrop-blur-2xl rounded-[2.5rem] p-10 relative overflow-hidden"
-        >
-          {/* Decorative Glow */}
-          <div className="absolute -top-20 -right-20 w-40 h-40 bg-cyan-500/20 blur-[100px] rounded-full" />
-          <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-purple-500/20 blur-[100px] rounded-full" />
-
-          <div className="text-center relative z-10">
-            <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-white/20">
-              <Shield className="text-cyan-400" size={32} />
-            </div>
-            <h1 className="text-2xl font-black text-white tracking-widest uppercase mb-2">Command Center</h1>
-            <p className="text-white/40 text-xs font-bold tracking-widest uppercase">NCC 13th Restricted Access</p>
-          </div>
-
-          <div className="mt-10 space-y-4 relative z-10">
-            <div className="relative">
-              <input 
-                type="password" 
-                value={pin}
-                onChange={(e) => setPin(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleUnlock()}
-                placeholder="MASUKKAN PIN"
-                className="w-full bg-black/40 border border-white/10 rounded-2xl px-6 py-4 text-center text-white font-black tracking-[1rem] placeholder:tracking-widest placeholder:text-white/20 focus:border-cyan-500/50 outline-none transition-all"
-              />
-              <Lock className="absolute left-6 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-            </div>
-            {error && <p className="text-rose-500 text-[10px] font-black text-center uppercase tracking-widest animate-pulse">{error}</p>}
-            <button 
-              onClick={handleUnlock}
-              className="w-full py-4 bg-gradient-to-r from-cyan-600 to-indigo-600 text-white rounded-2xl font-black tracking-widest uppercase text-sm shadow-xl shadow-cyan-900/20 active:scale-95 transition-all"
-            >
-              AUTHENTICATE
-            </button>
-          </div>
-        </motion.div>
-      </div>
-    );
-  }
-
   // --- ANALYTICS DATA PREP ---
   const pieData = [
     { name: 'Olimpiade MIPA', value: entries.filter(e => e.category === 'Olimpiade MIPA').length || 0 },
@@ -192,7 +132,7 @@ export default function HQPage() {
           <NavIcon icon={Settings} active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
         </div>
 
-        <button onClick={() => setIsLocked(true)} className="p-3 text-white/40 hover:text-rose-500 transition-colors">
+        <button onClick={() => window.location.href = '/login'} className="p-3 text-white/40 hover:text-rose-500 transition-colors">
           <Power size={24} />
         </button>
       </aside>

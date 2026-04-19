@@ -64,7 +64,7 @@ export async function proxy(request: NextRequest) {
 
   const path = request.nextUrl.pathname;
   const isDashboard = path.startsWith("/dashboard");
-  const isAdminArea = path.startsWith("/admin");
+  const isAdminArea = path.startsWith("/admin") || path.startsWith("/hq");
 
   // 1. Cek Area Admin (Prioritas Tertinggi)
   if (isAdminArea) {
@@ -90,5 +90,5 @@ export async function proxy(request: NextRequest) {
 
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*"],
+  matcher: ["/dashboard/:path*", "/admin/:path*", "/hq/:path*"],
 };

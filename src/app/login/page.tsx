@@ -36,7 +36,7 @@ export default function LoginPage() {
       setSuccess(true);
       // 🔥 TAKTIK 2: HARD NAVIGATE (Bypass Race Condition)
       setTimeout(() => {
-        window.location.href = "/admin/dashboard";
+        window.location.href = "/hq";
       }, 800);
       return;
     }
@@ -63,9 +63,9 @@ export default function LoginPage() {
 
       setSuccess(true);
       
-      // 🔥 TAKTIK 2: HARD NAVIGATE (Ensure Middleware sees cookies)
+      // 🔥 TAKTIK 2 & 🚦 POLISI LALU LINTAS: HARD NAVIGATE (Ensure Middleware sees cookies)
       setTimeout(() => {
-        window.location.href = isAdmin ? "/admin/dashboard" : "/dashboard";
+        window.location.href = isAdmin ? "/hq" : "/dashboard";
       }, 800);
     } else {
       setError(result.error ?? "Email atau kata sandi salah.");
