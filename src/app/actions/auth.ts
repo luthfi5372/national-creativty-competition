@@ -82,16 +82,21 @@ export async function loginLocalUser(formData: FormData): Promise<AuthResult> {
 
   try {
     const supabase = await createClient();
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data: authData, error } = await supabase.auth.signInWithPassword({
       email,
       password
     });
 
     if (error) throw error;
 
+    const isAdmin = authData.user?.email?.toLowerCase() === "admin1@ncc.id" || authData.user?.user_metadata?.role === "admin";
+
     // Set cookie for middleware sync
     const cookieStore = await cookies();
     cookieStore.set("ncc_hint", "1", { path: "/", maxAge: 60 * 60 * 24 * 7 });
+    if (isAdmin) {
+      cookieStore.set("ncc_admin_hint", "1", { path: "/", maxAge: 60 * 60 * 24 * 7 });
+    }
 
     return { success: true };
   } catch (error: any) {
@@ -108,6 +113,7 @@ export async function logoutLocalUser() {
   // Clear middleware hint cookie
   const cookieStore = await cookies();
   cookieStore.delete("ncc_hint");
+  cookieStore.delete("ncc_admin_hint");
   
   redirect("/login");
 }

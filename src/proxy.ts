@@ -4,15 +4,25 @@ import { type NextRequest, NextResponse } from "next/server";
 // Auth utama menggunakan localStorage (client-side)
 export function proxy(request: NextRequest) {
   const isLoggedIn = request.cookies.get("ncc_hint")?.value === "1";
+  const isAdmin = request.cookies.get("ncc_admin_hint")?.value === "1";
   const path = request.nextUrl.pathname;
   
-  const isProtected = path.startsWith("/dashboard") || path.startsWith("/admin");
+  const isDashboard = path.startsWith("/dashboard");
+  const isAdminArea = path.startsWith("/admin");
 
-  if (isProtected && !isLoggedIn) {
+  if (isDashboard && !isLoggedIn) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("from", path);
     return NextResponse.redirect(url);
+  }
+
+  if (isAdminArea) {
+    if (!isLoggedIn || !isAdmin) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/dashboard"; 
+      return NextResponse.redirect(url);
+    }
   }
 
   return NextResponse.next();

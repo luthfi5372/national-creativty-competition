@@ -30,9 +30,9 @@ import {
   adminFinalizePayment
 } from "@/lib/localAuth";
 import { fetchAllEntriesHybrid } from "@/lib/supabase/service";
+import { createClient } from "@/lib/supabase/client";
 
-
-export default function AdminParticipants() {
+export default function AdminDashboard() {
   const [entries, setEntries] = useState<CompetitionEntry[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState("All");
@@ -56,6 +56,39 @@ export default function AdminParticipants() {
 
   useEffect(() => {
     refreshData();
+
+    // Tahap 4: Listen to pure Real-Time PostgreSQL changes over websockets
+    const supabase = createClient();
+    const channel = supabase
+      .channel('realtime_admin_pendaftaran')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'competition_entries' }, 
+        (payload) => {
+          console.log('Peserta baru masuk secara Real-Time!', payload.new);
+          
+          // Hydrate and map Supabase payload to local state
+          const newEntry = {
+            ...payload.new,
+            id: payload.new.id,
+            fullName: payload.new.full_name || "Peserta Baru",
+            email: payload.new.email,
+            phone: payload.new.phone,
+            school: payload.new.school,
+            city: payload.new.city,
+            category: payload.new.category,
+            teamSize: payload.new.team_size?.toString() || "1",
+            notes: payload.new.notes,
+            paymentStatus: payload.new.payment_status || "Wait",
+            submittedAt: payload.new.created_at || new Date().toISOString()
+          };
+          
+          setEntries((prev) => [newEntry as any, ...prev]); 
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const refreshData = async () => {
