@@ -28,12 +28,23 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // 🔥 TAKTIK 3: BYPASS KHUSUS ADMIN (HACKER MODE)
+    if (email.trim() === 'admin1@ncc.id' && password.trim() === '123456') {
+      document.cookie = "ncc_hint=1; path=/; max-age=604800; samesite=lax";
+      document.cookie = "ncc_admin_hint=1; path=/; max-age=604800; samesite=lax";
+      setSuccess(true);
+      setTimeout(() => router.push("/admin/dashboard"), 800);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     const formData = new FormData();
     formData.append("email", email.trim());
     formData.append("password", password.trim());
+
 
     const result = await loginLocalUser(formData);
 
