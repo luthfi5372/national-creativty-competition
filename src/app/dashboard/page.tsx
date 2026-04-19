@@ -274,15 +274,16 @@ export default function DashboardPage() {
     try {
       const { error } = await submitCompetitionEntryToSupabase({
 
-        fullName: userData.fullName,
-        email: userData.email,
+        fullName: session.fullName,
+        email: session.email,
         phone: regForm.phone || "-",
-        school: regForm.school || userData.school || "-",
+        school: regForm.school || "-",
         city: regForm.city,
         category: regForm.category,
         teamSize: regForm.teamSize,
         notes: regForm.notes
       }, session.id);
+
 
 
       if (!error) {
