@@ -1,104 +1,99 @@
-import { type NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
+import { createServerClient } from '@supabase/ssr';
+import { NextResponse, type NextRequest } from 'next/server';
 
-/**
- * Middleware untuk proteksi dashboard dan area admin.
- * Memverifikasi sesi dan role user langsung dari data Supabase (Server-Side Authority).
- */
 export async function middleware(request: NextRequest) {
+  // 1. Inisialisasi response dasar
   let response = NextResponse.next({
     request: {
       headers: request.headers,
     },
   });
 
+  // 2. Cegah crash jika Environment Variables kosong di Vercel
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    return response;
+  }
+
+  // 3. Bangun jembatan ke Supabase
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value;
+        getAll() {
+          return request.cookies.getAll();
         },
-        set(name: string, value: string, options: any) {
-          request.cookies.set({
-            name,
-            value,
-            ...options,
-          });
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
           response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
+            request,
           });
-          response.cookies.set({
-            name,
-            value,
-            ...options,
-          });
-        },
-        remove(name: string, options: any) {
-          request.cookies.set({
-            name,
-            value: "",
-            ...options,
-          });
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          });
-          response.cookies.set({
-            name,
-            value: "",
-            ...options,
-          });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          );
         },
       },
     }
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // 4. Ambil data user yang sedang login dengan aman
+  const { data: { user } } = await supabase.auth.getUser();
 
-  // 1. Cek Area Admin & Juri (Prioritas Tertinggi)
-  if (path.startsWith("/hq") || path.startsWith("/juri")) {
-    const adminEmails = ["admin@ncc.id", "admin1@ncc.id", "admin2@ncc.id"];
-    const juryEmails = ["juri1@ncc.id", "juri2@ncc.id", "juri3@ncc.id"];
-    
-    const isHardcodedAdmin = user?.email && adminEmails.includes(user.email.toLowerCase());
-    const isHardcodedJury = user?.email && juryEmails.includes(user.email.toLowerCase());
-    
-    // Admin boleh masuk ke mana saja (HQ & Juri)
-    // Juri HANYA boleh masuk ke area /juri
-    if (path.startsWith("/hq") && !isHardcodedAdmin && user?.user_metadata?.role !== "admin") {
-      const url = request.nextUrl.clone();
-      url.pathname = user ? "/dashboard" : "/login";
-      return NextResponse.redirect(url);
+  // 5. 🚦 LOGIKA POLISI LALU LINTAS (ROUTING)
+  const pathname = request.nextUrl.pathname;
+
+  // Proteksi Area Admin & Markas Besar (/hq)
+  if (pathname.startsWith('/hq')) {
+    if (!user) {
+      return NextResponse.redirect(new URL('/login', request.url));
     }
-
-    if (path.startsWith("/juri") && !isHardcodedAdmin && !isHardcodedJury && user?.user_metadata?.role !== "juri" && user?.user_metadata?.role !== "admin") {
-      const url = request.nextUrl.clone();
-      url.pathname = "/login";
-      return NextResponse.redirect(url);
+    
+    // Cek apakah dia benar-benar Admin (Email atau Metadata)
+    const adminEmails = ["admin@ncc.id", "admin1@ncc.id", "admin2@ncc.id", "halo.ncc@gmail.com"];
+    const isAdmin = (user.email && adminEmails.includes(user.email.toLowerCase())) || user.user_metadata?.role === 'admin';
+    
+    if (!isAdmin) {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
     }
-
-    return response;
   }
 
-  // 2. Cek Dashboard Peserta Umum
-  if (isDashboard && !user) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    url.searchParams.set("from", path);
-    return NextResponse.redirect(url);
+  // Proteksi Area Juri (/juri)
+  if (pathname.startsWith('/juri')) {
+    if (!user) {
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
+    
+    const adminEmails = ["admin@ncc.id", "admin1@ncc.id", "admin2@ncc.id", "halo.ncc@gmail.com"];
+    const juryEmails = ["juri1@ncc.id", "juri2@ncc.id", "juri3@ncc.id"];
+    
+    const isAdmin = (user.email && adminEmails.includes(user.email.toLowerCase())) || user.user_metadata?.role === 'admin';
+    const isJury = (user.email && juryEmails.includes(user.email.toLowerCase())) || user.user_metadata?.role === 'juri';
+    
+    if (!isAdmin && !isJury) {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
+  }
+
+  // Proteksi Dashboard Peserta (/dashboard)
+  if (pathname.startsWith('/dashboard')) {
+    if (!user) {
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
   }
 
   return response;
 }
 
-
+// 6. Tentukan rute mana saja yang dijaga oleh Middleware ini
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*", "/hq/:path*", "/juri/:path*"],
+  matcher: [
+    /*
+     * Cocokkan semua request path kecuali:
+     * - _next/static (file statis)
+     * - _next/image (optimasi gambar)
+     * - favicon.ico (ikon browser)
+     * - Gambar dan aset publik lainnya (.svg, .png, dsb)
+     */
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
 };
