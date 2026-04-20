@@ -12,7 +12,12 @@ import {
   LogOut,
   Loader2,
   Search,
-  Filter
+  Filter,
+  Pencil,
+  Key,
+  Trash2,
+  X,
+  CheckCircle2
 } from "lucide-react";
 
 export default function HQDashboardLight() {
@@ -35,6 +40,10 @@ export default function HQDashboardLight() {
   // State Radar (Search & Filter)
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("ALL");
+  const [activeTab, setActiveTab] = useState<"VERIFIKASI" | "USERS">("VERIFIKASI");
+
+  // State Modal Edit
+  const [editingParticipant, setEditingParticipant] = useState<any | null>(null);
 
   // Fungsi Menarik Data Saat Halaman Dimuat
   useEffect(() => {
@@ -125,6 +134,58 @@ export default function HQDashboardLight() {
     }
   };
 
+  // God Mode Actions
+  const resetPassword = async (email: string) => {
+    if (!window.confirm(`Kirim email reset password ke ${email}?`)) return;
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      alert("✅ Link reset berhasil dikirim ke email peserta!");
+    } catch (err: any) {
+      alert(`❌ Gagal: ${err.message}`);
+    }
+  };
+
+  const deleteEntry = async (id: string, name: string) => {
+    if (!window.confirm(`⚠️ PERINGATAN: Hapus pendaftaran ${name}? Tindakan ini permanen.`)) return;
+    setIsSaving(true);
+    try {
+      const { error } = await supabase.from('competition_entries').delete().eq('id', id);
+      if (error) throw error;
+      setParticipants(participants.filter(p => p.id !== id));
+      alert("🗑️ Data berhasil dihapus.");
+    } catch (err: any) {
+      alert(`❌ Gagal menghapus: ${err.message}`);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleUpdateEntry = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingParticipant) return;
+    setIsSaving(true);
+    try {
+      const { error } = await supabase.from('competition_entries').update({
+        full_name: editingParticipant.full_name,
+        school: editingParticipant.school,
+        phone: editingParticipant.phone,
+        category: editingParticipant.category
+      }).eq('id', editingParticipant.id);
+      
+      if (error) throw error;
+      setParticipants(participants.map(p => p.id === editingParticipant.id ? editingParticipant : p));
+      setEditingParticipant(null);
+      alert("✅ Data peserta diperbarui!");
+    } catch (err: any) {
+      alert(`❌ Gagal update: ${err.message}`);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const saveSettings = async (newRegStatus?: boolean) => {
     setIsSaving(true);
     const updatedStatus = newRegStatus !== undefined ? newRegStatus : isRegOpen;
@@ -141,14 +202,17 @@ export default function HQDashboardLight() {
   };
 
   // Logic Radar (Filtering)
-  const filteredQueue = participants.filter(p => {
-    const isPaid = p.payment_status === 'Paid';
+  const filteredParticipants = participants.filter(p => {
     const matchesSearch = 
       p.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      p.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.school?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = categoryFilter === "ALL" || p.category === categoryFilter;
     
-    return isPaid && matchesSearch && matchesCategory;
+    if (activeTab === "VERIFIKASI") {
+      return p.payment_status === 'Paid' && matchesSearch && matchesCategory;
+    }
+    return matchesSearch && matchesCategory;
   });
 
   const stats = {
@@ -231,42 +295,68 @@ export default function HQDashboardLight() {
           </div>
         </div>
 
-        {/* ACTION PANELS */}
+        {/* HUD TAB SELECTOR */}
+        <div className="flex p-1.5 bg-white/50 backdrop-blur-xl border border-white/40 rounded-2xl w-fit">
+          <button 
+            onClick={() => setActiveTab("VERIFIKASI")}
+            className={`px-8 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === "VERIFIKASI" ? "bg-blue-600 text-white shadow-lg" : "text-slate-500 hover:text-slate-800"}`}
+          >
+            ⚡ Antrean Verifikasi
+          </button>
+          <button 
+            onClick={() => setActiveTab("USERS")}
+            className={`px-8 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === "USERS" ? "bg-indigo-600 text-white shadow-lg" : "text-slate-500 hover:text-slate-800"}`}
+          >
+            🗄️ Master Registry
+          </button>
+        </div>
+
+        {/* MAIN DATA PANELS */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
-          {/* BROADCAST CENTER */}
-          <div className="lg:col-span-1 bg-white/70 backdrop-blur-xl border border-white/60 shadow-sm p-6 rounded-3xl relative">
-            {isLoading && <div className="absolute inset-0 bg-white/50 backdrop-blur-sm z-10 rounded-3xl"></div>}
-            <div className="flex items-center gap-2 mb-2">
-              <Megaphone size={20} className="text-blue-500" />
-              <h3 className="text-lg font-bold text-slate-800">Terminal Siaran</h3>
+          {/* BROADCAST CENTER (Only visible on Verifikasi tab or small screens) */}
+          {activeTab === "VERIFIKASI" && (
+            <div className="lg:col-span-1 bg-white/70 backdrop-blur-xl border border-white/60 shadow-sm p-6 rounded-3xl relative animate-in fade-in slide-in-from-left-4 duration-300">
+              {isLoading && <div className="absolute inset-0 bg-white/50 backdrop-blur-sm z-10 rounded-3xl"></div>}
+              <div className="flex items-center gap-2 mb-2">
+                <Megaphone size={20} className="text-blue-500" />
+                <h3 className="text-lg font-bold text-slate-800">Terminal Siaran</h3>
+              </div>
+              <p className="text-xs text-slate-500 mb-6 font-medium">Broadcast pesan ke seluruh dashboard peserta.</p>
+              
+              <textarea 
+                value={broadcastText}
+                onChange={(e) => setBroadcastText(e.target.value)}
+                className="w-full bg-white/50 border border-slate-200 rounded-2xl p-4 text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none h-32 mb-4 transition-all"
+                placeholder="Ketik pengumuman..."
+              ></textarea>
+              <button 
+                onClick={() => saveSettings()}
+                disabled={isSaving}
+                className="w-full py-4 bg-indigo-600 hover:bg-slate-900 text-white font-black text-xs uppercase tracking-widest rounded-2xl transition-all shadow-lg active:scale-95"
+              >
+                {isSaving ? "Sinkronisasi..." : "Kirim Siaran Global"}
+              </button>
             </div>
-            <p className="text-xs text-slate-500 mb-6 font-medium">Broadcast pesan ke seluruh dashboard peserta.</p>
-            
-            <textarea 
-              value={broadcastText}
-              onChange={(e) => setBroadcastText(e.target.value)}
-              className="w-full bg-white/50 border border-slate-200 rounded-2xl p-4 text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none h-32 mb-4 transition-all"
-              placeholder="Ketik pengumuman..."
-            ></textarea>
-            <button 
-              onClick={() => saveSettings()}
-              disabled={isSaving}
-              className="w-full py-4 bg-indigo-600 hover:bg-slate-900 text-white font-black text-xs uppercase tracking-widest rounded-2xl transition-all shadow-lg active:scale-95"
-            >
-              {isSaving ? "Sinkronisasi..." : "Kirim Siaran Global"}
-            </button>
-          </div>
+          )}
 
-          {/* VERIFICATION RADAR */}
-          <div className="lg:col-span-2 bg-white/70 backdrop-blur-xl border border-white/60 shadow-sm p-6 rounded-3xl overflow-hidden flex flex-col">
+          {/* MAIN RADAR TABLE */}
+          <div className={`${activeTab === 'USERS' ? 'lg:col-span-3' : 'lg:col-span-2'} bg-white/70 backdrop-blur-xl border border-white/60 shadow-sm p-6 rounded-3xl overflow-hidden flex flex-col animate-in fade-in slide-in-from-right-4 duration-300`}>
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <Zap size={20} className="text-amber-500 fill-amber-500" />
-                  <h3 className="text-lg font-bold text-slate-800">Antrean Verifikasi</h3>
+                  {activeTab === "VERIFIKASI" ? (
+                    <Zap size={20} className="text-amber-500 fill-amber-500" />
+                  ) : (
+                    <Users size={20} className="text-indigo-600" />
+                  )}
+                  <h3 className="text-lg font-bold text-slate-800">
+                    {activeTab === "VERIFIKASI" ? "Antrean Verifikasi" : "Master Data Peserta"}
+                  </h3>
                 </div>
-                <p className="text-xs text-slate-500 font-medium">Radar peninjauan bukti transfer pendaftar.</p>
+                <p className="text-xs text-slate-500 font-medium">
+                  {activeTab === "VERIFIKASI" ? "Radar peninjauan bukti transfer pendaftar." : "God Mode: Kendali mutlak seluruh data peserta."}
+                </p>
               </div>
               
               {/* Management HUD: Search & Filter */}
@@ -275,7 +365,7 @@ export default function HQDashboardLight() {
                   <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input 
                     type="text" 
-                    placeholder="Nama / Sekolah..." 
+                    placeholder="Search radar..." 
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full sm:w-48 bg-white/50 border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-xs focus:ring-2 focus:ring-blue-500 outline-none transition-all"
@@ -284,7 +374,7 @@ export default function HQDashboardLight() {
                 <select 
                   value={categoryFilter}
                   onChange={(e) => setCategoryFilter(e.target.value)}
-                  className="bg-white/50 border border-slate-200 rounded-xl px-4 py-2 text-xs focus:ring-2 focus:ring-blue-500 outline-none transition-all cursor-pointer"
+                  className="bg-white/50 border border-slate-200 rounded-xl px-4 py-2 text-xs focus:ring-2 focus:ring-blue-500 outline-none transition-all cursor-pointer font-bold"
                 >
                   <option value="ALL">Semua Kategori</option>
                   <option value="Olimpiade MIPA">Olimpiade MIPA</option>
@@ -299,59 +389,91 @@ export default function HQDashboardLight() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                    <th className="pb-4">Nama Peserta</th>
-                    <th className="pb-4">Kategori</th>
-                    <th className="pb-4">Bukti TF</th>
-                    <th className="pb-4 text-right">Perintah</th>
+                    <th className="pb-4">Data Peserta</th>
+                    <th className="pb-4">Kontak / Kategori</th>
+                    {activeTab === "VERIFIKASI" && <th className="pb-4">Bukti TF</th>}
+                    <th className="pb-4 text-right">Aksi Administrator</th>
                   </tr>
                 </thead>
                 <tbody className="text-sm">
                   {isLoading ? (
-                    <tr><td colSpan={4} className="py-12 text-center text-slate-400 animate-pulse">Scanning database...</td></tr>
-                  ) : filteredQueue.length === 0 ? (
-                    <tr><td colSpan={4} className="py-12 text-center text-slate-400 font-bold italic">Radar bersih. Tidak ada data yang sesuai.</td></tr>
+                    <tr><td colSpan={4} className="py-12 text-center text-slate-400 animate-pulse font-bold uppercase tracking-tighter">Scanning database...</td></tr>
+                  ) : filteredParticipants.length === 0 ? (
+                    <tr><td colSpan={4} className="py-12 text-center text-slate-400 font-black italic">Radar bersih. Tidak ada data yang sesuai.</td></tr>
                   ) : (
-                    filteredQueue.map((p) => (
+                    filteredParticipants.map((p) => (
                       <tr key={p.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-100/30 transition-all group">
                         <td className="py-5">
                           <div className="font-bold text-slate-800">{p.full_name}</div>
-                          <div className="text-[10px] text-slate-400 font-bold">{p.school}</div>
+                          <div className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">{p.school}</div>
                         </td>
                         <td className="py-5">
-                          <span className="px-2.5 py-1 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-lg text-[9px] font-black uppercase tracking-tighter">
+                          <div className="text-xs font-medium text-slate-600 mb-1">{p.email}</div>
+                          <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-md text-[8px] font-black uppercase tracking-tighter">
                             {p.category}
                           </span>
                         </td>
-                        <td className="py-5">
-                          {p.payment_proof_url ? (
-                            <button 
-                              onClick={() => setViewImage(p.payment_proof_url)}
-                              className="text-blue-500 hover:text-blue-700 font-black text-[10px] uppercase underline decoration-2 underline-offset-4"
-                            >
-                              Buka Dokumen
-                            </button>
-                          ) : (
-                            <span className="text-slate-300 italic text-[10px]">No File</span>
-                          )}
-                        </td>
+                        {activeTab === "VERIFIKASI" && (
+                          <td className="py-5">
+                            {p.payment_proof_url ? (
+                              <button 
+                                onClick={() => setViewImage(p.payment_proof_url)}
+                                className="text-blue-500 hover:text-blue-700 font-black text-[10px] uppercase underline underline-offset-4 decoration-2"
+                              >
+                                View Proof
+                              </button>
+                            ) : (
+                              <span className="text-slate-300 italic text-[10px]">No File</span>
+                            )}
+                          </td>
+                        )}
                         <td className="py-5 text-right">
                           <div className="flex justify-end gap-2">
-                             <button 
-                              onClick={() => updatePaymentStatus(p.id, 'Verified')}
-                              disabled={isSaving}
-                              className="p-2.5 bg-emerald-100 text-emerald-600 hover:bg-emerald-600 hover:text-white rounded-2xl transition-all shadow-sm"
-                              title="Setujui"
-                            >
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-                            </button>
-                            <button 
-                              onClick={() => updatePaymentStatus(p.id, 'Wait')}
-                              disabled={isSaving}
-                              className="p-2.5 bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white rounded-2xl transition-all shadow-sm"
-                              title="Tolak"
-                            >
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                            </button>
+                            {activeTab === "VERIFIKASI" ? (
+                              <>
+                                <button 
+                                  onClick={() => updatePaymentStatus(p.id, 'Verified')}
+                                  disabled={isSaving}
+                                  className="p-2.5 bg-emerald-100 text-emerald-600 hover:bg-emerald-600 hover:text-white rounded-2xl transition-all shadow-sm"
+                                  title="Verifikasi"
+                                >
+                                  <CheckCircle2 size={18} />
+                                </button>
+                                <button 
+                                  onClick={() => updatePaymentStatus(p.id, 'Wait')}
+                                  disabled={isSaving}
+                                  className="p-2.5 bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white rounded-2xl transition-all shadow-sm"
+                                  title="Tolak"
+                                >
+                                  <X size={18} />
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <button 
+                                  onClick={() => setEditingParticipant(p)}
+                                  className="p-2.5 bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white rounded-xl transition-all"
+                                  title="Edit Data"
+                                >
+                                  <Pencil size={16} />
+                                </button>
+                                <button 
+                                  onClick={() => resetPassword(p.email)}
+                                  className="p-2.5 bg-slate-100 text-slate-600 hover:bg-slate-600 hover:text-white rounded-xl transition-all"
+                                  title="Reset Password"
+                                >
+                                  <Key size={16} />
+                                </button>
+                                <button 
+                                  onClick={() => deleteEntry(p.id, p.full_name)}
+                                  disabled={isSaving}
+                                  className="p-2.5 bg-red-50 text-red-500 hover:bg-red-500 hover:text-white rounded-xl transition-all"
+                                  title="Hapus Peserta"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -372,13 +494,72 @@ export default function HQDashboardLight() {
             onClick={() => setViewImage(null)}
             className="absolute top-8 right-8 w-12 h-12 bg-white/10 hover:bg-rose-500 text-white rounded-full flex items-center justify-center transition-all shadow-2xl"
           >
-            &times;
+            <X size={24} />
           </button>
           <img 
             src={viewImage} 
             alt="Payment Receipt" 
             className="max-w-full max-h-full object-contain rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] border-4 border-white/5" 
           />
+        </div>
+      )}
+
+      {/* EDIT MODAL */}
+      {editingParticipant && (
+        <div className="fixed inset-0 z-[100] bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in zoom-in duration-200">
+          <div className="bg-white/90 backdrop-blur-2xl border border-white/60 shadow-2xl rounded-[2.5rem] w-full max-w-md p-8 relative">
+            <button onClick={() => setEditingParticipant(null)} className="absolute top-6 right-6 text-slate-400 hover:text-red-500 transition-colors">
+              <X size={24} />
+            </button>
+            
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600">
+                 <Pencil size={24} />
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-slate-800">Edit Profil Peserta</h3>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Intervensi God Mode</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleUpdateEntry} className="space-y-5">
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Nama Lengkap</label>
+                <input 
+                  type="text" 
+                  value={editingParticipant.full_name} 
+                  onChange={(e) => setEditingParticipant({...editingParticipant, full_name: e.target.value})}
+                  className="w-full bg-slate-100 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-amber-500 outline-none font-bold"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Asal Sekolah</label>
+                <input 
+                  type="text" 
+                  value={editingParticipant.school} 
+                  onChange={(e) => setEditingParticipant({...editingParticipant, school: e.target.value})}
+                  className="w-full bg-slate-100 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-amber-500 outline-none font-bold"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Nomor WhatsApp</label>
+                <input 
+                  type="text" 
+                  value={editingParticipant.phone} 
+                  onChange={(e) => setEditingParticipant({...editingParticipant, phone: e.target.value})}
+                  className="w-full bg-slate-100 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-amber-500 outline-none font-bold"
+                />
+              </div>
+              
+              <button 
+                type="submit" 
+                disabled={isSaving}
+                className="w-full py-4 bg-amber-600 hover:bg-slate-900 text-white font-black text-xs uppercase tracking-widest rounded-2xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2"
+              >
+                {isSaving ? <Loader2 className="animate-spin" size={16} /> : "Simpan Perubahan"}
+              </button>
+            </form>
+          </div>
         </div>
       )}
 
