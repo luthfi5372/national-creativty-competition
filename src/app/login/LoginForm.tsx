@@ -30,14 +30,12 @@ export default function LoginForm() {
         document.cookie = "ncc_admin_hint=1; path=/; max-age=604800; samesite=lax";
       }
 
-      // 🚀 Taktik Anti-Banting (Delay 800ms agar cookie meresap)
+      // 🚀 Alternatif 1: Router Push + Refresh (Taktik 1.5 detik agar sesi matang)
       setTimeout(() => {
-        if (result.isAdmin) {
-          window.location.href = '/hq'; 
-        } else {
-          window.location.href = '/dashboard';
-        }
-      }, 800);
+        const destination = result.isAdmin ? "/hq" : "/dashboard";
+        router.push(destination);
+        router.refresh();
+      }, 1500);
     } else {
       const errorMsg = result.error ?? "Terjadi kesalahan.";
       setError(errorMsg);
