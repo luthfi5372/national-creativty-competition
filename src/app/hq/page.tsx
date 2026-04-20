@@ -2,6 +2,18 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserClient } from '@supabase/ssr';
+import { 
+  Users, 
+  ShieldCheck, 
+  Clock, 
+  Megaphone, 
+  Download, 
+  Zap, 
+  LogOut,
+  Loader2,
+  Search,
+  Filter
+} from "lucide-react";
 
 export default function HQDashboardLight() {
   const router = useRouter();
@@ -173,16 +185,16 @@ export default function HQDashboardLight() {
               onClick={handleExportCSV}
               className="px-5 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold shadow-sm hover:bg-slate-50 transition-all text-sm flex items-center gap-2"
             >
-              📥 Export CSV
+              <Download size={16} className="text-blue-600" /> Export CSV
             </button>
             <button 
               onClick={() => {
                 document.cookie = "ncc_bypass=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
                 supabase.auth.signOut().then(() => router.push('/login'));
               }}
-              className="px-5 py-2.5 bg-red-50 text-red-600 border border-red-100 rounded-xl font-bold shadow-sm hover:bg-red-100 transition-all text-sm"
+              className="px-5 py-2.5 bg-red-50 text-red-600 border border-red-100 rounded-xl font-bold shadow-sm hover:bg-red-100 transition-all text-sm flex items-center gap-2"
             >
-              Log Out
+              <LogOut size={16} /> Log Out
             </button>
           </div>
         </div>
@@ -190,21 +202,21 @@ export default function HQDashboardLight() {
         {/* METRICS & SWITCH */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {[
-            { title: "Total Pendaftar", value: stats.total, color: "text-blue-600", icon: "👥" },
-            { title: "Terverifikasi", value: stats.verified, color: "text-green-600", icon: "✅" },
-            { title: "Menunggu Review", value: stats.pending, color: "text-amber-500", icon: "⏳" },
+            { title: "Total Pendaftar", value: stats.total, color: "text-blue-600", icon: Users },
+            { title: "Terverifikasi", value: stats.verified, color: "text-green-600", icon: ShieldCheck },
+            { title: "Menunggu Review", value: stats.pending, color: "text-amber-500", icon: Clock },
           ].map((stat, idx) => (
             <div key={idx} className="bg-white/70 backdrop-blur-xl border border-white/60 shadow-sm p-6 rounded-3xl flex flex-col justify-between hover:scale-[1.02] transition-transform">
               <div className="flex justify-between items-start mb-4">
                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{stat.title}</h3>
-                <span className="text-2xl">{stat.icon}</span>
+                <stat.icon size={24} className={stat.color} />
               </div>
               <p className={`text-4xl font-black ${stat.color}`}>{isLoading ? "..." : stat.value.toLocaleString()}</p>
             </div>
           ))}
 
           <div className="bg-gradient-to-br from-indigo-500 to-blue-600 shadow-lg p-6 rounded-3xl flex flex-col justify-between text-white relative overflow-hidden group">
-            {isLoading && <div className="absolute inset-0 bg-black/10 backdrop-blur-sm z-10 flex items-center justify-center"><span className="animate-spin">🌀</span></div>}
+            {isLoading && <div className="absolute inset-0 bg-black/10 backdrop-blur-sm z-10 flex items-center justify-center"><Loader2 size={24} className="animate-spin" /></div>}
             <h3 className="text-[10px] font-black text-indigo-100 uppercase tracking-widest mb-4">Pendaftaran</h3>
             <div className="flex items-center justify-between">
               <span className="text-2xl font-black group-hover:scale-110 transition-transform">{isRegOpen ? "OPEN" : "CLOSED"}</span>
@@ -225,7 +237,10 @@ export default function HQDashboardLight() {
           {/* BROADCAST CENTER */}
           <div className="lg:col-span-1 bg-white/70 backdrop-blur-xl border border-white/60 shadow-sm p-6 rounded-3xl relative">
             {isLoading && <div className="absolute inset-0 bg-white/50 backdrop-blur-sm z-10 rounded-3xl"></div>}
-            <h3 className="text-lg font-bold text-slate-800 mb-2">📢 Terminal Siaran</h3>
+            <div className="flex items-center gap-2 mb-2">
+              <Megaphone size={20} className="text-blue-500" />
+              <h3 className="text-lg font-bold text-slate-800">Terminal Siaran</h3>
+            </div>
             <p className="text-xs text-slate-500 mb-6 font-medium">Broadcast pesan ke seluruh dashboard peserta.</p>
             
             <textarea 
@@ -247,19 +262,23 @@ export default function HQDashboardLight() {
           <div className="lg:col-span-2 bg-white/70 backdrop-blur-xl border border-white/60 shadow-sm p-6 rounded-3xl overflow-hidden flex flex-col">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
               <div>
-                <h3 className="text-lg font-bold text-slate-800">⚡ Antrean Verifikasi</h3>
+                <div className="flex items-center gap-2 mb-1">
+                  <Zap size={20} className="text-amber-500 fill-amber-500" />
+                  <h3 className="text-lg font-bold text-slate-800">Antrean Verifikasi</h3>
+                </div>
                 <p className="text-xs text-slate-500 font-medium">Radar peninjauan bukti transfer pendaftar.</p>
               </div>
               
               {/* Management HUD: Search & Filter */}
               <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
                 <div className="relative">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input 
                     type="text" 
                     placeholder="Nama / Sekolah..." 
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full sm:w-48 bg-white/50 border border-slate-200 rounded-xl px-4 py-2 text-xs focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                    className="w-full sm:w-48 bg-white/50 border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-xs focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                   />
                 </div>
                 <select 
