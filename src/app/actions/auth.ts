@@ -11,6 +11,7 @@ import { createClient } from "@/lib/supabase/server";
 export type AuthResult = {
   success: boolean;
   error?: string;
+  isAdmin?: boolean;
 };
 
 /** Mendaftarkan user baru ke Supabase Auth & Tabel Profiles */
@@ -93,7 +94,7 @@ export async function loginLocalUser(formData: FormData): Promise<AuthResult> {
     const cookieStore = await cookies();
     cookieStore.set("ncc_hint", "1", { path: "/", maxAge: 604800, samesite: "lax" });
     cookieStore.set("ncc_admin_hint", "1", { path: "/", maxAge: 604800, samesite: "lax" });
-    return { success: true };
+    return { success: true, isAdmin: true };
   }
 
 
@@ -115,7 +116,7 @@ export async function loginLocalUser(formData: FormData): Promise<AuthResult> {
       cookieStore.set("ncc_admin_hint", "1", { path: "/", maxAge: 60 * 60 * 24 * 7 });
     }
 
-    return { success: true };
+    return { success: true, isAdmin };
   } catch (error: any) {
     console.error("Login error:", error);
     return { success: false, error: error.message || "Email atau kata sandi salah." };

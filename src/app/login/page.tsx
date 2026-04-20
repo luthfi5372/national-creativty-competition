@@ -46,22 +46,29 @@ export default function LoginPage() {
     const result = await loginLocalUser(formData);
 
     if (result.success) {
-      // Set hint cookies untuk Middleware
+      // Set hint cookies untuk Middleware (Optional but good for fallback)
       document.cookie = "ncc_hint=1; path=/; max-age=604800; samesite=lax";
-      
-      if (isAdminDomain) {
+      if (result.isAdmin) {
         document.cookie = "ncc_admin_hint=1; path=/; max-age=604800; samesite=lax";
       }
 
       setSuccess(true);
       
-      // Redirect halus setelah animasi sukses
+      // 🚀 Taktik Anti-Banting (Delay 800ms agar cookie meresap)
       setTimeout(() => {
-        window.location.href = isAdminDomain ? "/hq" : "/dashboard";
-      }, 1000);
+        if (result.isAdmin) {
+          window.location.href = '/hq'; 
+        } else {
+          window.location.href = '/dashboard';
+        }
+      }, 800);
     } else {
-      setError(result.error ?? "Email atau kata sandi salah.");
+      const errorMsg = result.error ?? "Email atau kata sandi salah.";
+      setError(errorMsg);
       setLoading(false);
+      
+      // 🚨 Alarm Error Aktif (UX Feedback)
+      alert("❌ GAGAL MASUK: " + errorMsg);
     }
   };
 

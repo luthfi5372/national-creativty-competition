@@ -17,22 +17,30 @@ export default function LoginForm() {
     setError(null);
 
     const formData = new FormData(e.currentTarget);
-    const email = formData.get("email")?.toString().toLowerCase() || "";
-    const isAdminDomain = email.includes("admin") || email.endsWith("@ncc.id") || email === "halo.ncc@gmail.com";
-
     const result = await loginLocalUser(formData);
 
     if (result.success) {
       // Set hint cookies for consistency
       document.cookie = "ncc_hint=1; path=/; max-age=604800; samesite=lax";
-      if (isAdminDomain) {
+      if (result.isAdmin) {
         document.cookie = "ncc_admin_hint=1; path=/; max-age=604800; samesite=lax";
       }
 
-      window.location.href = isAdminDomain ? "/hq" : "/dashboard";
+      // 🚀 Taktik Anti-Banting (Delay 800ms agar cookie meresap)
+      setTimeout(() => {
+        if (result.isAdmin) {
+          window.location.href = '/hq'; 
+        } else {
+          window.location.href = '/dashboard';
+        }
+      }, 800);
     } else {
-      setError(result.error ?? "Terjadi kesalahan.");
+      const errorMsg = result.error ?? "Terjadi kesalahan.";
+      setError(errorMsg);
       setIsLoading(false);
+
+      // 🚨 Alarm Error Aktif (UX Feedback)
+      alert("❌ GAGAL MASUK: " + errorMsg);
     }
   };
 
