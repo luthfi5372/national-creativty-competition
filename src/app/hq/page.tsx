@@ -35,6 +35,8 @@ import {
   Legend,
   CartesianGrid
 } from "recharts";
+import QRCode from "react-qr-code";
+import html2canvas from "html2canvas";
 
 export default function HQDashboardLight() {
   const router = useRouter();
@@ -56,10 +58,13 @@ export default function HQDashboardLight() {
   // State Radar (Search & Filter)
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("ALL");
-  const [activeTab, setActiveTab] = useState<"VERIFIKASI" | "USERS">("VERIFIKASI");
+  const [activeTab, setActiveTab] = useState<"VERIFIKASI" | "USERS" | "PENILAIAN">("VERIFIKASI");
 
   // State Modal Edit
   const [editingParticipant, setEditingParticipant] = useState<any | null>(null);
+
+  // State untuk menyimpan data peserta yang tiketnya sedang dilihat
+  const [selectedTicket, setSelectedTicket] = useState<any | null>(null);
 
   // Fungsi Menarik Data Saat Halaman Dimuat
   useEffect(() => {
@@ -214,6 +219,50 @@ export default function HQDashboardLight() {
       alert("❌ Gagal menyimpan.");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const downloadTicket = async () => {
+    const ticketElement = document.getElementById("ncc-ticket");
+    if (!ticketElement) return;
+    
+    try {
+      const canvas = await html2canvas(ticketElement, { scale: 3, backgroundColor: null });
+      const image = canvas.toDataURL("image/png");
+      const link = document.createElement("a");
+      link.href = image;
+      link.download = `ID_CARD_${selectedTicket?.full_name}_NCC13.png`;
+      link.click();
+    } catch (err) {
+      console.error("Gagal mengunduh tiket", err);
+    }
+  };
+
+  // --- JURI SCORING LOGIC ---
+  const [isScoring, setIsScoring] = useState(false);
+
+  const handleSubmitScore = async (id_peserta: string, scoreValue: number) => {
+    if (scoreValue < 0 || scoreValue > 100) {
+      return alert("Skor harus berada di antara 0 hingga 100!");
+    }
+    
+    setIsScoring(true);
+    try {
+      const { error } = await supabase
+        .from('competition_entries') 
+        .update({ score: scoreValue })
+        .eq('id', id_peserta);
+
+      if (error) throw error;
+      
+      // Refresh data agar skor terbaru langsung muncul di layar
+      fetchHQData(); 
+      alert("✅ Skor berhasil dikunci ke dalam sistem!");
+    } catch (error) {
+      console.error("Gagal menyimpan skor:", error);
+      alert("❌ Terjadi kesalahan saat menyimpan skor.");
+    } finally {
+      setIsScoring(false);
     }
   };
 
@@ -463,6 +512,12 @@ export default function HQDashboardLight() {
           >
             <Users size={16} /> Master Data Peserta
           </button>
+          <button 
+            onClick={() => setActiveTab("PENILAIAN")}
+            className={`px-6 py-2.5 rounded-2xl font-black text-sm transition-all flex items-center gap-2 ${activeTab === "PENILAIAN" ? "bg-emerald-600 text-white shadow-lg shadow-emerald-200 scale-105" : "bg-white/50 text-slate-500 hover:bg-white hover:text-emerald-600 border border-transparent hover:border-emerald-100"}`}
+          >
+            <span>⚖️</span> Panel Penilaian
+          </button>
         </div>
 
         {/* MAIN DATA PANELS */}
@@ -574,7 +629,6 @@ export default function HQDashboardLight() {
                               {p.payment_status === 'Verified' ? 'TERVERIFIKASI' : p.payment_status === 'Paid' ? 'MENUNGGU REVIEW' : 'BELUM BAYAR'}
                             </span>
                           </td>
-                        )}
                         <td className="py-5 text-right">
                           <div className="flex justify-end gap-2">
                             {activeTab === "VERIFIKASI" ? (
@@ -587,24 +641,38 @@ export default function HQDashboardLight() {
                                 >
                                   <CheckCircle2 size={18} />
                                 </button>
-                                <button 
-                                  onClick={() => updatePaymentStatus(p.id, 'Wait')}
-                                  disabled={isSaving}
-                                  className="p-2.5 bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white rounded-2xl transition-all shadow-sm"
-                                  title="Tolak"
-                                >
-                                  <X size={18} />
-                                </button>
+                                  <button 
+                                    onClick={() => updatePaymentStatus(p.id, 'Wait')}
+                                    disabled={isSaving}
+                                    className="p-2.5 bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white rounded-2xl transition-all shadow-sm"
+                                    title="Tolak"
+                                  >
+                                    <X size={18} />
+                                  </button>
+                                  <button 
+                                    onClick={() => setSelectedTicket(p)}
+                                    className="px-3 py-1 bg-blue-50 text-blue-600 border border-blue-100 rounded-xl text-[10px] font-black hover:bg-blue-600 hover:text-white shadow-sm transition-all flex items-center gap-1"
+                                    title="Lihat Tiket"
+                                  >
+                                    🎫 TIKET
+                                  </button>
                               </>
                             ) : (
                               <>
-                                <button 
-                                  onClick={() => setEditingParticipant(p)}
-                                  className="p-2.5 bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white rounded-xl transition-all"
-                                  title="Edit Data"
-                                >
-                                  <Pencil size={16} />
-                                </button>
+                                  <button 
+                                    onClick={() => setEditingParticipant(p)}
+                                    className="p-2.5 bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white rounded-xl transition-all"
+                                    title="Edit Data"
+                                  >
+                                    <Pencil size={16} />
+                                  </button>
+                                  <button 
+                                    onClick={() => setSelectedTicket(p)}
+                                    className="px-3 py-1 bg-blue-50 text-blue-600 border border-blue-100 rounded-xl text-[10px] font-black hover:bg-blue-600 hover:text-white shadow-sm transition-all"
+                                    title="Lihat Tiket"
+                                  >
+                                    🎫 TIKET
+                                  </button>
                                 <button 
                                   onClick={() => resetPassword(p.email)}
                                   className="p-2.5 bg-slate-100 text-slate-600 hover:bg-slate-600 hover:text-white rounded-xl transition-all"
@@ -710,7 +778,165 @@ export default function HQDashboardLight() {
           </div>
         </div>
       )}
+      {/* ========================================= */}
+      {/* 🎫 MODAL E-TICKET (LIQUID GLASS ID) */}
+      {/* ========================================= */}
+      {selectedTicket && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-white p-6 md:p-8 rounded-[2.5rem] shadow-2xl max-w-sm w-full relative border border-white/60">
+            
+            {/* Tombol Tutup */}
+            <button 
+              onClick={() => setSelectedTicket(null)}
+              className="absolute -top-4 -right-4 w-10 h-10 bg-rose-500 hover:bg-rose-600 text-white rounded-full font-bold shadow-lg transition-transform hover:scale-110 flex items-center justify-center border-4 border-white"
+            >
+              <X size={20} />
+            </button>
 
+            {/* Area yang akan diubah jadi PNG (The Ticket) */}
+            <div id="ncc-ticket" className="relative bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-8 text-white overflow-hidden shadow-inner aspect-[2/3] flex flex-col justify-between">
+              {/* Ornamen Tiket */}
+              <div className="absolute top-[-20%] right-[-20%] w-48 h-48 bg-white/10 rounded-full blur-3xl"></div>
+              <div className="absolute bottom-[-10%] left-[-10%] w-40 h-40 bg-indigo-400/30 rounded-full blur-2xl"></div>
+              
+              <div>
+                {/* Header Tiket */}
+                <div className="flex justify-between items-center border-b border-white/20 pb-5 mb-6 relative z-10">
+                  <div>
+                    <p className="text-[10px] font-black tracking-[0.2em] text-blue-200 uppercase">Official Ticket</p>
+                    <h2 className="text-2xl font-black tracking-tighter">NCC 13th</h2>
+                  </div>
+                  <div className="bg-white/20 px-3 py-1 rounded-full backdrop-blur-md border border-white/20">
+                    <p className="text-[9px] font-black uppercase tracking-tight">{selectedTicket.category}</p>
+                  </div>
+                </div>
+
+                {/* Info Peserta */}
+                <div className="space-y-5 relative z-10">
+                  <div>
+                    <p className="text-[10px] font-black text-blue-200 uppercase tracking-widest mb-1 shadow-sm">Nama Peserta</p>
+                    <p className="text-xl font-black leading-tight uppercase">{selectedTicket.full_name}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-blue-200 uppercase tracking-widest mb-1">Asal Instansi</p>
+                    <p className="text-sm font-bold opacity-90">{selectedTicket.school}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* QR Code Section */}
+              <div className="mt-8 bg-white p-5 rounded-3xl flex items-center justify-between relative z-10 gap-4 shadow-2xl border border-white">
+                <div className="w-20 h-20 bg-white shrink-0">
+                  {/* Mesin QR Code Generate Otomatis */}
+                  <QRCode 
+                    value={`NCC13-VERIFIED-${selectedTicket.id}`} 
+                    size={100} 
+                    style={{ height: "auto", maxWidth: "100%", width: "100%" }} 
+                  />
+                </div>
+                <div className="text-right text-slate-800">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Registration ID</p>
+                  <p className="text-xs font-black font-mono break-all leading-tight text-blue-600">NCC-{String(selectedTicket.id).slice(0, 8).toUpperCase()}</p>
+                  <div className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-green-50 text-green-600 rounded-full border border-green-100 mt-2">
+                    <CheckCircle2 size={10} />
+                    <p className="text-[9px] font-black">VERIFIED</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Tombol Aksi */}
+            <div className="mt-8">
+              <button 
+                onClick={downloadTicket}
+                className="w-full py-4 bg-indigo-600 hover:bg-slate-900 text-white font-black text-xs uppercase tracking-widest rounded-2xl transition-all shadow-xl active:scale-95 flex items-center justify-center gap-3"
+              >
+                <Download size={16} /> Unduh ID Card (PNG)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PORTAL PENILAIAN */}
+      {activeTab === "PENILAIAN" && (
+        <div className="max-w-7xl mx-auto px-4 pb-20">
+          <div className="bg-white/70 backdrop-blur-xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-8 rounded-[2.5rem] animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+              <div>
+                <h3 className="text-2xl font-black text-slate-800 tracking-tight">⚖️ Panel Penilaian & Leaderboard</h3>
+                <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mt-1">Sistem Scoring NCC ke-13</p>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-200 text-xs text-slate-400 uppercase tracking-[0.2em] font-black">
+                    <th className="pb-6">Peringkat & Peserta</th>
+                    <th className="pb-6">Kategori</th>
+                    <th className="pb-6 text-center">Skor Akhir (0-100)</th>
+                    <th className="pb-6 text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="text-sm text-slate-700">
+                  {participants
+                    .filter(p => categoryFilter === "ALL" || p.category === categoryFilter)
+                    .sort((a, b) => (b.score || 0) - (a.score || 0))
+                    .map((row, index) => (
+                    <tr key={row.id} className="border-b border-slate-50 group hover:bg-slate-50/50 transition-all">
+                      <td className="py-6">
+                        <div className="flex items-center gap-5">
+                          <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-black shadow-sm ${
+                            index === 0 ? "bg-amber-100 text-amber-600 border border-amber-200" : 
+                            index === 1 ? "bg-slate-100 text-slate-500 border border-slate-200" : 
+                            index === 2 ? "bg-orange-50 text-orange-600 border border-orange-100" : 
+                            "bg-slate-50 text-slate-400"
+                          }`}>
+                            {index + 1}
+                          </div>
+                          <div>
+                            <p className="font-black text-slate-800 text-base">{row.full_name}</p>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{row.school}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-6">
+                        <span className="px-3 py-1 bg-indigo-50 text-indigo-600 text-[10px] font-black rounded-lg border border-indigo-100 uppercase">{row.category}</span>
+                      </td>
+                      <td className="py-6">
+                        <div className="flex justify-center">
+                          <input 
+                            type="number" 
+                            defaultValue={row.score || ""}
+                            id={`score-input-${row.id}`}
+                            className="w-24 px-4 py-3 text-center bg-slate-100 border-none rounded-2xl font-black text-emerald-600 focus:ring-2 focus:ring-emerald-500 outline-none transition-all text-lg"
+                            placeholder="0"
+                            min="0"
+                            max="100"
+                          />
+                        </div>
+                      </td>
+                      <td className="py-6 text-right">
+                        <button 
+                          disabled={isScoring}
+                          onClick={() => {
+                            const inputElement = document.getElementById(`score-input-${row.id}`) as HTMLInputElement;
+                            if (inputElement) handleSubmitScore(row.id, Number(inputElement.value));
+                          }}
+                          className="px-6 py-3 bg-emerald-600 hover:bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-emerald-200 hover:shadow-none transition-all active:scale-95 disabled:opacity-50"
+                        >
+                          {isScoring ? "..." : "Kunci Nilai"}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
