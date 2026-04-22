@@ -551,7 +551,6 @@ export default function HQDashboardLight() {
               </ResponsiveContainer>
             </div>
           </div>
-        </div>
 
         {/* AREA TAB KONTROL - Navigasi Ruang Kerja */}
         <div className="flex gap-4 mb-2 border-b border-slate-200 pb-4 overflow-x-auto">
@@ -1017,7 +1016,9 @@ export default function HQDashboardLight() {
             </div>
           </div>
         </div>
-      )}
+        </div>
+      </div>
+    )}
 
       {/* PORTAL PENILAIAN */}
       {activeTab === "PENILAIAN" && (
