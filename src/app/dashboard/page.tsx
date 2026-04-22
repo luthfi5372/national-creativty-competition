@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -106,6 +107,7 @@ export default function DashboardPage() {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [paymentPreview, setPaymentPreview] = useState<string | null>(null);
+  const [paymentFile, setPaymentFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isTicketOpen, setIsTicketOpen] = useState(false);
@@ -389,6 +391,7 @@ export default function DashboardPage() {
   const handlePaymentUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setPaymentFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setPaymentPreview(reader.result as string);
@@ -397,24 +400,49 @@ export default function DashboardPage() {
     }
   };
 
-  const submitPaymentProof = async () => {
-    if (!selectedEntry || !paymentPreview) return;
-    setIsUploading(true);
-    
-    // Minimal delay for UX flow
-    await new Promise(r => setTimeout(r, 800));
-    
-    const { userUploadPaymentProof } = await import("@/lib/localAuth");
-    const res = userUploadPaymentProof(selectedEntry.id, paymentPreview);
-    
-    if (res.success) {
-      setIsPaymentModalOpen(false);
-      setPaymentPreview(null);
+  const handleUploadBukti = async (e: React.ChangeEvent<HTMLInputElement>, entry: CompetitionEntry) => {
+    try {
+      setIsUploading(true);
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Akses ditolak. Sesi tidak valid.");
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `TF-${entry.id}-${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('payment-proofs')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('payment-proofs')
+        .getPublicUrl(filePath);
+
+      const { error: updateError } = await supabase
+        .from('competition_entries')
+        .update({ 
+          payment_proof_url: publicUrl,
+          payment_status: 'Pending' 
+        })
+        .eq('id', entry.id);
+
+      if (updateError) throw updateError;
+
+      alert("✅ Bukti transfer berhasil dikirim! Menunggu verifikasi Markas Besar.");
       refreshData();
-    } else {
-      alert(res.error);
+      
+    } catch (error: any) {
+      console.error("Gagal upload:", error);
+      alert("❌ Terjadi kesalahan: " + error.message);
+    } finally {
+      setIsUploading(false);
     }
-    setIsUploading(false);
   };
 
   const handlePrint = () => {
@@ -1166,33 +1194,41 @@ export default function DashboardPage() {
                           <span className="px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-600 border border-emerald-100 shadow-sm flex items-center gap-1.5 flex-nowrap whitespace-nowrap">
                              <CheckCircle2 size={12}/> PAID / LUNAS
                           </span>
-                        ) : entry.paymentStatus === "Paid" ? (
+                        ) : entry.paymentStatus === "Pending" ? (
                           <span className="px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-indigo-50 text-indigo-600 border border-indigo-100 shadow-sm flex items-center gap-1.5 flex-nowrap whitespace-nowrap animate-pulse">
                              <Clock size={12}/> VERIFIKASI PANITIA
                           </span>
                         ) : (
-                          <span className="px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-amber-50 text-amber-600 border border-amber-100 shadow-sm flex items-center gap-1.5 flex-nowrap whitespace-nowrap">
-                             <AlertCircle size={12}/> BELUM BAYAR
-                          </span>
+                          <div className="flex items-center gap-3">
+                            {/* BADGE STATUS LAMA */}
+                            <span className="px-3 py-1.5 bg-amber-50 text-amber-600 font-bold rounded-xl text-[10px] border border-amber-200 flex items-center gap-1 whitespace-nowrap">
+                              <AlertCircle size={12}/> BELUM BAYAR
+                            </span>
+                            
+                            {/* TOMBOL UPLOAD BARU DI SEBELAHNYA */}
+                            <label className="cursor-pointer px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-[10px] transition-all shadow-sm flex items-center gap-2 whitespace-nowrap">
+                              📤 Upload Bukti
+                              <input 
+                                type="file" 
+                                accept="image/*"
+                                className="hidden" 
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) alert(`File ${file.name} terpilih! Tombol Upload sudah di posisi yang benar.`);
+                                }}
+                              />
+                            </label>
+                          </div>
                         )}
                       </div>
                     </td>
                     <td className="px-8 py-6 text-right">
-                      {(entry.paymentStatus === "Wait" || entry.paymentStatus === "None") ? (
-                        <button 
-                          onClick={() => { setSelectedEntry(entry); setIsPaymentModalOpen(true); }}
-                          className="text-white bg-indigo-600 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-100 hover:scale-105 active:scale-95 transition-all"
-                        >
-                           Konfirmasi
-                        </button>
-                      ) : (
-                        <button 
-                          onClick={() => { setSelectedEntry(entry); setIsInvoiceOpen(true); }}
-                          className="text-indigo-600 text-[10px] font-black uppercase tracking-widest px-6 py-2.5 bg-indigo-50 rounded-xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
-                        >
-                           Invoice
-                        </button>
-                      )}
+                       <button 
+                         onClick={() => { setSelectedEntry(entry); setIsInvoiceOpen(true); }}
+                         className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm transition-all"
+                       >
+                         INVOICE
+                       </button>
                     </td>
                   </tr>
                 ))
@@ -1201,6 +1237,87 @@ export default function DashboardPage() {
           </table>
         </div>
       </div>
+      
+      {/* SEKSI KONFIRMASI PEMBAYARAN CEPAT (Berdasarkan Blueprint Admin) */}
+      {entries.some(e => e.paymentStatus === "Wait" || e.paymentStatus === "None") && (
+        <div className="bg-white/70 backdrop-blur-xl border border-white/60 p-8 rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] max-w-2xl animate-in zoom-in-95 duration-500">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center font-bold text-2xl shadow-inner">
+              🧾
+            </div>
+            <div>
+              <h3 className="font-black text-slate-900 text-xl tracking-tight leading-none mb-1">Konfirmasi Pembayaran</h3>
+              <p className="text-xs text-slate-500 font-medium">Unggah foto struk transfer Anda untuk verifikasi radar HQ.</p>
+            </div>
+          </div>
+
+          <div className="mt-4 space-y-4">
+            <div className="space-y-2">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[2px] ml-1">
+                Lomba yang akan dikonfirmasi:
+              </label>
+              <select 
+                onChange={(e) => {
+                  const entry = entries.find(ent => ent.id === e.target.value);
+                  if (entry) setSelectedEntry(entry);
+                }}
+                className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer appearance-none"
+              >
+                <option value="">Pilih Pendaftaran...</option>
+                {entries.filter(e => e.paymentStatus === "Wait" || e.paymentStatus === "None").map(e => (
+                  <option key={e.id} value={e.id}>{e.category} - Rp {getCategoryPrice(e.category).toLocaleString("id-ID")}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[2px] ml-1">
+                Pilih File (JPG/PNG)
+              </label>
+              <input 
+                type="file" 
+                accept="image/*"
+                onChange={handlePaymentUpload}
+                disabled={isUploading}
+                className="block w-full text-xs text-slate-500 font-bold
+                  file:mr-4 file:py-3 file:px-6
+                  file:rounded-2xl file:border-0
+                  file:text-[10px] file:font-black file:uppercase file:tracking-widest
+                  file:bg-indigo-600 file:text-white
+                  hover:file:bg-slate-900 transition-all cursor-pointer border border-slate-100 rounded-2xl p-1 bg-white/50"
+              />
+            </div>
+            
+            {(isUploading || paymentPreview) && (
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="pt-4">
+                {paymentPreview && !isUploading && (
+                  <div className="relative w-40 h-40 rounded-2xl overflow-hidden border-4 border-white shadow-lg mb-4">
+                    <img src={paymentPreview} alt="Preview" className="w-full h-full object-cover" />
+                  </div>
+                )}
+                
+                <button
+                  onClick={async () => {
+                    if (!paymentFile || !selectedEntry) return;
+                    // Triggering handleUploadBukti manually for the card
+                    const mockEvent = { target: { files: [paymentFile] } } as any;
+                    handleUploadBukti(mockEvent, selectedEntry);
+                  }}
+                  disabled={isUploading || !selectedEntry || !paymentPreview}
+                  className="w-full py-4 bg-indigo-600 hover:bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-[3px] shadow-xl shadow-indigo-100 transition-all active:scale-95 flex items-center justify-center gap-3 disabled:opacity-50"
+                >
+                  {isUploading ? (
+                    <><div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> Sedang mengirim ke Markas Besar...</>
+                  ) : (
+                    <>Kirim Konfirmasi Sekarang <Sparkles size={16}/></>
+                  )}
+                </button>
+              </motion.div>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="bg-indigo-600 rounded-[3rem] p-10 text-white flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl shadow-indigo-100 text-center md:text-left relative overflow-hidden group">
         <div className="relative z-10">
           <h3 className="text-2xl font-black mb-1 tracking-tight">Butuh bantuan Pembayaran?</h3>

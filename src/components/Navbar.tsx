@@ -21,6 +21,7 @@ import MagneticWrapper from "./ui/MagneticWrapper";
 const navItems = [
   { icon: Home, label: "Beranda", href: "#beranda" },
   { icon: Layers, label: "Kategori", href: "#kategori" },
+  { icon: ClipboardList, label: "Leaderboard", href: "/leaderboard" },
   { icon: Calendar, label: "Jadwal", href: "#jadwal" },
   { icon: UserPlus, label: "Pendaftaran", href: "/daftar" },
   { icon: Mail, label: "Kontak", href: "#kontak" },

@@ -105,8 +105,19 @@ export async function fetchHybridEntries(email: string) {
     }
   }
 
-  // 3. Merge (Simple deduplication by category if both exist)
-  const combined = [...supabaseEntries];
+  // 3. Merge and Normalize (Simple deduplication by category if both exist)
+  const normalizedSupabase = supabaseEntries.map(s => ({
+    ...s,
+    fullName: s.full_name,
+    teamSize: s.team_size,
+    paymentStatus: s.payment_status,
+    submittedAt: s.created_at,
+    submissionStatus: s.submission_status,
+    submissionUrl: s.submission_url,
+    paymentProofUrl: s.payment_proof_url
+  }));
+
+  const combined = [...normalizedSupabase];
   localEntries.forEach(local => {
     const exists = combined.find(s => s.category === local.category);
     if (!exists) combined.push(local);
@@ -460,6 +471,51 @@ export async function adminFetchAllScores() {
     return { data, error: null };
   } catch (err: any) {
     console.error("Admin fetch all scores error:", err);
+    return { data: null, error: err.message };
+  }
+}
+
+/** PUBLIC MODULE: Fetch Leaderboard Data */
+export async function fetchPublicLeaderboard() {
+  const supabase = createClient();
+  try {
+    const { data, error } = await supabase
+      .from('competition_entries')
+      .select(`
+        id,
+        full_name,
+        school,
+        category,
+        payment_status,
+        jury_scores (
+          total_score
+        )
+      `)
+      .eq('payment_status', 'Verified');
+
+    if (error) throw error;
+
+    const leaderboard = data.map(entry => {
+      const scores = entry.jury_scores || [];
+      const averageScore = scores.length > 0 
+        ? Math.round(scores.reduce((sum: number, s: any) => sum + s.total_score, 0) / scores.length) 
+        : 0;
+      
+      return {
+        id: entry.id,
+        name: entry.full_name,
+        school: entry.school,
+        category: entry.category,
+        score: averageScore
+      };
+    });
+
+    return { 
+      data: leaderboard.sort((a, b) => b.score - a.score), 
+      error: null 
+    };
+  } catch (err: any) {
+    console.error("Fetch leaderboard error:", err);
     return { data: null, error: err.message };
   }
 }

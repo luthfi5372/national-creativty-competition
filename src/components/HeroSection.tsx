@@ -105,11 +105,23 @@ export default function HeroSection() {
 
             {/* Secondary CTA */}
             <MagneticWrapper>
+              <Link
+                href="/leaderboard"
+                className="group px-8 py-4 rounded-xl font-semibold text-sm text-indigo-700 bg-indigo-50 border border-indigo-100 hover:bg-indigo-100 transition-all shadow-sm flex items-center gap-2"
+              >
+                <Trophy size={16} className="text-amber-500 group-hover:scale-125 transition-transform" />
+                Live Ranking
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              </Link>
+            </MagneticWrapper>
+
+            {/* Third CTA */}
+            <MagneticWrapper>
               <a
                 href="#kategori"
                 className="px-8 py-4 rounded-xl font-semibold text-sm text-slate-700 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-colors shadow-sm"
               >
-                Lihat Kategori Lomba
+                Kategori Lomba
               </a>
             </MagneticWrapper>
           </motion.div>

@@ -39,10 +39,30 @@ export default function JuryDashboard() {
     loadData();
   }, [selectedCategory]);
 
+  const JURI_EMAILS = [
+    "luthfi5372@gmail.com",
+    "admin@ncc.id",
+    "juri@ncc.id",
+    "evaluator@ncc.id"
+  ];
+
   async function loadData() {
     setIsLoading(true);
     const supabase = createClient();
-    const { data: { user: supabaseUser } } = await supabase.auth.getUser();
+    const { data: { user: supabaseUser }, error: authError } = await supabase.auth.getUser();
+    
+    // 🛡️ SECURITY GUARD: Only authorized judges!
+    if (!supabaseUser || authError) {
+      router.replace('/login');
+      return;
+    }
+    
+    if (!JURI_EMAILS.includes(supabaseUser.email || "")) {
+      alert("⛔ AKSES DITOLAK! Anda bukan Juri resmi NCC.");
+      router.replace('/dashboard');
+      return;
+    }
+
     setUser(supabaseUser);
 
     const catParam = selectedCategory === "SEMUA" ? undefined : selectedCategory;
