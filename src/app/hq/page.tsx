@@ -321,11 +321,14 @@ export default function HQDashboardLight() {
         {/* TOPBAR / HEADER (MAHA KARYA STYLE) */}
         <header className="h-44 md:h-24 bg-[#F8FAFC]/80 backdrop-blur-md flex flex-col md:flex-row items-start md:items-center justify-between px-8 sticky top-0 z-30 gap-4 py-4 md:py-0 border-b border-white/40">
           <div>
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-              {activeTab === "RINGKASAN" ? "Dashboard" : 
-               activeTab === "VERIFIKASI" ? "Antrean Verifikasi" : 
-               activeTab === "USERS" ? "Data Peserta" : "Panel Penilaian"}
-            </h2>
+            <div className="flex items-center gap-2">
+               <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+                 {activeTab === "RINGKASAN" ? "Dashboard" : 
+                  activeTab === "VERIFIKASI" ? "Antrean Verifikasi" : 
+                  activeTab === "USERS" ? "Data Peserta" : "Panel Penilaian"}
+               </h2>
+               <span className="bg-blue-600 text-[8px] font-black text-white px-2 py-0.5 rounded-full tracking-widest shadow-sm">v1.0.1</span>
+            </div>
             <p className="text-slate-500 text-xs mt-1 font-medium italic">
                Pantau pergerakan data pendaftaran NCC 13th secara real-time.
             </p>
