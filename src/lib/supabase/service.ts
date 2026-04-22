@@ -495,17 +495,19 @@ export async function fetchPublicLeaderboard() {
 
     if (error) throw error;
 
-    const leaderboard = data.map(entry => {
-      const scores = entry.jury_scores || [];
+    const leaderboard = (data || []).map(entry => {
+      // Pastikan jury_scores adalah array, jika null/undefined jadikan array kosong
+      const scores = Array.isArray(entry.jury_scores) ? entry.jury_scores : [];
+      
       const averageScore = scores.length > 0 
-        ? Math.round(scores.reduce((sum: number, s: any) => sum + s.total_score, 0) / scores.length) 
+        ? Math.round(scores.reduce((sum: number, s: any) => sum + (s.total_score || 0), 0) / scores.length) 
         : 0;
       
       return {
         id: entry.id,
-        name: entry.full_name,
-        school: entry.school,
-        category: entry.category,
+        name: entry.full_name || "Peserta NCC",
+        school: entry.school || "-",
+        category: entry.category || "General",
         score: averageScore
       };
     });
