@@ -128,6 +128,77 @@ export default function RingkasanTab({
            </div>
         </div>
       </div>
+
+      {/* TABLE RECENT ENTRIES (MAHA KARYA STYLE - REAL DATA INTEGRATION) */}
+      <div className="lg:col-span-3 bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-8 duration-700">
+        <div className="p-8 border-b border-slate-50 flex justify-between items-center">
+          <div>
+            <h3 className="text-lg font-black text-slate-800 tracking-tight">Pendaftaran Terbaru</h3>
+            <p className="text-xs text-slate-500 font-medium">Inilah jantung data real-time dari pangkalan data Supabase.</p>
+          </div>
+          <button className="text-xs font-black uppercase text-blue-600 tracking-widest hover:text-blue-700 group transition-all">
+             Lihat Semua Peserta <span className="inline-block group-hover:translate-x-1 transition-transform">→</span>
+          </button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm text-slate-600">
+            <thead className="bg-[#F8FAFC] text-[10px] text-slate-400 font-black border-b border-slate-50 uppercase tracking-widest">
+              <tr>
+                <th className="py-5 px-8">ID Pesanan</th>
+                <th className="py-5 px-8">Nama Peserta</th>
+                <th className="py-5 px-8">Kategori</th>
+                <th className="py-5 px-8">Biaya</th>
+                <th className="py-5 px-8">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {participants.slice(0, 5).map((entry: any, idx: number) => (
+                <tr key={idx} className="hover:bg-slate-50/50 transition-colors group">
+                  <td className="py-5 px-8 font-bold text-slate-800 text-xs">NCC-{String(entry.id).slice(0, 8).toUpperCase()}</td>
+                  <td className="py-5 px-8 flex items-center gap-3">
+                     <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-black text-xs uppercase shadow-sm group-hover:scale-110 transition-transform">
+                       {(entry.full_name || entry.email || "P").charAt(0)}
+                     </div>
+                     <div className="flex flex-col">
+                        <span className="font-bold text-slate-900 leading-none mb-1">{entry.full_name || "Peserta Anonim"}</span>
+                        <span className="text-[10px] text-slate-400 font-medium">{entry.email}</span>
+                     </div>
+                  </td>
+                  <td className="py-5 px-8 font-medium italic text-slate-500">{entry.category || "Belum Pilih"}</td>
+                  <td className="py-5 px-8 font-black text-slate-900 text-xs">Rp 150.000</td>
+                  <td className="py-5 px-8">
+                    <div className="flex flex-col gap-2">
+                       <span className={`px-3 py-1.5 rounded-xl text-[9px] font-black flex items-center w-max gap-1.5 uppercase tracking-wider
+                        ${entry.payment_status === 'Verified' ? 'bg-emerald-50 text-emerald-600' : 
+                          entry.payment_status === 'Pending' ? 'bg-amber-50 text-amber-600' : 'bg-slate-100 text-slate-600'}
+                      `}>
+                        <div className={`w-1.5 h-1.5 rounded-full ${entry.payment_status === 'Verified' ? 'bg-emerald-500' : entry.payment_status === 'Pending' ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]' : 'bg-slate-500'}`}></div>
+                        {entry.payment_status || "Pending"}
+                      </span>
+                      
+                      {entry.payment_proof_url && (
+                        <a 
+                          href={entry.payment_proof_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-[9px] font-black text-blue-600 hover:text-indigo-700 flex items-center gap-1 uppercase tracking-widest border-b border-transparent hover:border-blue-600 w-max transition-all"
+                        >
+                          Lihat Bukti TF <TrendingUp size={10} />
+                        </a>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {participants.length === 0 && (
+                <tr>
+                   <td colSpan={5} className="py-20 text-center text-slate-400 font-bold italic">Belum ada jantung data yang berdenyut...</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }
