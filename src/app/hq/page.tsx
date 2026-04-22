@@ -414,7 +414,6 @@ export default function HQDashboardLight() {
             </button>
           </div>
         </div>
-        </div>
 
         {/* METRICS & SWITCH */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
