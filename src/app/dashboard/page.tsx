@@ -1202,7 +1202,7 @@ export default function DashboardPage() {
                           <div className="flex items-center gap-3">
                             {/* BADGE STATUS LAMA */}
                             <span className="px-3 py-1.5 bg-amber-50 text-amber-600 font-bold rounded-xl text-[10px] border border-amber-200 flex items-center gap-1 whitespace-nowrap">
-                              <AlertCircle size={12}/> BELUM BAYAR
+                              <AlertCircle size={12}/> ⚠️ BELUM BAYAR [UPDATE LIVE]
                             </span>
                             
                             {/* TOMBOL UPLOAD BARU DI SEBELAHNYA */}
