@@ -311,33 +311,45 @@ export default function HQDashboardLight() {
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-800">
+    <div className="flex min-h-screen bg-[#F8FAFC] font-sans text-slate-800">
       {/* SIDEBAR NAVIGATION */}
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} />
 
       {/* MAIN CONTENT AREA */}
       <main className="flex-1 flex flex-col min-w-0">
-        {/* TOPBAR / HEADER */}
-        <header className="h-20 bg-white border-b border-slate-100 flex items-center justify-between px-8 sticky top-0 z-30">
+        {/* TOPBAR / HEADER (MAHA KARYA STYLE) */}
+        <header className="h-24 bg-[#F8FAFC]/80 backdrop-blur-md flex items-center justify-between px-8 sticky top-0 z-30">
           <div>
-            <h2 className="text-xl font-black text-slate-800 tracking-tight">
-              {activeTab === "RINGKASAN" ? "Dashboard Overview" : "Command Center"}
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+              {activeTab === "RINGKASAN" ? "Dashboard" : 
+               activeTab === "VERIFIKASI" ? "Antrean Verifikasi" : 
+               activeTab === "USERS" ? "Data Peserta" : "Panel Penilaian"}
             </h2>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">
-              {new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            <p className="text-slate-500 text-xs mt-1 font-medium italic">
+               Pantau pergerakan data pendaftaran NCC 13th secara real-time.
             </p>
           </div>
+          
           <div className="flex items-center gap-4">
+            {/* Filter Tanggal (Masterpiece Detail) */}
+            <div className="flex items-center gap-3 bg-white px-4 py-3 rounded-xl border border-slate-100 text-xs font-black text-slate-600 shadow-sm cursor-pointer hover:bg-slate-50 transition-colors">
+              <Calendar size={16} className="text-slate-400" />
+              {new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' })}
+            </div>
+
+            {/* Tombol Export */}
             <button 
               onClick={handleExportCSV}
-              className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-100 flex items-center gap-2 hover:bg-slate-900 transition-all active:scale-95"
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-blue-200 active:scale-95"
             >
-              <Download size={16} /> Export Master Data
+              <Download size={16} />
+              Export CSV
             </button>
-            <div className="w-px h-8 bg-slate-100 mx-2" />
-            <div className="flex items-center gap-3 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">
-               <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-               <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Server: Online</span>
+
+            {/* Notifikasi & Profil (Masterpiece Detail) */}
+            <div className="h-12 w-12 bg-white border border-slate-100 rounded-xl flex items-center justify-center text-slate-400 shadow-sm relative hover:text-blue-600 transition-colors cursor-pointer group">
+              <Bell size={20} className="group-hover:rotate-12 transition-transform" />
+              <span className="absolute top-3 right-3 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-bounce"></span>
             </div>
           </div>
         </header>
@@ -346,21 +358,22 @@ export default function HQDashboardLight() {
         <div className="p-8 space-y-8 animate-in fade-in duration-700">
           {/* STATS GRID */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <StatCard title="Total Pendaftar" value={stats.total} icon={Users} color="text-indigo-600" isLoading={isLoading} trend={{ value: "+12%", isUp: true }} />
-            <StatCard title="Verified" value={stats.verified} icon={ShieldCheck} color="text-emerald-600" isLoading={isLoading} trend={{ value: "+8%", isUp: true }} />
-            <StatCard title="Review Antrean" value={stats.pending} icon={Clock} color="text-amber-500" isLoading={isLoading} trend={{ value: "-4%", isUp: false }} />
+            <StatCard title="Total Pendaftar" value={stats.total} icon={Users} color="text-blue-600" isLoading={isLoading} trend={{ value: "+15.5%", isUp: true }} />
+            <StatCard title="Terverifikasi" value={stats.verified} icon={ShieldCheck} color="text-green-600" isLoading={isLoading} trend={{ value: "+8.4%", isUp: true }} />
+            <StatCard title="Menunggu Review" value={stats.pending} icon={Clock} color="text-amber-500" isLoading={isLoading} trend={{ value: "-10.5%", isUp: false }} />
             
-            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-center">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Registrasi</span>
-                <div className={`px-2 py-0.5 rounded-full text-[9px] font-black ${isRegOpen ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-500'}`}>
+            <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-6 rounded-2xl shadow-xl shadow-blue-200/50 flex flex-col justify-between text-white relative overflow-hidden group">
+               <div className="absolute top-[-20%] right-[-20%] w-20 h-20 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform"></div>
+               <div className="flex items-center justify-between mb-2 relative z-10">
+                <span className="text-[10px] font-black text-blue-100 uppercase tracking-widest leading-none">Registrasi</span>
+                <div className={`px-2 py-0.5 rounded-full text-[9px] font-black ${isRegOpen ? 'bg-emerald-400/20 text-emerald-100' : 'bg-red-400/20 text-red-100'}`}>
                    {isRegOpen ? 'OPEN' : 'CLOSED'}
                 </div>
               </div>
               <button 
                 onClick={() => saveSettings(!isRegOpen)}
                 disabled={isSaving}
-                className={`w-full py-2.5 flex items-center justify-center gap-2 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${isRegOpen ? 'bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white'}`}
+                className={`w-full py-2.5 relative z-10 flex items-center justify-center gap-2 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all bg-white text-blue-700 hover:bg-blue-50 shadow-lg active:scale-95`}
               >
                 {isRegOpen ? "Tutup Pendaftaran" : "Buka Pendaftaran"}
               </button>

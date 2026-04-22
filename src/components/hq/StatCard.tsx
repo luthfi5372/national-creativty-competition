@@ -22,27 +22,24 @@ export default function StatCard({
   isLoading 
 }: StatCardProps) {
   return (
-    <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow group">
-      <div className="flex justify-between items-start mb-4">
-        <div className={`p-3 rounded-xl ${color.replace('text-', 'bg-').replace('-600', '-50')} ${color} transition-colors group-hover:scale-110 duration-300`}>
-          <Icon size={24} />
-        </div>
-        {trend && (
-          <div className={`flex items-center gap-1 text-[10px] font-black px-2 py-1 rounded-full ${trend.isUp ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-500'}`}>
-            {trend.isUp ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-            {trend.value}
-          </div>
-        )}
-      </div>
-      <div>
-        <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">{title}</h3>
-        <p className={`text-3xl font-black text-slate-800 tracking-tight`}>
+    <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow h-32">
+      <h4 className="text-slate-500 font-medium text-sm mb-4 leading-none">{title}</h4>
+      <div className="flex items-end justify-between">
+        <h2 className="text-3xl font-black text-slate-800 tracking-tight leading-none">
           {isLoading ? (
             <span className="inline-block w-24 h-8 bg-slate-100 animate-pulse rounded-lg"></span>
           ) : (
             value.toLocaleString()
           )}
-        </p>
+        </h2>
+        {trend && (
+          <span className={`flex items-center text-[10px] font-bold px-2 py-1 rounded-md mb-0.5
+            ${trend.isUp ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50'}
+          `}>
+            {trend.isUp ? <TrendingUp size={14} className="mr-1"/> : <TrendingDown size={14} className="mr-1"/>}
+            {trend.value}
+          </span>
+        )}
       </div>
     </div>
   );

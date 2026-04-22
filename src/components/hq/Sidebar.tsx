@@ -29,51 +29,45 @@ export default function Sidebar({ activeTab, setActiveTab, onLogout }: SidebarPr
     <aside className="w-64 min-h-screen bg-white border-r border-slate-100 flex flex-col sticky top-0 hidden lg:flex">
       {/* LOGO */}
       <div className="p-8">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-200">
-            <ShieldCheck size={24} />
+        <div className="flex items-center gap-3 px-2">
+          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-blue-200">
+            🏆
           </div>
-          <div>
-            <h1 className="font-black text-xl tracking-tight text-slate-800">NCC HQ</h1>
-            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">Command Center</p>
-          </div>
+          <span className="font-bold text-xl tracking-tight text-slate-800">NCC HQ.</span>
         </div>
       </div>
 
       {/* NAVIGATION */}
-      <nav className="flex-1 px-4 space-y-1.5 mt-4">
+      <nav className="flex-1 px-4 space-y-2 mt-4">
         {menuItems.map((item) => (
           <button
             key={item.id}
             onClick={() => setActiveTab(item.id)}
-            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl font-bold text-sm transition-all group ${
+            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl font-medium text-sm transition-all group ${
               activeTab === item.id 
-              ? "bg-indigo-50 text-indigo-600" 
-              : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+              ? "bg-blue-50 text-blue-700" 
+              : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
             }`}
           >
             <div className="flex items-center gap-3">
-              <item.icon size={20} className={activeTab === item.id ? "text-indigo-600" : "text-slate-400 group-hover:text-slate-600"} />
+              <item.icon size={20} className={activeTab === item.id ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600"} />
               {item.label}
             </div>
-            {activeTab === item.id && <ChevronRight size={16} className="text-indigo-600" />}
+            {activeTab === item.id && <ChevronRight size={16} className="text-blue-600" />}
           </button>
         ))}
       </nav>
 
-      {/* SUPPORT CARD */}
-      <div className="p-4 mx-4 mb-8 bg-slate-900 rounded-2xl text-white relative overflow-hidden group border-4 border-slate-800 shadow-xl shadow-slate-200">
-         <div className="absolute top-[-20%] right-[-10%] w-20 h-20 bg-indigo-500 rounded-full blur-2xl opacity-20 group-hover:scale-150 transition-transform"></div>
-         <div className="relative z-10">
-            <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center mb-3">
-               <Headphones size={16} className="text-indigo-300" />
-            </div>
-            <p className="text-xs font-black mb-1">Butuh Bantuan IT?</p>
-            <p className="text-[10px] text-slate-400 mb-3 leading-relaxed">Hubungi Command Center jika ada kendala sistem.</p>
-            <button className="w-full py-2 bg-indigo-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-indigo-600 transition-colors">
-               Hubungi IT
-            </button>
-         </div>
+      {/* PROMO / INFO CARD (MAHA KARYA STYLE) */}
+      <div className="mx-4 mb-8 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-5 text-white shadow-xl shadow-blue-200/50 relative overflow-hidden group">
+        <div className="absolute top-0 right-0 p-3 opacity-20 group-hover:scale-125 transition-transform">
+          <Sparkles size={40}/>
+        </div>
+        <h4 className="font-bold mb-1 relative z-10">Fase Kompetisi</h4>
+        <p className="text-blue-100 text-[10px] mb-4 relative z-10 leading-relaxed">Pendaftaran Gelombang 1 sedang berlangsung aktif.</p>
+        <button className="w-full bg-white text-blue-700 text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl hover:bg-blue-50 transition-colors shadow-lg">
+          Laporan Operasional
+        </button>
       </div>
 
       {/* LOGOUT */}
