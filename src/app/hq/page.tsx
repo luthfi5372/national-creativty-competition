@@ -78,16 +78,22 @@ export default function HQDashboardLight() {
     const checkSecurityClearance = async () => {
       setIsLoading(true);
       try {
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        if (!user || authError) {
+        // ⚡ Ganti getUser() dengan getSession() untuk menghindari Race Condition
+        const { data: { session }, error: authError } = await supabase.auth.getSession();
+        
+        if (!session || authError) {
           router.replace('/login');
           return;
         }
+
+        const user = session.user;
+
         if (!ADMIN_EMAILS.includes(user.email || "")) {
           alert("⛔ AKSES DITOLAK! Anda bukan Admin Markas Besar NCC.");
           router.replace('/dashboard');
           return;
         }
+
         await fetchHQData();
       } catch (err) {
         console.error("Security failure:", err);
@@ -96,7 +102,7 @@ export default function HQDashboardLight() {
       }
     };
     checkSecurityClearance();
-  }, []);
+  }, [router]);
 
   const fetchHQData = async () => {
     try {
