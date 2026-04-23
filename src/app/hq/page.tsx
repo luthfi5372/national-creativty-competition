@@ -13,26 +13,12 @@ import {
   BarChart, Bar
 } from "recharts";
 
-const chartData = [
-  { name: "15 Apr", pendaftar: 4000 },
-  { name: "16 Apr", pendaftar: 3000 },
-  { name: "17 Apr", pendaftar: 5000 },
-  { name: "18 Apr", pendaftar: 4500 },
-  { name: "19 Apr", pendaftar: 6000 },
-  { name: "20 Apr", pendaftar: 8000 },
-  { name: "21 Apr", pendaftar: 10000 },
-];
-
-const barData = [
-  { name: "Olimpiade", total: 8162 },
-  { name: "Speech", total: 4000 },
-  { name: "LKTI", total: 3200 },
-];
-
 export default function ModernHQDashboard() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [realEntries, setRealEntries] = useState<any[]>([]);
+  const [dynamicChartData, setDynamicChartData] = useState<any[]>([]);
+  const [dynamicBarData, setDynamicBarData] = useState<any[]>([]);
   const supabase = createClient();
 
   useEffect(() => {
@@ -57,6 +43,46 @@ export default function ModernHQDashboard() {
 
     fetchRealData();
   }, []);
+
+  // --- MESIN PENGOLAH DATA GRAFIK REAL-TIME ---
+  useEffect(() => {
+    if (realEntries.length === 0) return;
+
+    const categoryMap: Record<string, number> = {};
+    const dateMap: Record<string, { name: string, pendaftar: number, timestamp: number }> = {};
+
+    realEntries.forEach(entry => {
+      // 1. Rekap Data Kategori (Bar Chart)
+      const category = entry.category || "Belum Pilih";
+      categoryMap[category] = (categoryMap[category] || 0) + 1;
+
+      // 2. Rekap Data Tanggal (Line Chart)
+      if (entry.created_at) {
+        const date = new Date(entry.created_at);
+        // Ubah format jadi "23 Apr"
+        const dateStr = date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }); 
+        const timeKey = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+
+        if (!dateMap[timeKey]) {
+          dateMap[timeKey] = { name: dateStr, pendaftar: 0, timestamp: timeKey };
+        }
+        dateMap[timeKey].pendaftar += 1;
+      }
+    });
+
+    // Ubah format objek menjadi Array yang bisa dibaca Recharts
+    const finalBarData = Object.keys(categoryMap).map(key => ({
+      name: key,
+      total: categoryMap[key]
+    }));
+
+    const finalLineData = Object.values(dateMap)
+      .sort((a, b) => a.timestamp - b.timestamp) // Urutkan dari tanggal paling lama ke baru
+      .map(item => ({ name: item.name, pendaftar: item.pendaftar }));
+
+    setDynamicBarData(finalBarData);
+    setDynamicChartData(finalLineData);
+  }, [realEntries]);
 
   if (isLoading) {
     return (
@@ -138,7 +164,7 @@ export default function ModernHQDashboard() {
             </div>
             <div className="h-64 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData}>
+                <LineChart data={dynamicChartData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94A3B8', fontSize: 12}} dy={10} />
                   <YAxis axisLine={false} tickLine={false} tick={{fill: '#94A3B8', fontSize: 12}} dx={-10} />
@@ -156,7 +182,7 @@ export default function ModernHQDashboard() {
             </div>
             <div className="h-64 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={barData}>
+                <BarChart data={dynamicBarData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94A3B8', fontSize: 12}} dy={10} />
                   <Tooltip cursor={{fill: '#F1F5F9'}} contentStyle={{borderRadius: '12px', border: 'none'}} />
