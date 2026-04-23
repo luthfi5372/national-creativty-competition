@@ -19,6 +19,7 @@ export default function ModernHQDashboard() {
   const [realEntries, setRealEntries] = useState<any[]>([]);
   const [dynamicChartData, setDynamicChartData] = useState<any[]>([]);
   const [dynamicBarData, setDynamicBarData] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState("Dashboard");
   const supabase = createClient();
 
   useEffect(() => {
@@ -105,10 +106,10 @@ export default function ModernHQDashboard() {
           </div>
 
           <nav className="space-y-2">
-            <NavItem icon={<LayoutDashboard size={20} />} text="Dashboard" active />
-            <NavItem icon={<Users size={20} />} text="Peserta" />
-            <NavItem icon={<FileCheck size={20} />} text="Verifikasi" badge={realEntries.filter(e => e.payment_status === 'Pending').length.toString()} />
-            <NavItem icon={<Settings size={20} />} text="Pengaturan" />
+            <NavItem icon={<LayoutDashboard size={20} />} text="Dashboard" active={activeTab === "Dashboard"} onClick={() => setActiveTab("Dashboard")} />
+            <NavItem icon={<Users size={20} />} text="Peserta" active={activeTab === "Peserta"} onClick={() => setActiveTab("Peserta")} />
+            <NavItem icon={<FileCheck size={20} />} text="Verifikasi" badge={realEntries.filter(e => e.payment_status === 'Pending').length.toString()} active={activeTab === "Verifikasi"} onClick={() => setActiveTab("Verifikasi")} />
+            <NavItem icon={<Settings size={20} />} text="Pengaturan" active={activeTab === "Pengaturan"} onClick={() => setActiveTab("Pengaturan")} />
           </nav>
         </div>
 
@@ -126,8 +127,13 @@ export default function ModernHQDashboard() {
         
         <header className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
-            <p className="text-slate-500 text-sm mt-1">Pantau pergerakan data pendaftaran NCC 13th.</p>
+            <h1 className="text-2xl font-bold text-slate-900">{activeTab}</h1>
+            <p className="text-slate-500 text-sm mt-1">
+              {activeTab === "Dashboard" && "Pantau pergerakan data pendaftaran NCC 13th."}
+              {activeTab === "Peserta" && "Manajemen seluruh data peserta kompetisi."}
+              {activeTab === "Verifikasi" && "Pusat verifikasi pembayaran dan dokumen."}
+              {activeTab === "Pengaturan" && "Konfigurasi sistem Markas Besar."}
+            </p>
           </div>
           
           <div className="flex items-center gap-4">
@@ -146,7 +152,10 @@ export default function ModernHQDashboard() {
           </div>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        {/* 🎛️ KONTEN TAB: DASHBOARD */}
+        {activeTab === "Dashboard" && (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <StatCard title="Total Pendaftar" value={realEntries.length.toString()} trend="Live" isUp={true} />
           <StatCard title="Terverifikasi" value={realEntries.filter(e => e.payment_status === 'Verified').length.toString()} trend="Aman" isUp={true} />
           <StatCard title="Menunggu Review" value={realEntries.filter(e => e.payment_status === 'Pending').length.toString()} trend="Action Needed" isUp={false} />
@@ -261,24 +270,56 @@ export default function ModernHQDashboard() {
               </tbody>
             </table>
           </div>
-        </div>
+            </div>
+          </>
+        )}
 
+        {/* 🎛️ KONTEN TAB: PESERTA */}
+        {activeTab === "Peserta" && (
+          <div className="bg-white p-12 rounded-2xl border border-slate-100 shadow-sm text-center flex flex-col items-center justify-center min-h-[400px] animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <Users size={64} className="text-slate-200 mb-4" />
+            <h2 className="text-xl font-bold text-slate-800">Modul Peserta</h2>
+            <p className="text-slate-500 mt-2">Daftar lengkap seluruh peserta akan ditampilkan di sini.</p>
+            <button className="mt-6 bg-blue-50 text-blue-600 px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-blue-600 hover:text-white transition-all active:scale-95 shadow-sm">Unduh Data Lengkap</button>
+          </div>
+        )}
+
+        {/* 🎛️ KONTEN TAB: VERIFIKASI */}
+        {activeTab === "Verifikasi" && (
+          <div className="bg-white p-12 rounded-2xl border border-slate-100 shadow-sm text-center flex flex-col items-center justify-center min-h-[400px] animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <FileCheck size={64} className="text-amber-200 mb-4" />
+            <h2 className="text-xl font-bold text-slate-800">Modul Verifikasi Bukti TF</h2>
+            <p className="text-slate-500 mt-2">Anda memiliki {realEntries.filter(e => e.payment_status === 'Pending').length} berkas yang menunggu untuk ditinjau.</p>
+            <button className="mt-6 bg-blue-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-blue-700 transition-all active:scale-95 shadow-md shadow-blue-200">Mulai Verifikasi</button>
+          </div>
+        )}
+
+        {/* 🎛️ KONTEN TAB: PENGATURAN */}
+        {activeTab === "Pengaturan" && (
+          <div className="bg-white p-12 rounded-2xl border border-slate-100 shadow-sm text-center flex flex-col items-center justify-center min-h-[400px] animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <Settings size={64} className="text-slate-200 mb-4" />
+            <h2 className="text-xl font-bold text-slate-800">Konfigurasi Sistem</h2>
+            <p className="text-slate-500 mt-2">Atur periode pendaftaran, kategori lomba, dan akses admin.</p>
+          </div>
+        )}
       </main>
     </div>
   );
 }
 
-function NavItem({ icon, text, active = false, badge }: { icon: React.ReactNode, text: string, active?: boolean, badge?: string }) {
+function NavItem({ icon, text, active = false, badge, onClick }: { icon: React.ReactNode, text: string, active?: boolean, badge?: string, onClick?: () => void }) {
   return (
-    <div className={`flex items-center justify-between px-4 py-3 rounded-xl cursor-pointer transition-all font-medium text-sm
-      ${active ? 'bg-blue-50 text-blue-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}
+    <div 
+      onClick={onClick}
+      className={`flex items-center justify-between px-4 py-3 rounded-xl cursor-pointer transition-all font-medium text-sm
+      ${active ? 'bg-blue-50 text-blue-700 font-bold shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}
     `}>
       <div className="flex items-center gap-3">
         {icon}
-        <span>{text}</span>
+        <span className="tracking-tight">{text}</span>
       </div>
       {badge && badge !== "0" && (
-        <span className="bg-red-100 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-full">
+        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${active ? 'bg-blue-200 text-blue-800' : 'bg-red-100 text-red-600'}`}>
           {badge}
         </span>
       )}
