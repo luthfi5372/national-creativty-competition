@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { 
   LayoutDashboard, Users, FileCheck, Settings, 
   ArrowUpRight, ArrowDownRight, Download, Calendar, 
-  Bell, MoreHorizontal, Sparkles, Search, Filter, Printer, X, IdCard, Megaphone
+  Bell, MoreHorizontal, Sparkles, Search, Filter, Printer, X, IdCard, Megaphone, Send, ArrowRight
 } from "lucide-react";
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -682,146 +682,139 @@ export default function ModernHQDashboard() {
           </div>
         )}
 
-        {/* 🎛️ KONTEN TAB: PENGUMUMAN (SIARAN KOMANDO) */}
+        {/* 🎛️ KONTEN TAB: PENGUMUMAN (BROADCAST CENTER) */}
         {activeTab === "Pengumuman" && (
-          <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="bg-white/50 backdrop-blur-xl border border-white/60 rounded-3xl p-8 md:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-              <div className="flex items-center gap-4 mb-8">
-                <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-200">
-                  <Megaphone size={24} />
+          <div className="bg-white/50 backdrop-blur-xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-2xl p-8 md:p-12 min-h-[500px]">
+            <div className="max-w-3xl mx-auto">
+              
+              {/* Header Ruangan */}
+              <div className="flex items-center gap-4 mb-8 pb-6 border-b border-slate-200/50">
+                <div className="w-14 h-14 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center shadow-inner">
+                  <Megaphone size={28} />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Siaran Komando</h2>
-                  <p className="text-slate-500 text-sm">Kirim pengumuman real-time ke seluruh dashboard peserta NCC.</p>
+                  <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Pusat Siaran Komando</h2>
+                  <p className="text-slate-500 text-sm mt-1">Transmisikan pemberitahuan ke seluruh atau sebagian peserta.</p>
                 </div>
               </div>
 
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="md:col-span-2 space-y-2">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Judul Pengumuman</label>
-                    <input 
-                      type="text" 
-                      value={broadcastTitle}
-                      onChange={(e) => setBroadcastTitle(e.target.value)}
-                      placeholder="Contoh: Selamat Datang di NCC 13th!" 
-                      className="w-full px-5 py-3.5 bg-white/60 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-slate-700 placeholder:text-slate-400 shadow-sm"
-                    />
-                  </div>
+              {/* Form Pengumuman */}
+              <div className="space-y-6 bg-white/60 p-6 rounded-2xl border border-slate-100 shadow-sm">
+                
+                {/* Opsi Target & Radar */}
+                <div className="space-y-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Target Audiens</label>
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Target Penerima</label>
                     <select 
                       value={broadcastTarget}
-                      onChange={(e) => setBroadcastTarget(e.target.value)}
-                      className="w-full px-5 py-3.5 bg-white/60 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-slate-700 appearance-none shadow-sm"
+                      onChange={(e) => {
+                        setBroadcastTarget(e.target.value);
+                        if (e.target.value !== 'specific') setSelectedUserIds([]); 
+                      }}
+                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 font-medium text-slate-700 shadow-sm"
                     >
-                      <option value="All">Seluruh Peserta</option>
-                      <option value="Verified">Peserta Terverifikasi</option>
-                      <option value="Pending">Menunggu Pembayaran</option>
-                      <option value="specific">Peserta Tertentu (Pilih Manual)</option>
+                      <option value="All">Semua Peserta (Massal)</option>
+                      <option value="Verified">Hanya Peserta Lolos (Verified)</option>
+                      <option value="Pending">Hanya Peserta Belum Lolos (Pending)</option>
+                      <option value="specific">🎯 Peserta Tertentu (Pilih Manual)</option>
                     </select>
                   </div>
-                </div>
 
-                {/* --- SELEKSI PESERTA SPESIFIK (HANYA MUNCUL JIKA TARGET ADALAH SPECIFIC) --- */}
-                {broadcastTarget === "specific" && (
-                  <div className="p-6 bg-slate-50 border border-slate-200 rounded-2xl animate-in fade-in zoom-in-95 duration-300">
-                    <div className="flex justify-between items-center mb-4">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Daftar Peserta NCC ({realEntries.length})</label>
-                      <div className="flex gap-2">
+                  {/* Panel Centang Nama (ANTI-CRASH VERSION) */}
+                  {broadcastTarget === 'specific' && (
+                    <div className="mt-2 border border-blue-200 bg-blue-50/50 rounded-xl p-4">
+                      <div className="flex justify-between items-center mb-3">
+                        <label className="text-xs font-bold text-blue-800 uppercase tracking-wider">
+                          Pilih Sasaran ({(selectedUserIds || []).length} Terpilih)
+                        </label>
                         <button 
-                          type="button"
-                          onClick={() => setSelectedUserIds(realEntries.map(e => e.user_id).filter(id => id))} 
-                          className="text-[10px] font-bold text-blue-600 hover:underline"
+                          onClick={() => {
+                            const entries = realEntries || [];
+                            if ((selectedUserIds || []).length === entries.length && entries.length > 0) {
+                              setSelectedUserIds([]); // Hapus Semua
+                            } else {
+                              setSelectedUserIds(entries.map((e: any) => e.user_id).filter((id: any) => id)); // Pilih Semua
+                            }
+                          }}
+                          className="text-[10px] bg-blue-100 text-blue-700 font-bold px-2 py-1 rounded hover:bg-blue-200 transition-colors"
                         >
-                          Pilih Semua
-                        </button>
-                        <span className="text-slate-300">|</span>
-                        <button 
-                          type="button"
-                          onClick={() => setSelectedUserIds([])} 
-                          className="text-[10px] font-bold text-slate-400 hover:underline"
-                        >
-                          Kosongkan
+                          Pilih Semua / Hapus
                         </button>
                       </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
-                      {realEntries.length === 0 ? (
-                        <p className="text-xs text-slate-400 italic col-span-full py-4 text-center">Belum ada data peserta di radar.</p>
-                      ) : (
-                        realEntries.map((entry) => (
-                          <label 
-                            key={entry.id} 
-                            className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer group ${
-                              selectedUserIds.includes(entry.user_id) 
-                              ? 'bg-blue-50 border-blue-200 shadow-sm' 
-                              : 'bg-white border-slate-100 hover:border-slate-200'
-                            }`}
-                          >
-                            <input 
-                              type="checkbox" 
-                              className="w-4 h-4 rounded-md border-slate-300 text-blue-600 focus:ring-blue-500 transition-all cursor-pointer"
-                              checked={selectedUserIds.includes(entry.user_id)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setSelectedUserIds([...selectedUserIds, entry.user_id]);
-                                } else {
-                                  setSelectedUserIds(selectedUserIds.filter(id => id !== entry.user_id));
-                                }
-                              }}
-                            />
-                            <div className="min-w-0">
-                              <p className="text-xs font-bold text-slate-700 truncate">{entry.full_name}</p>
-                              <p className="text-[10px] text-slate-400 truncate">{entry.school_name || entry.school}</p>
-                            </div>
-                          </label>
-                        ))
-                      )}
-                    </div>
-                    
-                    <div className="mt-4 pt-4 border-t border-slate-200 flex items-center justify-between">
-                       <p className="text-[10px] font-medium text-slate-500 italic">
-                         Terpilih: <span className="font-bold text-blue-600">{selectedUserIds.length}</span> orang
-                       </p>
-                    </div>
-                  </div>
-                )}
 
+                      <div className="max-h-48 overflow-y-auto space-y-1.5 pr-2 custom-scrollbar">
+                        {(!realEntries || realEntries.length === 0) ? (
+                          <p className="text-xs text-slate-500 text-center py-4">Belum ada data peserta di sistem.</p>
+                        ) : (
+                          realEntries.map((entry: any, idx: number) => {
+                            // Gunakan OR fallback agar aman dari undefined
+                            const currentSelected = selectedUserIds || [];
+                            const isChecked = currentSelected.includes(entry.user_id);
+                            
+                            return (
+                              <label key={entry.id || idx} className={`flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition-all ${isChecked ? 'bg-blue-100/50 border-blue-300' : 'bg-white border-slate-200 hover:bg-slate-50'}`}>
+                                <input 
+                                  type="checkbox" 
+                                  checked={isChecked}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSelectedUserIds([...currentSelected, entry.user_id]);
+                                    } else {
+                                      setSelectedUserIds(currentSelected.filter((id: any) => id !== entry.user_id));
+                                    }
+                                  }}
+                                  className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+                                />
+                                <div className="flex flex-col">
+                                  <span className="text-sm font-bold text-slate-800">{entry.full_name || entry.email || "Peserta Anonim"}</span>
+                                  <span className="text-[10px] text-slate-500 font-medium">NCC-{entry.id || "-"} • {entry.competition_type || entry.category || "Belum Pilih"}</span>
+                                </div>
+                              </label>
+                            );
+                          })
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Judul Pesan */}
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Isi Pesan Siaran</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Subjek / Judul Pengumuman</label>
+                  <input 
+                    type="text" 
+                    value={broadcastTitle}
+                    onChange={(e) => setBroadcastTitle(e.target.value)}
+                    placeholder="Contoh: Perbaikan Bukti Transfer" 
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 font-medium text-slate-800 placeholder:text-slate-400 shadow-sm"
+                  />
+                </div>
+
+                {/* Isi Pesan */}
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Isi Pesan Siaran</label>
                   <textarea 
+                    rows={5}
                     value={broadcastMessage}
                     onChange={(e) => setBroadcastMessage(e.target.value)}
-                    rows={5}
-                    placeholder="Tuliskan detail pengumuman Anda di sini..." 
-                    className="w-full px-5 py-4 bg-white/60 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-slate-700 placeholder:text-slate-400 shadow-sm resize-none"
+                    placeholder="Ketik instruksi atau pengumuman Anda di sini..." 
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-slate-700 placeholder:text-slate-400 leading-relaxed shadow-sm"
                   ></textarea>
                 </div>
 
-                <div className="pt-4">
-                  <button 
-                    onClick={handleSendBroadcast}
-                    disabled={isSending}
-                    className="w-full bg-slate-900 hover:bg-blue-600 text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-3 transition-all shadow-xl shadow-slate-900/10 active:scale-[0.98] disabled:opacity-50"
-                  >
-                    {isSending ? (
-                      <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                    ) : (
-                      <>SIARKAN PESAN SEKARANG <ArrowRight size={18} /></>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </div>
+                {/* Tombol Eksekusi */}
+                <button 
+                  onClick={handleSendBroadcast}
+                  disabled={isSending}
+                  className={`w-full mt-4 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-slate-900/20 active:scale-[0.99]
+                    ${isSending ? 'bg-slate-500 cursor-not-allowed' : 'bg-slate-900 hover:bg-slate-800'}
+                  `}
+                >
+                  <Send size={18} className={isSending ? 'animate-pulse' : ''} /> 
+                  {isSending ? 'Menyiarkan Pesan...' : 'Siarkan Pesan Sekarang'}
+                </button>
 
-            <div className="mt-8 p-6 bg-blue-50/50 border border-blue-100 rounded-2xl flex items-start gap-4">
-               <div className="p-2 bg-blue-100 text-blue-600 rounded-lg"><Sparkles size={20}/></div>
-               <div>
-                  <h4 className="text-sm font-bold text-blue-900 mb-1">Tips Komando</h4>
-                  <p className="text-xs text-blue-700 leading-relaxed">Pesan yang Anda kirim akan langsung muncul di halaman Dashboard masing-masing peserta. Gunakan fitur ini untuk informasi mendesak atau ucapan selamat.</p>
-               </div>
+              </div>
             </div>
           </div>
         )}
