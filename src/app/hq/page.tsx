@@ -50,7 +50,9 @@ export default function ModernHQDashboard() {
     }
   };
 
+  // --- MESIN PENGUMPUL DATA & RADAR REAL-TIME ---
   useEffect(() => {
+    // Fungsi penarik data utama
     const fetchRealData = async () => {
       try {
         const { data, error } = await supabase
@@ -70,7 +72,29 @@ export default function ModernHQDashboard() {
       }
     };
 
+    // 1. Tarik data saat Markas Besar pertama kali dibuka
     fetchRealData();
+
+    // 2. 📡 AKTIFKAN SENSOR RADAR (Supabase WebSockets)
+    const radarSubscription = supabase
+      .channel('pantau_pendaftaran_ncc') // Nama saluran bebas
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'competition_entries' }, // Pantau SEMUA perubahan di tabel ini
+        (payload) => {
+          // 🚨 JIKA ADA PERGERAKAN (Daftar baru, update foto, ubah status)
+          console.log("Radar mendeteksi pergerakan data!", payload);
+          
+          // Perintahkan sistem untuk menarik ulang data secara rahasia di latar belakang
+          fetchRealData(); 
+        }
+      )
+      .subscribe();
+
+    // 3. Matikan radar secara otomatis jika Presiden menutup halaman
+    return () => {
+      supabase.removeChannel(radarSubscription);
+    };
   }, []);
 
   // --- MESIN PENGOLAH DATA GRAFIK REAL-TIME ---
