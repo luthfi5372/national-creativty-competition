@@ -148,9 +148,13 @@ export default function ModernHQDashboard() {
   }
 
   return (
-    <div className="flex h-screen bg-[#F8FAFC] text-slate-800 font-sans overflow-hidden">
+    <div className="flex h-screen bg-slate-50 text-slate-800 font-sans overflow-hidden relative">
+      {/* Ornamen Latar Belakang untuk Efek Kaca */}
+      <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-blue-400/20 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="absolute bottom-[-10%] right-[-5%] w-96 h-96 bg-indigo-400/20 rounded-full blur-3xl pointer-events-none"></div>
       
-      <aside className="w-64 bg-white border-r border-slate-100 flex flex-col justify-between p-6">
+      {/* ================= SIDEBAR (LIQUID GLASS) ================= */}
+      <aside className="w-64 bg-white/40 backdrop-blur-2xl backdrop-saturate-150 border-r border-white/60 flex flex-col justify-between p-6 relative z-10 shadow-[4px_0_24px_rgb(0,0,0,0.02)]">
         <div>
           <div className="flex items-center gap-3 mb-10 px-2">
             <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-blue-200">
@@ -199,7 +203,7 @@ export default function ModernHQDashboard() {
               <Download size={16} />
               Export CSV
             </button>
-            <div className="h-10 w-10 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-600 shadow-sm ml-2 relative">
+            <div className="h-10 w-10 bg-white/50 backdrop-blur-md border border-white/60 rounded-full flex items-center justify-center text-slate-600 shadow-sm ml-2 relative">
               <Bell size={18} />
               <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
             </div>
@@ -217,7 +221,7 @@ export default function ModernHQDashboard() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm col-span-2">
+          <div className="bg-white/50 backdrop-blur-xl backdrop-saturate-150 p-6 rounded-2xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] col-span-2">
             <div className="flex justify-between items-center mb-6">
               <div>
                 <h3 className="font-bold text-slate-800">Tren Pendaftaran Harian</h3>
@@ -238,7 +242,7 @@ export default function ModernHQDashboard() {
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+          <div className="bg-white/50 backdrop-blur-xl backdrop-saturate-150 p-6 rounded-2xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
              <div className="flex justify-between items-center mb-6">
               <h3 className="font-bold text-slate-800">Peminat Kategori</h3>
               <MoreHorizontal size={20} className="text-slate-400" />
@@ -260,7 +264,7 @@ export default function ModernHQDashboard() {
 
         {/* 🎛️ KONTEN TAB: PESERTA (BUKU INDUK + LIVE SEARCH) */}
         {activeTab === "Peserta" && (
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="bg-white/50 backdrop-blur-xl backdrop-saturate-150 rounded-2xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="p-6 border-b border-slate-100">
               <div className="flex justify-between items-center mb-6">
                 <div>
@@ -402,7 +406,7 @@ export default function ModernHQDashboard() {
         )}
 
         {activeTab === "Verifikasi" && (
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="bg-white/50 backdrop-blur-xl backdrop-saturate-150 rounded-2xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
               <h3 className="font-bold text-slate-800 flex items-center gap-2">
                 <FileCheck size={20} className="text-blue-600" />
@@ -504,7 +508,7 @@ export default function ModernHQDashboard() {
 
         {/* 🎛️ KONTEN TAB: PENGATURAN */}
         {activeTab === "Pengaturan" && (
-          <div className="bg-white p-12 rounded-2xl border border-slate-100 shadow-sm text-center flex flex-col items-center justify-center min-h-[400px] animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="bg-white/50 backdrop-blur-xl backdrop-saturate-150 p-12 rounded-2xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] text-center flex flex-col items-center justify-center min-h-[400px] animate-in fade-in slide-in-from-bottom-4 duration-500">
             <Settings size={64} className="text-slate-200 mb-4" />
             <h2 className="text-xl font-bold text-slate-800">Konfigurasi Sistem</h2>
             <p className="text-slate-500 mt-2">Atur periode pendaftaran, kategori lomba, dan akses admin.</p>
@@ -537,12 +541,12 @@ function NavItem({ icon, text, active = false, badge, onClick }: { icon: React.R
 
 function StatCard({ title, value, trend, isUp }: { title: string, value: string, trend: string, isUp: boolean }) {
   return (
-    <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+    <div className="bg-white/50 backdrop-blur-xl backdrop-saturate-150 p-6 rounded-2xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col justify-between hover:bg-white/70 transition-all">
       <h4 className="text-slate-500 font-medium text-sm mb-4">{title}</h4>
       <div className="flex items-end justify-between">
         <h2 className="text-3xl font-bold text-slate-800 tracking-tight">{value}</h2>
-        <span className={`flex items-center text-xs font-bold px-2 py-1 rounded-md
-          ${isUp ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50'}
+        <span className={`flex items-center text-xs font-bold px-2 py-1 rounded-md border
+          ${isUp ? 'text-green-700 bg-green-500/10 border-green-500/20' : 'text-red-700 bg-red-500/10 border-red-500/20'}
         `}>
           {isUp ? <ArrowUpRight size={14} className="mr-1"/> : <ArrowDownRight size={14} className="mr-1"/>}
           {trend}
