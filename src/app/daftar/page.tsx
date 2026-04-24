@@ -1,29 +1,19 @@
 "use client";
 
+import { User, Mail, Lock, Type, ArrowRight, AlertCircle, CheckCircle2 } from "lucide-react";
+import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
-import { 
-  User, 
-  Mail, 
-  Lock, 
-  CheckCircle2, 
-  ChevronRight,
-  Sparkles,
-  ShieldCheck,
-  AlertCircle,
-  Type
-} from "lucide-react";
 import { registerLocalUser } from "@/app/actions/auth";
-import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
 
-export default function RegisterMinimalist() {
-  const [form, setForm] = useState({
+export default function DaftarPage() {
+  const [formData, setFormData] = useState({
     username: "",
     fullName: "",
     email: "",
     password: "",
-    confirmPassword: "",
+    confirmPassword: ""
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,38 +29,33 @@ export default function RegisterMinimalist() {
     }
   }, [router]);
 
-  const update = (field: string, val: string) => {
-    setForm(f => ({ ...f, [field]: val }));
-    setError(null);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    // 1. Validation
-    if (!form.username || !form.fullName || !form.email || !form.password || !form.confirmPassword) {
+    // Validation
+    if (!formData.username || !formData.fullName || !formData.email || !formData.password || !formData.confirmPassword) {
       setError("Semua kolom wajib diisi.");
       return;
     }
-    if (form.password.length < 6) {
+    if (formData.password.length < 6) {
       setError("Kata sandi minimal 6 karakter.");
       return;
     }
-    if (form.password !== form.confirmPassword) {
+    if (formData.password !== formData.confirmPassword) {
       setError("Konfirmasi kata sandi tidak cocok.");
       return;
     }
 
     setLoading(true);
     try {
-      const formData = new FormData();
-      formData.append("username", form.username);
-      formData.append("fullName", form.fullName);
-      formData.append("email", form.email);
-      formData.append("password", form.password);
+      const data = new FormData();
+      data.append("username", formData.username);
+      data.append("fullName", formData.fullName);
+      data.append("email", formData.email);
+      data.append("password", formData.password);
 
-      const result = await registerLocalUser(formData);
+      const result = await registerLocalUser(data);
 
       if (result.success) {
         setSubmitted(true);
@@ -89,18 +74,22 @@ export default function RegisterMinimalist() {
 
   if (submitted) {
     return (
-      <main className="min-h-screen bg-[#fafafa] flex items-center justify-center p-6 font-sans">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 relative overflow-hidden p-4 font-sans">
+        {/* --- Ornamen Background Liquid Glass --- */}
+        <div className="absolute top-[-10%] left-[-5%] w-96 h-96 bg-blue-400/20 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute bottom-[-10%] right-[-5%] w-96 h-96 bg-indigo-400/20 rounded-full blur-3xl pointer-events-none"></div>
+
         <motion.div 
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="max-w-md w-full bg-white rounded-[3rem] p-12 shadow-2xl text-center border border-slate-100"
+          className="w-full max-w-[550px] bg-white/70 backdrop-blur-2xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.06)] rounded-3xl p-12 text-center relative z-10"
         >
-          <div className="w-24 h-24 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner">
+          <div className="w-24 h-24 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner border border-emerald-100">
             <CheckCircle2 size={48} />
           </div>
-          <h2 className="text-3xl font-black text-slate-900 mb-4 tracking-tight">Akun Berhasil Dibuat!</h2>
+          <h2 className="text-3xl font-black text-slate-800 mb-4 tracking-tight">Akun Berhasil Dibuat!</h2>
           <p className="text-slate-500 font-medium leading-relaxed mb-8 text-sm">
-            Selamat datang di NCC. Tunggu sebentar, kami sedang mengalihkan Anda ke dashboard untuk melengkapi data lomba...
+            Selamat datang di NCC. Tunggu sebentar, kami sedang mengalihkan Anda ke dashboard...
           </p>
           <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
              <motion.div 
@@ -111,172 +100,154 @@ export default function RegisterMinimalist() {
              />
           </div>
         </motion.div>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[#f8f9fc] flex items-center justify-center p-6 font-sans relative overflow-hidden">
-      {/* Background Decor */}
-      <div className="absolute top-0 right-0 w-[50%] h-[50%] bg-indigo-100/30 blur-[150px] -mr-[10%] -mt-[10%] rounded-full opacity-60 pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[40%] h-[40%] bg-purple-100/30 blur-[120px] -ml-[10%] -mb-[10%] rounded-full opacity-60 pointer-events-none" />
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 relative overflow-hidden p-4 font-sans">
+      {/* --- Ornamen Background Liquid Glass --- */}
+      <div className="absolute top-[-10%] left-[-5%] w-96 h-96 bg-blue-400/20 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="absolute bottom-[-10%] right-[-5%] w-96 h-96 bg-indigo-400/20 rounded-full blur-3xl pointer-events-none"></div>
 
+      {/* --- Kartu Form Utama --- */}
       <motion.div 
-        initial={{ opacity: 0, y: 30 }}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="max-w-xl w-full z-10"
+        className="w-full max-w-[550px] bg-white/70 backdrop-blur-2xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.06)] rounded-3xl p-8 md:p-10 relative z-10"
       >
-        <div className="text-center mb-10">
-          <motion.div 
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-100 rounded-full text-[10px] font-black uppercase tracking-[2px] text-indigo-600 shadow-sm mb-6"
-          >
-            <Sparkles size={12} />
-            National Creativity Competition
-          </motion.div>
-          <h1 
-            className="text-4xl md:text-5xl font-black text-slate-900 mb-3 tracking-tight"
-            style={{ fontFamily: 'var(--font-display, var(--font-space-grotesk))' }}
-          >
-            Daftar Akun
-          </h1>
-          <p className="text-slate-500 text-sm max-w-xs mx-auto leading-relaxed font-medium">
-            Buat akun baru untuk mengakses dashboard pendaftaran dan kompetisi NCC.
-          </p>
+        
+        <div className="text-center mb-8">
+          <div className="inline-block px-3 py-1 bg-blue-50 border border-blue-100 text-blue-600 rounded-full text-[10px] font-bold tracking-widest uppercase mb-4 shadow-sm">
+            ✨ National Creativity Competition
+          </div>
+          <h1 className="text-3xl font-black text-slate-800 mb-2 tracking-tight">Daftar Akun</h1>
+          <p className="text-slate-500 text-sm font-medium">Buat akun baru untuk mengakses dashboard pendaftaran dan kompetisi NCC.</p>
         </div>
 
-        <div className="bg-white/90 backdrop-blur-2xl rounded-[3.5rem] p-10 lg:p-14 shadow-2xl border border-white relative overflow-hidden">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            
-            {/* Grid for User Info */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {/* Username */}
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 text-center md:text-left block">Username</label>
-                <div className="relative group">
-                  <User size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
-                  <input
-                    type="text"
-                    required
-                    value={form.username}
-                    onChange={(e) => update("username", e.target.value)}
-                    className="w-full pl-16 pr-6 py-5 bg-white border border-slate-100 rounded-[2rem] text-sm font-bold text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all shadow-sm"
-                    placeholder="luthfi5372"
-                  />
-                </div>
-              </div>
-
-              {/* Full Name */}
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 text-center md:text-left block">Nama Lengkap</label>
-                <div className="relative group">
-                  <Type size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
-                  <input
-                    type="text"
-                    required
-                    value={form.fullName}
-                    onChange={(e) => update("fullName", e.target.value)}
-                    className="w-full pl-16 pr-6 py-5 bg-white border border-slate-100 rounded-[2rem] text-sm font-bold text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all shadow-sm"
-                    placeholder="Nama Lengkap Anda"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Email */}
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Alamat Email Aktif</label>
+        <form className="space-y-5" onSubmit={handleSubmit}>
+          
+          {/* Baris 1: Username & Nama Lengkap */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-1">Username</label>
               <div className="relative group">
-                <Mail size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
-                <input
-                  type="email"
-                  required
-                  value={form.email}
-                  onChange={(e) => update("email", e.target.value)}
-                  className="w-full pl-16 pr-6 py-5 bg-white border border-slate-100 rounded-[2rem] text-sm font-bold text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all shadow-sm"
-                  placeholder="nama@email.com"
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                  <User size={16} className="text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                </div>
+                <input 
+                  type="text" 
+                  placeholder="luthfi5372" 
+                  className="w-full pl-10 pr-4 py-3 bg-white/60 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-slate-700 placeholder:text-slate-400 shadow-sm"
+                  value={formData.username}
+                  onChange={(e) => setFormData({...formData, username: e.target.value})}
                 />
               </div>
             </div>
 
-            {/* Password Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-               <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Kata Sandi</label>
-                  <div className="relative group">
-                    <Lock size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
-                    <input
-                      type="password"
-                      required
-                      value={form.password}
-                      onChange={(e) => update("password", e.target.value)}
-                      className="w-full pl-16 pr-6 py-5 bg-white border border-slate-100 rounded-[2rem] text-sm font-bold text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all shadow-sm"
-                      placeholder="••••••••"
-                    />
-                  </div>
-               </div>
-               <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Konfirmasi</label>
-                  <div className="relative group">
-                    <Lock size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
-                    <input
-                      type="password"
-                      required
-                      value={form.confirmPassword}
-                      onChange={(e) => update("confirmPassword", e.target.value)}
-                      className="w-full pl-16 pr-6 py-5 bg-white border border-slate-100 rounded-[2rem] text-sm font-bold text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all shadow-sm"
-                      placeholder="••••••••"
-                    />
-                  </div>
-               </div>
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-1">Nama Lengkap</label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                  <Type size={16} className="text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                </div>
+                <input 
+                  type="text" 
+                  placeholder="Nama Lengkap Anda" 
+                  className="w-full pl-10 pr-4 py-3 bg-white/60 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-slate-700 placeholder:text-slate-400 shadow-sm"
+                  value={formData.fullName}
+                  onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+                />
+              </div>
             </div>
-
-            {/* Error Message */}
-            <AnimatePresence>
-              {error && (
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                  className="p-4 bg-rose-50 border border-rose-100 rounded-2xl flex items-center gap-3 text-rose-600 text-xs font-bold"
-                >
-                  <AlertCircle size={16} />
-                  {error}
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-5 bg-slate-900 text-white rounded-[2rem] font-black text-xs uppercase tracking-[3px] shadow-2xl shadow-slate-200 flex items-center justify-center gap-3 hover:bg-indigo-600 transition-all active:scale-[0.98] disabled:opacity-50"
-            >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-              ) : (
-                <>Daftar Sekarang <ChevronRight size={18} /></>
-              )}
-            </button>
-
-            <div className="text-center pt-4">
-              <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">
-                Sudah memiliki akun?{" "}
-                <Link href="/login" className="text-indigo-600 hover:text-indigo-700 ml-1 transition-colors underline underline-offset-4">
-                  Masuk Saja
-                </Link>
-              </p>
-            </div>
-          </form>
-
-          {/* Secure Badge */}
-          <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-2 text-slate-300 text-[10px] font-black uppercase tracking-widest whitespace-nowrap">
-            <ShieldCheck size={14} className="text-emerald-500" />
-            NCC Secure 256-Bit Authentication
           </div>
+
+          {/* Baris 2: Email */}
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-1">Alamat Email Aktif</label>
+            <div className="relative group">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                <Mail size={16} className="text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+              </div>
+              <input 
+                type="email" 
+                placeholder="admin1@ncc.id" 
+                className="w-full pl-10 pr-4 py-3 bg-white/60 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-slate-700 placeholder:text-slate-400 shadow-sm"
+                value={formData.email}
+                onChange={(e) => setFormData({...formData, email: e.target.value})}
+              />
+            </div>
+          </div>
+
+          {/* Baris 3: Password & Konfirmasi */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-1">Kata Sandi</label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                  <Lock size={16} className="text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                </div>
+                <input 
+                  type="password" 
+                  placeholder="••••••••" 
+                  className="w-full pl-10 pr-4 py-3 bg-white/60 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-slate-700 placeholder:text-slate-400 shadow-sm"
+                  value={formData.password}
+                  onChange={(e) => setFormData({...formData, password: e.target.value})}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-1">Konfirmasi</label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                  <Lock size={16} className="text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                </div>
+                <input 
+                  type="password" 
+                  placeholder="••••••••" 
+                  className="w-full pl-10 pr-4 py-3 bg-white/60 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-slate-700 placeholder:text-slate-400 shadow-sm"
+                  value={formData.confirmPassword}
+                  onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Error Message */}
+          <AnimatePresence>
+            {error && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                className="p-4 bg-rose-50 border border-rose-100 rounded-2xl flex items-center gap-3 text-rose-600 text-xs font-bold"
+              >
+                <AlertCircle size={16} />
+                {error}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <button 
+            type="submit"
+            disabled={loading}
+            className="w-full mt-6 bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-slate-900/20 active:scale-[0.98] disabled:opacity-50"
+          >
+            {loading ? (
+              <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+            ) : (
+              <>DAFTAR SEKARANG <ArrowRight size={18} /></>
+            )}
+          </button>
+        </form>
+
+        <div className="mt-8 text-center">
+          <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">
+            Sudah Memiliki Akun? <Link href="/login" className="text-blue-600 font-extrabold hover:text-blue-700 hover:underline transition-all">Masuk Saja</Link>
+          </p>
         </div>
       </motion.div>
-    </main>
+    </div>
   );
 }
