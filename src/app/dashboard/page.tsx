@@ -26,6 +26,14 @@ export default function UserDashboard() {
     participant2_nisn: ""
   });
 
+  // --- MEMORI SISTEM NOTIFIKASI KUSTOM ---
+  const [toast, setToast] = useState({ show: false, message: "", type: "success" as "success" | "error" });
+
+  const showToast = (message: string, type: "success" | "error" = "success") => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: "", type: "success" }), 3500);
+  };
+
   // --- MESIN PENARIK PENGUMUMAN DARI MARKAS BESAR (PINTU CERDAS) ---
   useEffect(() => {
     const fetchAnnouncements = async () => {
@@ -78,7 +86,7 @@ export default function UserDashboard() {
   // --- MESIN TEMPUR: PENGIRIMAN BERKAS REGISTRASI ---
   const handleSubmitEntry = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file) return alert("⚠️ Mohon unggah bukti transfer terlebih dahulu, Komandan!");
+    if (!file) return showToast("⚠️ Mohon unggah bukti transfer terlebih dahulu, Komandan!", "error");
 
     setIsSubmitting(true);
     try {
@@ -125,24 +133,27 @@ export default function UserDashboard() {
 
       if (dbError) throw dbError;
 
-      alert("✅ MISI BERHASIL! Berkas pendaftaran sudah meluncur ke Markas Besar. Mohon tunggu verifikasi admin.");
-      setShowForm(false);
+      showToast("✅ MISI BERHASIL! Berkas pendaftaran sudah meluncur ke Markas Besar. Mohon tunggu verifikasi admin.", "success");
       
-      // Reset form
-      setFile(null);
-      setFormData({
-        school_name: "",
-        nisn: "",
-        province: "",
-        competition_type: "Olimpiade MIPA",
-        mentor_name: "",
-        team_name: "",
-        participant2_name: "",
-        participant2_nisn: ""
-      });
+      // Tunggu sejenak agar toast terlihat sebelum form ditutup
+      setTimeout(() => {
+        setShowForm(false);
+        // Reset form
+        setFile(null);
+        setFormData({
+          school_name: "",
+          nisn: "",
+          province: "",
+          competition_type: "Olimpiade MIPA",
+          mentor_name: "",
+          team_name: "",
+          participant2_name: "",
+          participant2_nisn: ""
+        });
+      }, 1500);
 
     } catch (error: any) {
-      alert(`❌ Misi Gagal: ${error.message}`);
+      showToast(`❌ Misi Gagal: ${error.message}`, "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -495,6 +506,22 @@ export default function UserDashboard() {
           </motion.div>
         )}
       </AnimatePresence>
+      {/* ========================================================= */}
+      {/* 🌟 SISTEM NOTIFIKASI TOAST (MENGAMBANG DI POJOK KANAN ATAS) */}
+      {/* ========================================================= */}
+      <div className={`fixed top-8 right-8 z-[100] transition-all duration-500 transform ${toast.show ? 'translate-y-0 opacity-100' : '-translate-y-10 opacity-0 pointer-events-none'}`}>
+        <div className="bg-white/80 backdrop-blur-2xl border border-white/60 shadow-2xl rounded-2xl p-4 flex items-center gap-3">
+          {toast.type === 'success' ? (
+            <div className="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center"><CheckCircle2 size={18} /></div>
+          ) : (
+            <div className="w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center"><AlertCircle size={18} /></div>
+          )}
+          <div>
+            <p className="font-bold text-slate-800 text-sm">{toast.type === 'success' ? 'Berhasil' : 'Misi Gagal'}</p>
+            <p className="text-xs text-slate-500 font-medium max-w-[250px]">{toast.message}</p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
