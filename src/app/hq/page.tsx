@@ -256,13 +256,60 @@ export default function ModernHQDashboard() {
           </>
         )}
 
-        {/* 🎛️ KONTEN TAB: PESERTA */}
+        {/* 🎛️ KONTEN TAB: PESERTA (REAL-TIME BUKU INDUK) */}
         {activeTab === "Peserta" && (
-          <div className="bg-white p-12 rounded-2xl border border-slate-100 shadow-sm text-center flex flex-col items-center justify-center min-h-[400px] animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <Users size={64} className="text-slate-200 mb-4" />
-            <h2 className="text-xl font-bold text-slate-800">Modul Peserta</h2>
-            <p className="text-slate-500 mt-2">Daftar lengkap seluruh peserta akan ditampilkan di sini.</p>
-            <button className="mt-6 bg-blue-50 text-blue-600 px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-blue-600 hover:text-white transition-all active:scale-95 shadow-sm">Unduh Data Lengkap</button>
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/30">
+              <div>
+                <h3 className="font-bold text-slate-800">Buku Induk Peserta Resmi</h3>
+                <p className="text-xs text-slate-500 mt-1">Daftar pendaftar yang pembayarannya telah diverifikasi. Diperbarui secara live.</p>
+              </div>
+              <span className="bg-blue-100 text-blue-700 px-4 py-1.5 rounded-full text-xs font-bold border border-blue-200">
+                Total Tiket Aktif: {realEntries.filter(e => e.payment_status === 'Verified').length}
+              </span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm text-slate-600">
+                <thead className="bg-slate-50/50 text-slate-500 font-medium border-b border-slate-100">
+                  <tr>
+                    <th className="py-4 px-6">ID TIKET</th>
+                    <th className="py-4 px-6">NAMA PESERTA</th>
+                    <th className="py-4 px-6">KATEGORI LOMBA</th>
+                    <th className="py-4 px-6">STATUS TIKET</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {realEntries.filter(e => e.payment_status === 'Verified').length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="py-12 text-center text-slate-400 font-medium">
+                        Belum ada peserta yang berhasil diverifikasi.
+                      </td>
+                    </tr>
+                  ) : (
+                    realEntries.filter(e => e.payment_status === 'Verified').map((entry: any, idx: number) => (
+                      <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="py-4 px-6 font-bold text-blue-600">NCC-{entry.id}</td>
+                        <td className="py-4 px-6 flex items-center gap-3">
+                           <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-blue-600 text-xs uppercase">
+                             {(entry.full_name || entry.email || "U").charAt(0)}
+                           </div>
+                           <div className="font-medium text-slate-800">
+                             {entry.full_name || entry.email || "Peserta Anonim"}
+                           </div>
+                        </td>
+                        <td className="py-4 px-6 font-medium text-slate-700">{entry.category || "General"}</td>
+                        <td className="py-4 px-6">
+                          <span className="px-3 py-1.5 rounded-full text-[11px] font-bold flex items-center w-max gap-1.5 border bg-green-50 text-green-600 border-green-200 shadow-sm">
+                            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+                            Active
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
