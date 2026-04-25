@@ -6,8 +6,8 @@ import { Bell, Megaphone, User, Clock, CheckCircle2, AlertCircle, X, ArrowUpRigh
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function UserDashboard() {
-  const [announcements, setAnnouncements] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [userEntry, setUserEntry] = useState<any>(null);
   const supabase = createClient();
 
   // --- MEMORI REGISTRASI PESERTA ---
@@ -42,14 +42,18 @@ export default function UserDashboard() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        // 2. Cek Status Pendaftaran User (untuk filter target_audience)
+        // 2. Cek status berkas peserta di database
         const { data: entryData } = await supabase
           .from('competition_entries')
-          .select('payment_status')
+          .select('*')
           .eq('user_id', user.id)
           .single();
-
-        const userStatus = entryData?.payment_status || "Pending";
+          
+        if (entryData) {
+          setUserEntry(entryData);
+        }
+        
+        const userStatus = entryData?.payment_status === 'Verified' ? 'Verified' : 'Pending';
 
         // 3. Tarik data pengumuman dengan Filter Berlapis (Pintu Cerdas)
         // Logika: Ambil jika (Target=All) ATAU (Target=Status Anda) ATAU (ID Anda ada di daftar spesifik)
@@ -199,28 +203,69 @@ export default function UserDashboard() {
             transition={{ delay: 0.1 }}
             className="space-y-6"
           >
-            <div className="bg-white/60 backdrop-blur-xl border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl p-6">
-              <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                <AlertCircle size={18} className="text-blue-500" />
-                Langkah Selanjutnya
-              </h3>
-              <div className="space-y-3">
-                <div className="p-3 bg-green-50 border border-green-100 rounded-xl flex items-center gap-3 text-sm">
-                  <CheckCircle2 size={16} className="text-green-500" />
-                  <span className="font-medium text-green-800">Lengkapi Profil Biodata</span>
+            {/* FASE 1: BELUM DAFTAR */}
+            {!userEntry && (
+              <div className="bg-white/60 backdrop-blur-xl border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl p-6">
+                <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                  <AlertCircle size={18} className="text-blue-500" />
+                  Langkah Selanjutnya
+                </h3>
+                <div className="space-y-3">
+                  <div className="p-3 bg-green-50 border border-green-100 rounded-xl flex items-center gap-3 text-sm">
+                    <CheckCircle2 size={16} className="text-green-500" />
+                    <span className="font-medium text-green-800">Lengkapi Profil Biodata</span>
+                  </div>
+                  <div className="p-3 bg-amber-50 border border-amber-100 rounded-xl flex items-center gap-3 text-sm">
+                    <Clock size={16} className="text-amber-500" />
+                    <span className="font-medium text-amber-800">Unggah Bukti Transfer</span>
+                  </div>
                 </div>
-                <div className="p-3 bg-amber-50 border border-amber-100 rounded-xl flex items-center gap-3 text-sm">
-                  <Clock size={16} className="text-amber-500" />
-                  <span className="font-medium text-amber-800">Unggah Bukti Transfer</span>
+                <button 
+                  onClick={() => setShowForm(true)}
+                  className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-all shadow-md shadow-blue-200 text-sm active:scale-[0.98]"
+                >
+                  Lengkapi Berkas Sekarang
+                </button>
+              </div>
+            )}
+
+            {/* FASE 2: STATUS PENDING (Sedang Diverifikasi) */}
+            {userEntry && userEntry.payment_status === 'Pending' && (
+              <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-3xl p-6 text-white shadow-lg shadow-amber-200 relative overflow-hidden">
+                <div className="absolute top-[-10%] right-[-10%] w-32 h-32 bg-white/20 rounded-full blur-2xl pointer-events-none"></div>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-white/20 rounded-xl backdrop-blur-md">
+                    <Clock size={24} className="text-white" />
+                  </div>
+                  <h3 className="font-bold text-lg">Proses Verifikasi</h3>
+                </div>
+                <p className="text-sm text-amber-50 font-medium leading-relaxed mb-4">
+                  Berkas pendaftaran <strong className="text-white bg-white/20 px-1 rounded">{userEntry.competition_type}</strong> Anda sedang diperiksa oleh Markas Besar. 
+                </p>
+                <div className="bg-black/10 rounded-xl p-3 text-xs font-bold uppercase tracking-wider text-center border border-white/20">
+                  Mohon Tunggu 1x24 Jam
                 </div>
               </div>
-              <button 
-                onClick={() => setShowForm(true)}
-                className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-all shadow-md shadow-blue-200 text-sm active:scale-[0.98]"
-              >
-                Lengkapi Berkas Sekarang
-              </button>
-            </div>
+            )}
+
+            {/* FASE 3: STATUS VERIFIED (Resmi Terdaftar) */}
+            {userEntry && userEntry.payment_status === 'Verified' && (
+              <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-6 text-white shadow-lg shadow-blue-200 relative overflow-hidden">
+                <div className="absolute top-[-10%] right-[-10%] w-32 h-32 bg-white/20 rounded-full blur-2xl pointer-events-none"></div>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-white/20 rounded-xl backdrop-blur-md">
+                    <CheckCircle2 size={24} className="text-white" />
+                  </div>
+                  <h3 className="font-bold text-lg">Resmi Terdaftar!</h3>
+                </div>
+                <p className="text-sm text-blue-100 font-medium leading-relaxed mb-4">
+                  Selamat! Anda telah resmi menjadi peserta NCC 13th cabang <strong className="text-white">{userEntry.competition_type}</strong>.
+                </p>
+                <div className="bg-black/20 rounded-xl p-3 text-xs font-bold tracking-wide text-center border border-white/20 font-mono">
+                  ID: NCC-{userEntry.id.toString().substring(0,6).toUpperCase()}
+                </div>
+              </div>
+            )}
           </motion.div>
 
           {/* KOLOM KANAN: PAPAN PENGUMUMAN DARI MARKAS BESAR (Makan 2 Kolom) */}
@@ -448,44 +493,48 @@ export default function UserDashboard() {
                   </div>
                 </div>
 
-                {/* --- BLOK DINAMIS: DATA TIM (Hanya Muncul untuk MIPA & LKTI) --- */}
-                {(formData.competition_type === "Olimpiade MIPA" || formData.competition_type === "LKTI Nasional") && (
-                  <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4 p-5 bg-blue-50/50 border border-blue-100 rounded-2xl animate-in fade-in slide-in-from-bottom-2 duration-300">
+                {/* --- BLOK DINAMIS: DATA TIM (Animasi Smooth Dropdown) --- */}
+                <div 
+                  className={`md:col-span-2 overflow-hidden transition-all duration-500 ease-in-out ${
+                    (formData.competition_type === "Olimpiade MIPA" || formData.competition_type === "LKTI Nasional") ? "max-h-[500px] opacity-100 mt-2" : "max-h-0 opacity-0 m-0"
+                  }`}
+                >
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-5 bg-blue-50/50 border border-blue-100 rounded-2xl">
                     <div className="md:col-span-1">
                       <label className="text-[10px] font-bold text-blue-500 uppercase tracking-widest block mb-1">Nama Tim</label>
                       <input 
-                        required 
                         type="text" 
                         className="w-full p-3 bg-white border border-blue-200 focus:border-blue-500 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-400/50 transition-all" 
                         placeholder="Contoh: Tim Einstein" 
                         value={formData.team_name}
                         onChange={(e) => setFormData({...formData, team_name: e.target.value})} 
+                        required={formData.competition_type === "Olimpiade MIPA" || formData.competition_type === "LKTI Nasional"}
                       />
                     </div>
                     <div className="md:col-span-1">
                       <label className="text-[10px] font-bold text-blue-500 uppercase tracking-widest block mb-1">Nama Anggota 2</label>
                       <input 
-                        required 
                         type="text" 
                         className="w-full p-3 bg-white border border-blue-200 focus:border-blue-500 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-400/50 transition-all" 
                         placeholder="Nama Lengkap Anggota" 
                         value={formData.participant2_name}
                         onChange={(e) => setFormData({...formData, participant2_name: e.target.value})} 
+                        required={formData.competition_type === "Olimpiade MIPA" || formData.competition_type === "LKTI Nasional"}
                       />
                     </div>
                     <div className="md:col-span-1">
                       <label className="text-[10px] font-bold text-blue-500 uppercase tracking-widest block mb-1">NISN Anggota 2</label>
                       <input 
-                        required 
                         type="number" 
                         className="w-full p-3 bg-white border border-blue-200 focus:border-blue-500 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-400/50 transition-all" 
                         placeholder="10 Digit NISN" 
                         value={formData.participant2_nisn}
                         onChange={(e) => setFormData({...formData, participant2_nisn: e.target.value})} 
+                        required={formData.competition_type === "Olimpiade MIPA" || formData.competition_type === "LKTI Nasional"}
                       />
                     </div>
                   </div>
-                )}
+                </div>
 
                 <div className="md:col-span-2 pt-4">
                   <button 
