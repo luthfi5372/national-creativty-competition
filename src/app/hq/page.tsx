@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Users, FileCheck, Settings, 
   ArrowUpRight, ArrowDownRight, Download, Calendar, 
   Bell, MoreHorizontal, Sparkles, Search, Filter, Printer, X, IdCard, Megaphone, Send, ArrowRight,
-  CheckCircle2, AlertCircle 
+  CheckCircle2, AlertCircle, LogOut 
 } from "lucide-react";
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -34,6 +34,12 @@ export default function ModernHQDashboard() {
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [isSending, setIsSending] = useState(false);
   const supabase = createClient();
+
+  // --- 🚪 FUNGSI PINTU EVAKUASI ---
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/login'); // Lempar kembali ke halaman login
+  };
 
   // --- MEMORI SISTEM NOTIFIKASI KUSTOM ---
   const [toast, setToast] = useState({ show: false, message: "", type: "success" as "success" | "error" });
@@ -308,6 +314,16 @@ export default function ModernHQDashboard() {
             <NavItem icon={<Megaphone size={20} />} text="Pengumuman" active={activeTab === "Pengumuman"} onClick={() => setActiveTab("Pengumuman")} />
             <NavItem icon={<Settings size={20} />} text="Pengaturan" active={activeTab === "Pengaturan"} onClick={() => setActiveTab("Pengaturan")} />
           </nav>
+
+          {/* Tombol Logout Admin */}
+          <div className="mt-6">
+            <button 
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-4 py-3 text-red-500 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all font-bold text-sm border border-transparent hover:border-red-100"
+            >
+              <LogOut size={20} /> Keluar Sesi
+            </button>
+          </div>
         </div>
 
         <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-5 text-white shadow-xl shadow-blue-200/50 relative overflow-hidden">

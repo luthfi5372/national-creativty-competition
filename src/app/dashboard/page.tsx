@@ -1,14 +1,22 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase"; 
-import { Bell, Megaphone, User, Clock, CheckCircle2, AlertCircle } from "lucide-react";
+import { Bell, Megaphone, User, Clock, CheckCircle2, AlertCircle, LogOut } from "lucide-react";
 
 export default function UserDashboard() {
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [userEntry, setUserEntry] = useState<any>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const router = useRouter();
+
+  // --- 🚪 FUNGSI PINTU EVAKUASI ---
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/login');
+  };
 
   // Form State
   const [showForm, setShowForm] = useState(false);
@@ -149,22 +157,35 @@ export default function UserDashboard() {
             <h1 className="text-3xl font-black text-slate-800 tracking-tight">Halo, Peserta NCC! 👋</h1>
             <p className="text-slate-500 font-medium mt-1">Selamat datang di Dasbor Resmi National Creativity Competition 13th.</p>
           </div>
-          <div className="flex items-center gap-3 bg-white/60 backdrop-blur-xl border border-white/80 px-4 py-2 rounded-2xl shadow-sm">
-            <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold">
-              {currentUser?.user_metadata?.full_name?.charAt(0)?.toUpperCase() || "P"}
-            </div>
-            <div>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Status Anda</p>
-              <div className="text-sm font-bold text-slate-700 flex items-center gap-1">
-                {userEntry?.payment_status === 'Verified' ? (
-                  <><CheckCircle2 size={14} className="text-blue-600"/> Terverifikasi</>
-                ) : userEntry?.payment_status === 'Pending' ? (
-                  <><Clock size={14} className="text-amber-500"/> Menunggu Verifikasi</>
-                ) : (
-                  <><AlertCircle size={14} className="text-slate-500"/> Belum Daftar Lomba</>
-                )}
+          
+          {/* Bagian Kanan Header (Status + Logout) */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 bg-white/60 backdrop-blur-xl border border-white/80 px-4 py-2 rounded-2xl shadow-sm">
+              <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold">
+                {currentUser?.user_metadata?.full_name?.charAt(0)?.toUpperCase() || "P"}
+              </div>
+              <div>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Status Anda</p>
+                <div className="text-sm font-bold text-slate-700 flex items-center gap-1">
+                  {userEntry?.payment_status === 'Verified' ? (
+                    <><CheckCircle2 size={14} className="text-blue-600"/> Terverifikasi</>
+                  ) : userEntry?.payment_status === 'Pending' ? (
+                    <><Clock size={14} className="text-amber-500"/> Menunggu Verifikasi</>
+                  ) : (
+                    <><AlertCircle size={14} className="text-slate-500"/> Belum Daftar Lomba</>
+                  )}
+                </div>
               </div>
             </div>
+
+            {/* Tombol Logout Kaca */}
+            <button 
+              onClick={handleLogout}
+              title="Keluar dari Akun"
+              className="p-3 bg-white/60 backdrop-blur-xl border border-white/80 text-red-500 hover:bg-red-50 hover:text-red-600 rounded-2xl shadow-sm transition-all flex items-center justify-center active:scale-95"
+            >
+              <LogOut size={20} />
+            </button>
           </div>
         </header>
 
