@@ -240,7 +240,7 @@ export default function UserDashboard() {
                   <h3 className="font-bold text-lg">Proses Verifikasi</h3>
                 </div>
                 <p className="text-sm text-amber-50 font-medium leading-relaxed mb-4">
-                  Berkas pendaftaran <strong className="text-white bg-white/20 px-1 rounded">{userEntry.competition_type}</strong> Anda sedang diperiksa oleh Markas Besar. 
+                  Berkas pendaftaran <strong className="text-white bg-white/20 px-1 rounded">{userEntry?.competition_type || "Kompetisi"}</strong> Anda sedang diperiksa oleh Markas Besar. 
                 </p>
                 <div className="bg-black/10 rounded-xl p-3 text-xs font-bold uppercase tracking-wider text-center border border-white/20">
                   Mohon Tunggu 1x24 Jam
@@ -259,10 +259,10 @@ export default function UserDashboard() {
                   <h3 className="font-bold text-lg">Resmi Terdaftar!</h3>
                 </div>
                 <p className="text-sm text-blue-100 font-medium leading-relaxed mb-4">
-                  Selamat! Anda telah resmi menjadi peserta NCC 13th cabang <strong className="text-white">{userEntry.competition_type}</strong>.
+                  Selamat! Anda telah resmi menjadi peserta NCC 13th cabang <strong className="text-white">{userEntry?.competition_type || "Kompetisi"}</strong>.
                 </p>
                 <div className="bg-black/20 rounded-xl p-3 text-xs font-bold tracking-wide text-center border border-white/20 font-mono">
-                  ID: NCC-{userEntry.id.toString().substring(0,6).toUpperCase()}
+                  ID: NCC-{userEntry?.id ? userEntry.id.toString().substring(0,6).toUpperCase() : "XXXXXX"}
                 </div>
               </div>
             )}
