@@ -43,24 +43,27 @@ export default function ModernHQDashboard() {
 
   // --- 🗑️ FUNGSI PEMUSNAH ABSOLUT ---
   const executeDelete = async () => {
-    if (!deleteModal.userId) return; // Pastikan KTP Digitalnya ada
+    // Pastikan kita memiliki ID otentikasi (userId)
+    if (!deleteModal.userId) {
+      return showToast("⚠️ Gagal: ID KTP Digital (User ID) tidak ditemukan!", "error");
+    }
     
     try {
-      // Panggil peluncur rudal (RPC) yang baru kita buat di Supabase
+      // PANGGIL FUNGSI RPC, BUKAN .delete()
       const { error } = await supabase.rpc('delete_participant_completely', {
         target_user_id: deleteModal.userId
       });
 
       if (error) throw error;
 
-      // Bersihkan dari layar Markas Besar tanpa perlu refresh halaman
+      // Bersihkan dari layar Markas Besar
       setRealEntries(realEntries.filter((e: any) => e.id !== deleteModal.id));
       showToast(`Peserta ${deleteModal.name} berhasil dihapus permanen dari sistem!`, "success");
       
     } catch (error: any) {
       showToast(`Gagal menghapus: ${error.message}`, "error");
     } finally {
-      setDeleteModal({ show: false, id: null, userId: null, name: "" }); // Tutup modal
+      setDeleteModal({ show: false, id: null, userId: null, name: "" }); 
     }
   };
 
@@ -752,7 +755,7 @@ export default function ModernHQDashboard() {
                               title="Hapus Data Peserta Permanen"
                               className="text-red-500 hover:text-red-700 p-1.5 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
                             >
-                              <Trash2 size={16} />
+                              <Trash2 size={18} />
                             </button>
                           </div>
                         </td>
