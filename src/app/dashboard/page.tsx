@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase"; 
-import { Bell, Megaphone, User, Clock, CheckCircle2, AlertCircle, LogOut } from "lucide-react";
+import { Bell, Megaphone, User, Clock, CheckCircle2, AlertCircle, LogOut, IdCard, Printer } from "lucide-react";
 
 export default function UserDashboard() {
   const [announcements, setAnnouncements] = useState<any[]>([]);
@@ -20,6 +20,7 @@ export default function UserDashboard() {
 
   // Form State
   const [showForm, setShowForm] = useState(false);
+  const [showIdCard, setShowIdCard] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [formData, setFormData] = useState({
@@ -250,6 +251,14 @@ export default function UserDashboard() {
                 <div className="bg-black/20 rounded-xl p-3 text-xs font-bold tracking-wide text-center border border-white/20 font-mono">
                   ID: NCC-{userEntry?.id ? String(userEntry.id).substring(0,6).toUpperCase() : "XXXXXX"}
                 </div>
+                
+                {/* 👇 TOMBOL ID CARD BARU 👇 */}
+                <button 
+                  onClick={() => setShowIdCard(true)}
+                  className="mt-4 w-full bg-white/20 hover:bg-white/30 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-sm border border-white/30"
+                >
+                  <IdCard size={18} /> Lihat & Cetak ID Card
+                </button>
               </div>
             )}
           </div>
@@ -445,6 +454,71 @@ export default function UserDashboard() {
               </button>
             </form>
           </div>
+        </div>
+      )}
+      {/* ========================================================= */}
+      {/* 💳 MODAL EKSKLUSIF ID CARD PESERTA */}
+      {/* ========================================================= */}
+      {showIdCard && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm print:bg-white print:p-0">
+          
+          <div className="bg-white rounded-3xl overflow-hidden shadow-2xl max-w-sm w-full relative print:shadow-none print:w-[350px]">
+            {/* Bagian Atas Card */}
+            <div className="bg-gradient-to-br from-blue-600 to-indigo-800 p-8 text-center text-white relative">
+              <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-20 pointer-events-none">
+                <div className="absolute -top-10 -right-10 w-32 h-32 bg-white rounded-full blur-2xl"></div>
+              </div>
+              <h2 className="font-black text-3xl tracking-tight relative z-10">NCC 13th</h2>
+              <p className="text-blue-200 text-[10px] font-bold tracking-widest uppercase mt-1 relative z-10">Official Participant Card</p>
+            </div>
+            
+            {/* Bagian Bawah Card */}
+            <div className="p-6 text-center bg-white relative">
+              {/* Foto Profil Inisial */}
+              <div className="w-20 h-20 bg-slate-100 rounded-full mx-auto -mt-16 border-4 border-white flex items-center justify-center text-3xl font-black text-blue-600 mb-3 shadow-lg relative z-20">
+                {userEntry?.full_name?.charAt(0).toUpperCase() || "P"}
+              </div>
+              
+              <h3 className="font-black text-xl text-slate-800 uppercase mb-1">{userEntry?.full_name}</h3>
+              <div className="inline-block px-3 py-1 bg-blue-50 text-blue-600 font-bold text-xs rounded-full mb-6 border border-blue-100">
+                {userEntry?.competition_type}
+              </div>
+
+              {/* Grid Data Validasi */}
+              <div className="grid grid-cols-2 gap-3 text-left bg-slate-50 p-4 rounded-2xl mb-6 border border-slate-100">
+                <div>
+                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">ID Tiket Resmi</p>
+                  <p className="text-sm font-black text-slate-700 font-mono">NCC-{userEntry?.id ? String(userEntry.id).substring(0,6).toUpperCase() : "XXXXXX"}</p>
+                </div>
+                <div>
+                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Asal Instansi</p>
+                  <p className="text-sm font-bold text-slate-700 truncate" title={userEntry?.school_name}>{userEntry?.school_name}</p>
+                </div>
+              </div>
+
+              {/* Tombol Aksi (Otomatis Hilang Saat Dicetak) */}
+              <div className="flex gap-3 print:hidden">
+                <button 
+                  onClick={() => window.print()} 
+                  className="flex-1 bg-slate-900 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-slate-800 transition-colors shadow-md"
+                >
+                  <Printer size={18} /> Cetak
+                </button>
+                <button 
+                  onClick={() => setShowIdCard(false)} 
+                  className="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl font-bold hover:bg-slate-200 transition-colors"
+                >
+                  Tutup
+                </button>
+              </div>
+            </div>
+            
+            {/* Pita Dekorasi */}
+            <div className="h-2 w-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500"></div>
+          </div>
+
+          {/* Latar Belakang Gelap Penutup Modal */}
+          <div className="absolute inset-0 z-[-1] print:hidden" onClick={() => setShowIdCard(false)}></div>
         </div>
       )}
     </div>
