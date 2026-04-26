@@ -161,6 +161,7 @@ export default function ModernHQDashboard() {
         const { data, error } = await supabase
           .from('competition_entries')
           .select('*')
+          .neq('email', 'admin1@ncc.id') 
           .order('created_at', { ascending: false });
 
         if (error) {
