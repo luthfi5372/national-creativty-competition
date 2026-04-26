@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShineBorder } from "@/components/ui/ShineBorder";
 import { loginLocalUser } from "@/app/actions/auth";
-import { Mail, Lock, Eye, EyeOff, Loader2, Trophy, ArrowRight, CheckCircle2, Mic, Microscope, BookOpen, Sparkles } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, Loader2, Trophy, ArrowRight, CheckCircle2, Mic, Microscope, BookOpen, Sparkles, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { useLiveStats } from "@/hooks/useLiveStats";
 
@@ -25,6 +25,14 @@ export default function LoginPage() {
   const [success, setSuccess] = useState(false);
   const router = useRouter();
   const { stats: liveStats } = useLiveStats();
+
+  // --- MEMORI SISTEM NOTIFIKASI TOAST ---
+  const [toast, setToast] = useState({ show: false, message: "", type: "success" });
+
+  const showToast = (message: string, type: "success" | "error" = "success") => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: "", type: "success" }), 3500); // Hilang otomatis dalam 3.5 detik
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,12 +75,16 @@ export default function LoginPage() {
         }
       }, 1000);
     } else {
-      const errorMsg = result.error ?? "Email atau kata sandi salah.";
-      setError(errorMsg);
+      let errorMessage = result.error ?? "Email atau kata sandi salah.";
+      if (errorMessage.includes("Invalid login credentials") || errorMessage.includes("Email atau kata sandi")) {
+        errorMessage = "Email atau kata sandi tidak cocok. Silakan periksa kembali!";
+      }
+      
+      setError(errorMessage);
       setLoading(false);
       
-      // 🚨 Alarm Error Aktif (UX Feedback)
-      alert("❌ GAGAL MASUK: " + errorMsg);
+      // Munculkan notifikasi keren
+      showToast(errorMessage, "error");
     }
   };
 
@@ -307,6 +319,27 @@ export default function LoginPage() {
             </Link>
           </p>
         </motion.div>
+      </div>
+
+      {/* ========================================================= */}
+      {/* 🌟 SISTEM NOTIFIKASI TOAST (MENGAMBANG DI POJOK KANAN ATAS) */}
+      {/* ========================================================= */}
+      <div className={`fixed top-8 right-8 z-[100] transition-all duration-500 transform ${toast.show ? 'translate-y-0 opacity-100' : '-translate-y-10 opacity-0 pointer-events-none'}`}>
+        <div className="bg-white/90 backdrop-blur-2xl border border-white/60 shadow-2xl rounded-2xl p-4 flex items-center gap-3">
+          {toast.type === 'success' ? (
+            <div className="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center shrink-0">
+              <CheckCircle2 size={18} />
+            </div>
+          ) : (
+            <div className="w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+              <AlertCircle size={18} />
+            </div>
+          )}
+          <div>
+            <p className="font-bold text-slate-800 text-sm">{toast.type === 'success' ? 'Berhasil' : 'Akses Ditolak'}</p>
+            <p className="text-xs text-slate-500 font-medium max-w-[250px] leading-relaxed">{toast.message}</p>
+          </div>
+        </div>
       </div>
     </div>
   );
