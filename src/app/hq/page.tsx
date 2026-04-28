@@ -660,113 +660,119 @@ export default function ModernHQDashboard() {
         )}
 
         {activeTab === "Verifikasi" && (
-          <div className="bg-white/90 backdrop-blur-md backdrop-saturate-150 rounded-2xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-              <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                <FileCheck size={20} className="text-blue-600" />
-                Antrean Verifikasi Pembayaran
-              </h3>
-              <span className="text-xs font-bold px-3 py-1 bg-amber-100 text-amber-700 rounded-full shadow-sm border border-amber-200">
+          <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            
+            {/* Header Antrean */}
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
+                  <FileCheck size={20} className="text-blue-600" />
+                  Antrean Verifikasi Pembayaran
+                </h3>
+                <p className="text-slate-500 text-sm mt-0.5">Tinjau dan setujui setiap pendaftaran masuk.</p>
+              </div>
+              <span className="text-xs font-bold px-4 py-2 bg-amber-100 text-amber-700 rounded-full shadow-sm border border-amber-200">
                 {realEntries.filter(e => e.payment_status === 'Pending').length} Menunggu
               </span>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-slate-600">
-                <thead className="bg-white text-slate-500 font-medium border-b border-slate-100">
-                  <tr>
-                    <th className="py-4 px-6">ID</th>
-                    <th className="py-4 px-6">NAMA PESERTA</th>
-                    <th className="py-4 px-6">KATEGORI</th>
-                    <th className="py-4 px-6">STATUS & AKSI</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {realEntries.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="py-12 text-center text-slate-400 flex flex-col items-center">
-                        <Sparkles size={40} className="mb-2 opacity-20" />
-                        Belum ada pendaftar di radar...
-                      </td>
-                    </tr>
-                  ) : (
-                    realEntries.map((entry: any, idx: number) => (
-                      <tr key={idx} className="hover:bg-slate-50/30 transition-colors group">
-                        <td className="py-4 px-6 font-medium text-slate-800">NCC-{entry.id}</td>
-                        <td className="py-4 px-6 flex items-center gap-3">
-                           <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs uppercase border border-blue-100">
-                             {(entry.full_name || entry.email || "U").charAt(0)}
-                           </div>
-                           <div className="flex flex-col">
-                             <span className="font-bold text-slate-900 leading-tight">{entry.full_name || "Peserta Anonim"}</span>
-                             <span className="text-[10px] text-slate-400">{entry.email}</span>
-                           </div>
-                        </td>
-                        <td className="py-4 px-6">
-                          <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded text-[10px] font-bold uppercase tracking-wider">
-                            {entry.category || "General"}
-                          </span>
-                        </td>
-                        <td className="py-4 px-6">
-                          <div className="flex flex-col gap-2">
-                            {/* BAGIAN 1: TOMBOL AKSI */}
-                            {(!entry.payment_status || entry.payment_status === 'Pending' || entry.payment_status === 'Wait') ? (
-                              <div className="flex items-center gap-2">
-                                <button 
-                                  onClick={() => handleUpdateStatus(entry.id, 'Verified')}
-                                  className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-[11px] font-bold rounded-lg transition-all shadow-sm flex items-center gap-1 active:scale-95"
-                                >
-                                  ✅ Terima
-                                </button>
-                                <button 
-                                  onClick={() => handleUpdateStatus(entry.id, 'Rejected')}
-                                  className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-[11px] font-bold rounded-lg transition-all shadow-sm flex items-center gap-1 active:scale-95"
-                                >
-                                  ❌ Tolak
-                                </button>
-                              </div>
-                            ) : (
-                              <span className={`px-3 py-1.5 rounded-full text-[11px] font-bold flex items-center w-max gap-1.5 border
-                                ${entry.payment_status === 'Verified' ? 'bg-green-50 text-green-600 border-green-200' : 
-                                  entry.payment_status === 'Rejected' ? 'bg-red-50 text-red-600 border-red-200' : 'bg-slate-50 text-slate-500 border-slate-200'}
-                              `}>
-                                <div className={`w-1.5 h-1.5 rounded-full ${entry.payment_status === 'Verified' ? 'bg-green-500' : entry.payment_status === 'Rejected' ? 'bg-red-500' : 'bg-slate-400'}`}></div>
-                                {entry.payment_status}
-                              </span>
-                            )}
 
-                            {/* BAGIAN 2: TOMBOL BUKTI TF */}
-                            {entry.payment_proof_url && (
-                              <a 
-                                href={entry.payment_proof_url} 
-                                target="_blank" 
-                                rel="noreferrer" 
-                                className="flex items-center w-max gap-1.5 px-3 py-1.5 bg-white border border-slate-200 text-slate-600 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50 hover:shadow-sm rounded-lg text-[11px] font-bold transition-all"
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                  <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
-                                  <circle cx="12" cy="12" r="3"/>
-                                </svg>
-                                Bukti TF
-                              </a>
-                            )}
-                            
-                            <button 
-                              onClick={() => setDeleteModal({ show: true, id: entry.id, userId: entry.user_id, name: entry.full_name })}
-                              title="Hapus Data Peserta Permanen"
-                              className="text-red-500 hover:text-red-700 p-1.5 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
-                            >
-                              <Trash2 size={18} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+            {/* Card List */}
+            {realEntries.filter(e => !e.payment_status || e.payment_status === 'Pending').length === 0 ? (
+              <div className="bg-white/60 backdrop-blur-md border border-white/60 rounded-3xl p-16 text-center shadow-sm">
+                <div className="w-20 h-20 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle2 size={40} />
+                </div>
+                <h3 className="text-xl font-bold text-slate-800">Antrean Bersih!</h3>
+                <p className="text-slate-500 mt-2 text-sm">Semua pendaftaran telah diverifikasi. Markas Besar aman.</p>
+              </div>
+            ) : (
+              realEntries
+                .filter(e => !e.payment_status || e.payment_status === 'Pending')
+                .map((entry: any) => (
+                <div
+                  key={entry.id}
+                  className="group bg-white/80 backdrop-blur-md border border-slate-100 hover:border-blue-200 rounded-3xl p-5 md:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(37,99,235,0.10)] transition-all duration-300 ease-out hover:-translate-y-1 flex flex-col md:flex-row items-start md:items-center justify-between gap-6"
+                >
+                  {/* Identitas Pendaftar */}
+                  <div className="flex items-center gap-4 flex-1 min-w-0">
+                    <div className="w-14 h-14 bg-gradient-to-br from-blue-100 to-indigo-100 text-blue-600 rounded-2xl flex items-center justify-center font-black text-xl shrink-0 border border-white shadow-sm">
+                      {(entry.full_name || entry.email || "U").charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <h4 className="font-bold text-slate-800 text-base leading-tight truncate">{entry.full_name || "Peserta Anonim"}</h4>
+                      <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                        <span className="text-[10px] font-mono font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">NCC-{String(entry.id).substring(0,6).toUpperCase()}</span>
+                        <span className="text-xs text-slate-500 truncate max-w-[180px]">{entry.email}</span>
+                      </div>
+                      {entry.school_name && (
+                        <p className="text-[11px] text-slate-400 mt-1">🏫 {entry.school_name}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Badge Cabang Lomba */}
+                  <div className="shrink-0">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-xl text-xs font-bold">
+                      {entry.competition_type || entry.category || "General"}
+                    </span>
+                    {entry.team_name && (
+                      <p className="text-[10px] font-bold text-slate-400 mt-1.5 uppercase tracking-wider">
+                        Tim: <span className="text-slate-600">{entry.team_name}</span>
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Smart Action Group */}
+                  <div className="flex items-center gap-2 shrink-0 bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
+                    {/* Lihat Bukti TF */}
+                    {entry.payment_proof_url ? (
+                      <a
+                        href={entry.payment_proof_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1.5 px-3.5 py-2.5 bg-white text-slate-600 hover:text-blue-600 border border-slate-200 hover:border-blue-300 hover:bg-blue-50 rounded-xl font-bold text-xs transition-all shadow-sm hover:shadow-md"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                        Bukti TF
+                      </a>
+                    ) : (
+                      <span className="px-3.5 py-2.5 text-slate-300 text-xs font-bold">Tidak ada</span>
+                    )}
+
+                    {/* Tombol Terima */}
+                    <button
+                      onClick={() => handleUpdateStatus(entry.id, 'Verified')}
+                      className="flex items-center gap-1.5 px-4 py-2.5 bg-gradient-to-r from-emerald-400 to-green-500 text-white rounded-xl font-bold text-xs transition-all shadow-sm hover:shadow-emerald-200/60 hover:scale-105 active:scale-95"
+                    >
+                      <CheckCircle2 size={14} /> Terima
+                    </button>
+
+                    {/* Tombol Tolak */}
+                    <button
+                      onClick={() => handleUpdateStatus(entry.id, 'Rejected')}
+                      className="flex items-center gap-1.5 px-4 py-2.5 bg-gradient-to-r from-rose-400 to-red-500 text-white rounded-xl font-bold text-xs transition-all shadow-sm hover:shadow-rose-200/60 hover:scale-105 active:scale-95"
+                    >
+                      <AlertCircle size={14} /> Tolak
+                    </button>
+
+                    {/* Divider */}
+                    <div className="w-px h-8 bg-slate-200 mx-0.5"></div>
+
+                    {/* Tombol Hapus (minimalis) */}
+                    <button
+                      onClick={() => setDeleteModal({ show: true, id: entry.id, userId: entry.user_id, name: entry.full_name })}
+                      title="Hapus Data Peserta Permanen"
+                      className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         )}
+
 
         {/* 🎛️ KONTEN TAB: PENGUMUMAN (BROADCAST CENTER) */}
         {activeTab === "Pengumuman" && (

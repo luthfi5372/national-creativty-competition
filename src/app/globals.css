@@ -140,6 +140,18 @@ body {
   100% { transform: scale(2.5); opacity: 0; }
 }
 
+@keyframes floating {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-18px); }
+}
+
+.animate-floating {
+  animation: floating 7s ease-in-out infinite;
+}
+.animate-floating-slow {
+  animation: floating 10s ease-in-out infinite;
+}
+
 /* ========== SELECTION STYLE ========== */
 ::selection {
   background: rgba(109, 40, 217, 0.4);
