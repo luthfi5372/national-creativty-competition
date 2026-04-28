@@ -27,15 +27,21 @@ export default function UserDashboard() {
   // --- 📸 REFERENSI AREA FOTO ID CARD ---
   const idCardRef = useRef<HTMLDivElement>(null);
 
-  // --- FUNGSI UNDUH ID CARD (PNG BERESOLUSI TINGGI) ---
+  // --- FUNGSI UNDUH ID CARD (MODE ANTI-GAGAL) ---
   const handleDownloadCard = async () => {
-    if (!idCardRef.current) return;
+    if (!idCardRef.current) {
+      return showToast('Sistem belum siap, coba sebentar lagi.', 'error');
+    }
     setIsDownloading(true);
     try {
+      // Tunggu 500ms agar semua transisi CSS selesai sebelum difoto
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       const canvas = await html2canvas(idCardRef.current, {
         scale: 2,
-        backgroundColor: '#ffffff',
         useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
         logging: false,
       });
       const image = canvas.toDataURL('image/png');
@@ -45,7 +51,8 @@ export default function UserDashboard() {
       link.click();
       showToast('ID Card berhasil diunduh sebagai PNG!', 'success');
     } catch (err) {
-      showToast('Gagal mengunduh ID Card.', 'error');
+      console.error('Detail Error Kamera:', err);
+      showToast('Gagal mengunduh. Coba lagi dalam 5 detik.', 'error');
     } finally {
       setIsDownloading(false);
     }

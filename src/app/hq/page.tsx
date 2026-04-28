@@ -48,13 +48,19 @@ export default function ModernHQDashboard() {
 
   // --- FUNGSI UNDUH ID CARD PNG (ADMIN HQ) ---
   const handleDownloadCard = async () => {
-    if (!idCardRef.current) return;
+    if (!idCardRef.current) {
+      return showToast('Sistem belum siap, coba sebentar lagi.', 'error');
+    }
     setIsDownloadingCard(true);
     try {
+      // Tunggu 500ms agar semua transisi CSS selesai sebelum difoto
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       const canvas = await html2canvas(idCardRef.current, {
         scale: 2,
-        backgroundColor: '#1e40af',
         useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#1e40af',
         logging: false,
       });
       const image = canvas.toDataURL('image/png');
@@ -64,7 +70,8 @@ export default function ModernHQDashboard() {
       link.click();
       showToast('ID Card berhasil diunduh sebagai PNG!', 'success');
     } catch (err) {
-      showToast('Gagal mengunduh ID Card.', 'error');
+      console.error('Detail Error Kamera:', err);
+      showToast('Gagal mengunduh. Coba lagi dalam 5 detik.', 'error');
     } finally {
       setIsDownloadingCard(false);
     }
