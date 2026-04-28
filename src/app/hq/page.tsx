@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Users, FileCheck, Settings, 
   ArrowUpRight, ArrowDownRight, Download, Calendar, 
   Bell, MoreHorizontal, Sparkles, Search, Filter, Printer, X, IdCard, Megaphone, Send, ArrowRight,
-  CheckCircle2, AlertCircle, LogOut, Trash2 
+  CheckCircle2, AlertCircle, LogOut, Trash2, MapPin, School, Target
 } from "lucide-react";
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -102,9 +102,9 @@ export default function ModernHQDashboard() {
             )
           );
 
-          showToast(`✅ Komando berhasil! Status telah menjadi ${newStatus}.`, "success");
+          showToast(`Komando berhasil! Status telah menjadi ${newStatus}.`, "success");
         } catch (error: any) {
-          showToast(`❌ Misi Gagal: ${error.message}`, "error");
+          showToast(`Misi Gagal: ${error.message}`, "error");
         }
       }
     });
@@ -145,12 +145,12 @@ export default function ModernHQDashboard() {
 
       if (error) throw error;
 
-      showToast("✅ MISI BERHASIL! Pengumuman resmi mengudara.", "success");
+      showToast("Pengumuman resmi berhasil mengudara ke peserta!", "success");
       setBroadcastTitle("");
       setBroadcastMessage("");
       setSelectedUserIds([]);
     } catch (error: any) {
-      showToast(`❌ Misi Gagal: ${error.message}`, "error");
+      showToast(`Gagal menyiarkan: ${error.message}`, "error");
     } finally {
       setIsSending(false);
     }
@@ -603,7 +603,7 @@ export default function ModernHQDashboard() {
                           <td className="py-4 px-6">
                             <div className="font-bold text-slate-700">{entry.school_name || entry.school || "Belum Diisi"}</div>
                             <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
-                               📍 {entry.province || entry.city || "Provinsi belum diisi"}
+                               <MapPin size={11} className="shrink-0" /> {entry.province || entry.city || "Provinsi belum diisi"}
                             </div>
                           </td>
                           <td className="py-4 px-6">
@@ -705,7 +705,9 @@ export default function ModernHQDashboard() {
                         <span className="text-xs text-slate-500 truncate max-w-[180px]">{entry.email}</span>
                       </div>
                       {entry.school_name && (
-                        <p className="text-[11px] text-slate-400 mt-1">🏫 {entry.school_name}</p>
+                        <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
+                          <School size={11} className="shrink-0" /> {entry.school_name}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -808,7 +810,7 @@ export default function ModernHQDashboard() {
                       <option value="All">Semua Peserta (Massal)</option>
                       <option value="Verified">Hanya Peserta Lolos (Verified)</option>
                       <option value="Pending">Hanya Peserta Belum Lolos (Pending)</option>
-                      <option value="specific">🎯 Peserta Tertentu (Pilih Manual)</option>
+                      <option value="specific">Peserta Tertentu (Pilih Manual)</option>
                     </select>
                   </div>
 
@@ -950,7 +952,10 @@ export default function ModernHQDashboard() {
                 <div className="p-4 bg-white/60 border border-slate-100 rounded-xl shadow-sm">
                   <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Institusi / Sekolah</p>
                   <p className="font-semibold text-slate-800 mb-1">{selectedParticipant.school_name || selectedParticipant.school || "Data Kosong"}</p>
-                  <p className="text-sm text-slate-600">📍 {selectedParticipant.province || selectedParticipant.city || "Provinsi tidak dicantumkan"}</p>
+                  <p className="text-sm text-slate-600 flex items-center gap-1.5">
+                    <MapPin size={13} className="text-slate-400 shrink-0" />
+                    {selectedParticipant.province || selectedParticipant.city || "Provinsi tidak dicantumkan"}
+                  </p>
                 </div>
               </div>
             </div>

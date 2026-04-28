@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import html2canvas from "html2canvas";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase"; 
-import { Bell, Megaphone, User, Clock, CheckCircle2, AlertCircle, LogOut, IdCard, Printer, Calendar, BookOpen, Image as ImageIcon, MessageCircle } from "lucide-react";
+import { Bell, Megaphone, User, Clock, CheckCircle2, AlertCircle, LogOut, IdCard, Printer, Calendar, BookOpen, Image as ImageIcon, MessageCircle, Pin, X, MapPin, School } from "lucide-react";
 
 export default function UserDashboard() {
   const [announcements, setAnnouncements] = useState<any[]>([]);
@@ -123,7 +123,7 @@ export default function UserDashboard() {
     
     // --- 🛡️ KATUP KEAMANAN: UKURAN FILE ---
     if (file.size > 2 * 1024 * 1024) { // Batas maksimal 2 MB
-      return showToast("⚠️ Ukuran foto maksimal 2MB agar sistem tidak melambat!", "error");
+      return showToast("Ukuran foto maksimal 2MB agar sistem tidak melambat!", "error");
     }
 
     setIsSubmitting(true);
@@ -495,7 +495,9 @@ export default function UserDashboard() {
 
                 {/* ── 📌 TM SEMUA LOMBA ── */}
                 <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-5 flex items-center gap-4">
-                  <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center shrink-0 text-lg">📌</div>
+                  <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center shrink-0">
+                    <Pin size={20} className="text-white" />
+                  </div>
                   <div>
                     <p className="font-black text-white text-sm">Technical Meeting – Semua Lomba</p>
                     <p className="text-indigo-200 text-xs font-semibold mt-0.5">18 November • Semua Cabang Lomba</p>
@@ -529,7 +531,7 @@ export default function UserDashboard() {
           <div className="bg-white/95 backdrop-blur-md w-full max-w-2xl rounded-3xl border border-white/60 p-8 shadow-2xl overflow-y-auto max-h-[90vh]">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-black text-slate-800">Finalisasi Pendaftaran</h2>
-              <button onClick={() => setShowForm(false)} className="text-slate-400 hover:text-slate-600">✕</button>
+              <button onClick={() => setShowForm(false)} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"><X size={18} /></button>
             </div>
 
             <form onSubmit={handleSubmitEntry} className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -723,7 +725,7 @@ export default function UserDashboard() {
                 className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition-colors"
                 title="Tutup"
               >
-                ✕
+                <X size={18} />
               </button>
             </div>
           </div>
