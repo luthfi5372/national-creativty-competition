@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import html2canvas from "html2canvas";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase"; 
 import { Bell, Megaphone, User, Clock, CheckCircle2, AlertCircle, LogOut, IdCard, Printer, Calendar, BookOpen, Image as ImageIcon, MessageCircle } from "lucide-react";
@@ -21,6 +22,34 @@ export default function UserDashboard() {
   // Form State
   const [showForm, setShowForm] = useState(false);
   const [showIdCard, setShowIdCard] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  // --- 📸 REFERENSI AREA FOTO ID CARD ---
+  const idCardRef = useRef<HTMLDivElement>(null);
+
+  // --- FUNGSI UNDUH ID CARD (PNG BERESOLUSI TINGGI) ---
+  const handleDownloadCard = async () => {
+    if (!idCardRef.current) return;
+    setIsDownloading(true);
+    try {
+      const canvas = await html2canvas(idCardRef.current, {
+        scale: 3,
+        backgroundColor: '#ffffff',
+        useCORS: true,
+        logging: false,
+      });
+      const image = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.href = image;
+      link.download = `ID_Card_NCC_${userEntry?.full_name?.replace(/\s+/g, '_') || 'Peserta'}.png`;
+      link.click();
+      showToast('ID Card berhasil diunduh sebagai PNG!', 'success');
+    } catch (err) {
+      showToast('Gagal mengunduh ID Card.', 'error');
+    } finally {
+      setIsDownloading(false);
+    }
+  };
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [formData, setFormData] = useState({
@@ -626,58 +655,77 @@ export default function UserDashboard() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm print:bg-white print:p-0">
           
           <div className="bg-white rounded-3xl overflow-hidden shadow-2xl max-w-sm w-full relative print:shadow-none print:w-[350px]">
-            {/* Bagian Atas Card */}
-            <div className="bg-gradient-to-br from-blue-600 to-indigo-800 p-8 text-center text-white relative">
-              <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-20 pointer-events-none">
-                <div className="absolute -top-10 -right-10 w-32 h-32 bg-white rounded-full blur-2xl"></div>
-              </div>
-              <h2 className="font-black text-3xl tracking-tight relative z-10">NCC 13th</h2>
-              <p className="text-blue-200 text-[10px] font-bold tracking-widest uppercase mt-1 relative z-10">Official Participant Card</p>
-            </div>
-            
-            {/* Bagian Bawah Card */}
-            <div className="p-6 text-center bg-white relative">
-              {/* Foto Profil Inisial */}
-              <div className="w-20 h-20 bg-slate-100 rounded-full mx-auto -mt-16 border-4 border-white flex items-center justify-center text-3xl font-black text-blue-600 mb-3 shadow-lg relative z-20">
-                {userEntry?.full_name?.charAt(0).toUpperCase() || "P"}
-              </div>
-              
-              <h3 className="font-black text-xl text-slate-800 uppercase mb-1">{userEntry?.full_name}</h3>
-              <div className="inline-block px-3 py-1 bg-blue-50 text-blue-600 font-bold text-xs rounded-full mb-6 border border-blue-100">
-                {userEntry?.competition_type}
+
+            {/* ====== AREA YANG AKAN DIFOTO OLEH KAMERA (ref terpasang di sini) ====== */}
+            <div ref={idCardRef}>
+              {/* Bagian Atas Card */}
+              <div className="bg-gradient-to-br from-blue-600 to-indigo-800 p-8 text-center text-white relative">
+                <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-20 pointer-events-none">
+                  <div className="absolute -top-10 -right-10 w-32 h-32 bg-white rounded-full blur-2xl"></div>
+                  <div className="absolute -bottom-10 -left-5 w-24 h-24 bg-white rounded-full blur-2xl"></div>
+                </div>
+                <h2 className="font-black text-3xl tracking-tight relative z-10">NCC 13th</h2>
+                <p className="text-blue-200 text-[10px] font-bold tracking-widest uppercase mt-1 relative z-10">Official Participant Card</p>
               </div>
 
-              {/* Grid Data Validasi */}
-              <div className="grid grid-cols-2 gap-3 text-left bg-slate-50 p-4 rounded-2xl mb-6 border border-slate-100">
-                <div>
-                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">ID Tiket Resmi</p>
-                  <p className="text-sm font-black text-slate-700 font-mono">NCC-{userEntry?.id ? String(userEntry.id).substring(0,6).toUpperCase() : "XXXXXX"}</p>
+              {/* Bagian Bawah Card */}
+              <div className="p-6 text-center bg-white relative">
+                {/* Avatar Inisial */}
+                <div className="w-20 h-20 bg-blue-50 rounded-full mx-auto -mt-16 border-4 border-white flex items-center justify-center text-3xl font-black text-blue-600 mb-3 shadow-lg relative z-20">
+                  {userEntry?.full_name?.charAt(0).toUpperCase() || "P"}
                 </div>
-                <div>
-                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Asal Instansi</p>
-                  <p className="text-sm font-bold text-slate-700 truncate" title={userEntry?.school_name}>{userEntry?.school_name}</p>
+
+                <h3 className="font-black text-xl text-slate-800 uppercase mb-1">{userEntry?.full_name}</h3>
+                <div className="inline-block px-3 py-1 bg-blue-50 text-blue-600 font-bold text-xs rounded-full mb-6 border border-blue-100">
+                  {userEntry?.competition_type}
+                </div>
+
+                {/* Grid Data */}
+                <div className="grid grid-cols-2 gap-3 text-left bg-slate-50 p-4 rounded-2xl mb-4 border border-slate-100">
+                  <div>
+                    <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">ID Tiket Resmi</p>
+                    <p className="text-sm font-black text-slate-700 font-mono">NCC-{userEntry?.id ? String(userEntry.id).substring(0,6).toUpperCase() : "XXXXXX"}</p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Asal Instansi</p>
+                    <p className="text-sm font-bold text-slate-700 truncate" title={userEntry?.school_name}>{userEntry?.school_name}</p>
+                  </div>
                 </div>
               </div>
 
-              {/* Tombol Aksi (Otomatis Hilang Saat Dicetak) */}
-              <div className="flex gap-3 print:hidden">
-                <button 
-                  onClick={() => window.print()} 
-                  className="flex-1 bg-slate-900 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-slate-800 transition-colors shadow-md"
-                >
-                  <Printer size={18} /> Cetak
-                </button>
-                <button 
-                  onClick={() => setShowIdCard(false)} 
-                  className="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl font-bold hover:bg-slate-200 transition-colors"
-                >
-                  Tutup
-                </button>
-              </div>
+              {/* Pita Dekorasi */}
+              <div className="h-2 w-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500"></div>
             </div>
-            
-            {/* Pita Dekorasi */}
-            <div className="h-2 w-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500"></div>
+            {/* ====== BATAS AREA FOTO ====== */}
+
+            {/* Tombol Aksi — DI LUAR REF agar tidak ikut terfoto */}
+            <div className="flex gap-2 p-4 print:hidden">
+              <button
+                onClick={handleDownloadCard}
+                disabled={isDownloading}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-md shadow-blue-200 active:scale-95 text-sm"
+              >
+                {isDownloading ? (
+                  <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></div> Memproses...</>
+                ) : (
+                  <><ImageIcon size={16} /> Unduh PNG</>
+                )}
+              </button>
+              <button
+                onClick={() => window.print()}
+                className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition-colors"
+                title="Cetak"
+              >
+                <Printer size={18} />
+              </button>
+              <button
+                onClick={() => setShowIdCard(false)}
+                className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition-colors"
+                title="Tutup"
+              >
+                ✕
+              </button>
+            </div>
           </div>
 
           {/* Latar Belakang Gelap Penutup Modal */}
