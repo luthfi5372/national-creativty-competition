@@ -871,117 +871,229 @@ export default function UserDashboard() {
               <div className="space-y-8">
 
                 {/* ── 1. LKTI ── */}
-                <div>
-                  <div className="flex items-center gap-2 mb-4">
-                    <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shrink-0"></span>
-                    <h3 className="font-black text-slate-800 text-sm uppercase tracking-wide">LKTI – Lomba Karya Tulis Ilmiah</h3>
+                <div className="group/timeline">
+                  <div className="flex items-center gap-3 mb-6 transition-transform group-hover/timeline:translate-x-1 duration-300">
+                    <span className="w-3.5 h-3.5 rounded-full bg-blue-500 ring-4 ring-blue-100 shrink-0"></span>
+                    <h3 className="font-black text-slate-800 text-sm uppercase tracking-wider">LKTI – Lomba Karya Tulis Ilmiah</h3>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Gel I */}
-                    <div className="bg-blue-50/60 border border-blue-100 rounded-2xl p-4 space-y-2.5">
-                      <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-3">Gelombang I</p>
-                      <div><p className="text-xs font-bold text-slate-700">Pendaftaran & Abstrak</p><p className="text-[11px] text-blue-500 font-semibold">16 Juli – 3 September</p></div>
-                      <div><p className="text-xs font-bold text-slate-700">Pengumuman Tahap I</p><p className="text-[11px] text-blue-500 font-semibold">10 September</p></div>
-                      <div><p className="text-xs font-bold text-slate-700">Pengumpulan Fullpaper</p><p className="text-[11px] text-blue-500 font-semibold">12 – 18 September</p></div>
-                      <div><p className="text-xs font-bold text-slate-700">Pengumuman Tahap II</p><p className="text-[11px] text-blue-500 font-semibold">26 September</p></div>
+                  
+                  <div className="relative pl-6 border-l-2 border-dashed border-slate-200/80 space-y-8 ml-[5px]">
+                    {/* Gelombang I */}
+                    <div className="relative">
+                      <div className="absolute -left-[30px] top-1.5 w-3.5 h-3.5 rounded-full bg-white border-4 border-blue-500 shadow-sm animate-pulse"></div>
+                      <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100">Gelombang I</span>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+                        <div className="bg-white border border-slate-100 hover:border-blue-300 hover:shadow-lg hover:shadow-blue-50/50 p-4 rounded-2xl transition-all duration-300 transform hover:-translate-y-0.5">
+                          <p className="text-xs font-bold text-slate-700 flex items-center gap-1.5">📝 Pendaftaran & Abstrak</p>
+                          <p className="text-[11px] text-blue-600 font-bold mt-1.5 bg-blue-50 px-2 py-0.5 rounded-md w-max">16 Juli – 3 September</p>
+                        </div>
+                        <div className="bg-white border border-slate-100 hover:border-blue-300 hover:shadow-lg hover:shadow-blue-50/50 p-4 rounded-2xl transition-all duration-300 transform hover:-translate-y-0.5">
+                          <p className="text-xs font-bold text-slate-700 flex items-center gap-1.5">📢 Pengumuman Tahap I</p>
+                          <p className="text-[11px] text-blue-600 font-bold mt-1.5 bg-blue-50 px-2 py-0.5 rounded-md w-max">10 September</p>
+                        </div>
+                        <div className="bg-white border border-slate-100 hover:border-blue-300 hover:shadow-lg hover:shadow-blue-50/50 p-4 rounded-2xl transition-all duration-300 transform hover:-translate-y-0.5">
+                          <p className="text-xs font-bold text-slate-700 flex items-center gap-1.5">📥 Pengumpulan Fullpaper</p>
+                          <p className="text-[11px] text-blue-600 font-bold mt-1.5 bg-blue-50 px-2 py-0.5 rounded-md w-max">12 – 18 September</p>
+                        </div>
+                        <div className="bg-white border border-slate-100 hover:border-blue-300 hover:shadow-lg hover:shadow-blue-50/50 p-4 rounded-2xl transition-all duration-300 transform hover:-translate-y-0.5">
+                          <p className="text-xs font-bold text-slate-700 flex items-center gap-1.5">🎉 Pengumuman Tahap II</p>
+                          <p className="text-[11px] text-blue-600 font-bold mt-1.5 bg-blue-50 px-2 py-0.5 rounded-md w-max">26 September</p>
+                        </div>
+                      </div>
                     </div>
-                    {/* Gel II */}
-                    <div className="bg-slate-50/80 border border-slate-100 rounded-2xl p-4 space-y-2.5">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Gelombang II</p>
-                      <div><p className="text-xs font-bold text-slate-600">Pendaftaran & Abstrak</p><p className="text-[11px] text-slate-400 font-semibold">1 – 25 Oktober</p></div>
-                      <div><p className="text-xs font-bold text-slate-600">Pengumuman Tahap I</p><p className="text-[11px] text-slate-400 font-semibold">31 Oktober</p></div>
-                      <div><p className="text-xs font-bold text-slate-600">Pengumpulan Fullpaper</p><p className="text-[11px] text-slate-400 font-semibold">1 – 9 November</p></div>
-                      <div><p className="text-xs font-bold text-slate-600">Pengumuman Tahap II</p><p className="text-[11px] text-slate-400 font-semibold">16 November</p></div>
+
+                    {/* Gelombang II */}
+                    <div className="relative">
+                      <div className="absolute -left-[30px] top-1.5 w-3.5 h-3.5 rounded-full bg-white border-4 border-slate-300 shadow-sm"></div>
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100">Gelombang II</span>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+                        <div className="bg-white border border-slate-100 hover:border-slate-300 hover:shadow-md p-4 rounded-2xl transition-all duration-300 opacity-80 hover:opacity-100">
+                          <p className="text-xs font-bold text-slate-600 flex items-center gap-1.5">📝 Pendaftaran & Abstrak</p>
+                          <p className="text-[11px] text-slate-400 font-bold mt-1.5 bg-slate-50 px-2 py-0.5 rounded-md w-max">1 – 25 Oktober</p>
+                        </div>
+                        <div className="bg-white border border-slate-100 hover:border-slate-300 hover:shadow-md p-4 rounded-2xl transition-all duration-300 opacity-80 hover:opacity-100">
+                          <p className="text-xs font-bold text-slate-600 flex items-center gap-1.5">📢 Pengumuman Tahap I</p>
+                          <p className="text-[11px] text-slate-400 font-bold mt-1.5 bg-slate-50 px-2 py-0.5 rounded-md w-max">31 Oktober</p>
+                        </div>
+                        <div className="bg-white border border-slate-100 hover:border-slate-300 hover:shadow-md p-4 rounded-2xl transition-all duration-300 opacity-80 hover:opacity-100">
+                          <p className="text-xs font-bold text-slate-600 flex items-center gap-1.5">📥 Pengumpulan Fullpaper</p>
+                          <p className="text-[11px] text-slate-400 font-bold mt-1.5 bg-slate-50 px-2 py-0.5 rounded-md w-max">1 – 9 November</p>
+                        </div>
+                        <div className="bg-white border border-slate-100 hover:border-slate-300 hover:shadow-md p-4 rounded-2xl transition-all duration-300 opacity-80 hover:opacity-100">
+                          <p className="text-xs font-bold text-slate-600 flex items-center gap-1.5">🎉 Pengumuman Tahap II</p>
+                          <p className="text-[11px] text-slate-400 font-bold mt-1.5 bg-slate-50 px-2 py-0.5 rounded-md w-max">16 November</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <hr className="border-slate-100" />
+                <hr className="border-slate-100/80 my-2" />
 
                 {/* ── 2. OLIMPIADE ── */}
-                <div>
-                  <div className="flex items-center gap-2 mb-4">
-                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0"></span>
-                    <h3 className="font-black text-slate-800 text-sm uppercase tracking-wide">Olimpiade MIPA</h3>
+                <div className="group/timeline">
+                  <div className="flex items-center gap-3 mb-6 transition-transform group-hover/timeline:translate-x-1 duration-300">
+                    <span className="w-3.5 h-3.5 rounded-full bg-amber-500 ring-4 ring-amber-100 shrink-0"></span>
+                    <h3 className="font-black text-slate-800 text-sm uppercase tracking-wider">Olimpiade MIPA</h3>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Gel I */}
-                    <div className="bg-amber-50/60 border border-amber-100 rounded-2xl p-4 space-y-2.5">
-                      <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-3">Gelombang I</p>
-                      <div><p className="text-xs font-bold text-slate-700">Pendaftaran</p><p className="text-[11px] text-amber-500 font-semibold">16 Juli – 3 September</p></div>
-                      <div><p className="text-xs font-bold text-slate-700">Seleksi 1</p><p className="text-[11px] text-amber-500 font-semibold">10 September</p></div>
-                      <div><p className="text-xs font-bold text-slate-700">Seleksi 2</p><p className="text-[11px] text-amber-500 font-semibold">14 September</p></div>
-                      <div><p className="text-xs font-bold text-slate-700">Pengumuman Tahap I</p><p className="text-[11px] text-amber-500 font-semibold">21 September</p></div>
+                  
+                  <div className="relative pl-6 border-l-2 border-dashed border-slate-200/80 space-y-8 ml-[5px]">
+                    {/* Gelombang I */}
+                    <div className="relative">
+                      <div className="absolute -left-[30px] top-1.5 w-3.5 h-3.5 rounded-full bg-white border-4 border-amber-500 shadow-sm animate-pulse"></div>
+                      <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-100">Gelombang I</span>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+                        <div className="bg-white border border-slate-100 hover:border-amber-300 hover:shadow-lg hover:shadow-amber-50/50 p-4 rounded-2xl transition-all duration-300 transform hover:-translate-y-0.5">
+                          <p className="text-xs font-bold text-slate-700 flex items-center gap-1.5">📝 Pendaftaran</p>
+                          <p className="text-[11px] text-amber-600 font-bold mt-1.5 bg-amber-50 px-2 py-0.5 rounded-md w-max">16 Juli – 3 September</p>
+                        </div>
+                        <div className="bg-white border border-slate-100 hover:border-amber-300 hover:shadow-lg hover:shadow-amber-50/50 p-4 rounded-2xl transition-all duration-300 transform hover:-translate-y-0.5">
+                          <p className="text-xs font-bold text-slate-700 flex items-center gap-1.5">🧠 Seleksi 1</p>
+                          <p className="text-[11px] text-amber-600 font-bold mt-1.5 bg-amber-50 px-2 py-0.5 rounded-md w-max">10 September</p>
+                        </div>
+                        <div className="bg-white border border-slate-100 hover:border-amber-300 hover:shadow-lg hover:shadow-amber-50/50 p-4 rounded-2xl transition-all duration-300 transform hover:-translate-y-0.5">
+                          <p className="text-xs font-bold text-slate-700 flex items-center gap-1.5">⚡ Seleksi 2</p>
+                          <p className="text-[11px] text-amber-600 font-bold mt-1.5 bg-amber-50 px-2 py-0.5 rounded-md w-max">14 September</p>
+                        </div>
+                        <div className="bg-white border border-slate-100 hover:border-amber-300 hover:shadow-lg hover:shadow-amber-50/50 p-4 rounded-2xl transition-all duration-300 transform hover:-translate-y-0.5">
+                          <p className="text-xs font-bold text-slate-700 flex items-center gap-1.5">📢 Pengumuman Tahap I</p>
+                          <p className="text-[11px] text-amber-600 font-bold mt-1.5 bg-amber-50 px-2 py-0.5 rounded-md w-max">21 September</p>
+                        </div>
+                      </div>
                     </div>
-                    {/* Gel II */}
-                    <div className="bg-slate-50/80 border border-slate-100 rounded-2xl p-4 space-y-2.5">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Gelombang II</p>
-                      <div><p className="text-xs font-bold text-slate-600">Pendaftaran</p><p className="text-[11px] text-slate-400 font-semibold">1 – 25 Oktober</p></div>
-                      <div><p className="text-xs font-bold text-slate-600">Simulasi</p><p className="text-[11px] text-slate-400 font-semibold">29 Oktober</p></div>
-                      <div><p className="text-xs font-bold text-slate-600">Seleksi</p><p className="text-[11px] text-slate-400 font-semibold">2 November</p></div>
-                      <div><p className="text-xs font-bold text-slate-600">Pengumuman</p><p className="text-[11px] text-slate-400 font-semibold">8 November</p></div>
+
+                    {/* Gelombang II */}
+                    <div className="relative">
+                      <div className="absolute -left-[30px] top-1.5 w-3.5 h-3.5 rounded-full bg-white border-4 border-slate-300 shadow-sm"></div>
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100">Gelombang II</span>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+                        <div className="bg-white border border-slate-100 hover:border-slate-300 hover:shadow-md p-4 rounded-2xl transition-all duration-300 opacity-80 hover:opacity-100">
+                          <p className="text-xs font-bold text-slate-600 flex items-center gap-1.5">📝 Pendaftaran</p>
+                          <p className="text-[11px] text-slate-400 font-bold mt-1.5 bg-slate-50 px-2 py-0.5 rounded-md w-max">1 – 25 Oktober</p>
+                        </div>
+                        <div className="bg-white border border-slate-100 hover:border-slate-300 hover:shadow-md p-4 rounded-2xl transition-all duration-300 opacity-80 hover:opacity-100">
+                          <p className="text-xs font-bold text-slate-600 flex items-center gap-1.5">🎮 Simulasi</p>
+                          <p className="text-[11px] text-slate-400 font-bold mt-1.5 bg-slate-50 px-2 py-0.5 rounded-md w-max">29 Oktober</p>
+                        </div>
+                        <div className="bg-white border border-slate-100 hover:border-slate-300 hover:shadow-md p-4 rounded-2xl transition-all duration-300 opacity-80 hover:opacity-100">
+                          <p className="text-xs font-bold text-slate-600 flex items-center gap-1.5">⚡ Seleksi</p>
+                          <p className="text-[11px] text-slate-400 font-bold mt-1.5 bg-slate-50 px-2 py-0.5 rounded-md w-max">2 November</p>
+                        </div>
+                        <div className="bg-white border border-slate-100 hover:border-slate-300 hover:shadow-md p-4 rounded-2xl transition-all duration-300 opacity-80 hover:opacity-100">
+                          <p className="text-xs font-bold text-slate-600 flex items-center gap-1.5">📢 Pengumuman</p>
+                          <p className="text-[11px] text-slate-400 font-bold mt-1.5 bg-slate-50 px-2 py-0.5 rounded-md w-max">8 November</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <hr className="border-slate-100" />
+                <hr className="border-slate-100/80 my-2" />
 
                 {/* ── 3. SPEECH ── */}
-                <div>
-                  <div className="flex items-center gap-2 mb-4">
-                    <span className="w-2.5 h-2.5 rounded-full bg-purple-500 shrink-0"></span>
-                    <h3 className="font-black text-slate-800 text-sm uppercase tracking-wide">Speech Contest</h3>
+                <div className="group/timeline">
+                  <div className="flex items-center gap-3 mb-6 transition-transform group-hover/timeline:translate-x-1 duration-300">
+                    <span className="w-3.5 h-3.5 rounded-full bg-purple-500 ring-4 ring-purple-100 shrink-0"></span>
+                    <h3 className="font-black text-slate-800 text-sm uppercase tracking-wider">Speech Contest</h3>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Gel I */}
-                    <div className="bg-purple-50/60 border border-purple-100 rounded-2xl p-4 space-y-2.5">
-                      <p className="text-[10px] font-black text-purple-500 uppercase tracking-widest mb-3">Gelombang I</p>
-                      <div><p className="text-xs font-bold text-slate-700">Pendaftaran & Naskah</p><p className="text-[11px] text-purple-500 font-semibold">16 Juli – 3 September</p></div>
-                      <div><p className="text-xs font-bold text-slate-700">Pengumuman</p><p className="text-[11px] text-purple-500 font-semibold">14 September</p></div>
+                  
+                  <div className="relative pl-6 border-l-2 border-dashed border-slate-200/80 space-y-8 ml-[5px]">
+                    {/* Gelombang I */}
+                    <div className="relative">
+                      <div className="absolute -left-[30px] top-1.5 w-3.5 h-3.5 rounded-full bg-white border-4 border-purple-500 shadow-sm animate-pulse"></div>
+                      <span className="text-[10px] font-black text-purple-600 uppercase tracking-widest bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-100">Gelombang I</span>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+                        <div className="bg-white border border-slate-100 hover:border-purple-300 hover:shadow-lg hover:shadow-purple-50/50 p-4 rounded-2xl transition-all duration-300 transform hover:-translate-y-0.5">
+                          <p className="text-xs font-bold text-slate-700 flex items-center gap-1.5">📝 Pendaftaran & Naskah</p>
+                          <p className="text-[11px] text-purple-600 font-bold mt-1.5 bg-purple-50 px-2 py-0.5 rounded-md w-max">16 Juli – 3 September</p>
+                        </div>
+                        <div className="bg-white border border-slate-100 hover:border-purple-300 hover:shadow-lg hover:shadow-purple-50/50 p-4 rounded-2xl transition-all duration-300 transform hover:-translate-y-0.5">
+                          <p className="text-xs font-bold text-slate-700 flex items-center gap-1.5">📢 Pengumuman</p>
+                          <p className="text-[11px] text-purple-600 font-bold mt-1.5 bg-purple-50 px-2 py-0.5 rounded-md w-max">14 September</p>
+                        </div>
+                      </div>
                     </div>
-                    {/* Gel II */}
-                    <div className="bg-slate-50/80 border border-slate-100 rounded-2xl p-4 space-y-2.5">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Gelombang II</p>
-                      <div><p className="text-xs font-bold text-slate-600">Pendaftaran & Naskah</p><p className="text-[11px] text-slate-400 font-semibold">1 – 25 Oktober</p></div>
-                      <div><p className="text-xs font-bold text-slate-600">Pengumuman</p><p className="text-[11px] text-slate-400 font-semibold">14 November</p></div>
+
+                    {/* Gelombang II */}
+                    <div className="relative">
+                      <div className="absolute -left-[30px] top-1.5 w-3.5 h-3.5 rounded-full bg-white border-4 border-slate-300 shadow-sm"></div>
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100">Gelombang II</span>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+                        <div className="bg-white border border-slate-100 hover:border-slate-300 hover:shadow-md p-4 rounded-2xl transition-all duration-300 opacity-80 hover:opacity-100">
+                          <p className="text-xs font-bold text-slate-600 flex items-center gap-1.5">📝 Pendaftaran & Naskah</p>
+                          <p className="text-[11px] text-slate-400 font-bold mt-1.5 bg-slate-50 px-2 py-0.5 rounded-md w-max">1 – 25 Oktober</p>
+                        </div>
+                        <div className="bg-white border border-slate-100 hover:border-slate-300 hover:shadow-md p-4 rounded-2xl transition-all duration-300 opacity-80 hover:opacity-100">
+                          <p className="text-xs font-bold text-slate-600 flex items-center gap-1.5">📢 Pengumuman</p>
+                          <p className="text-[11px] text-slate-400 font-bold mt-1.5 bg-slate-50 px-2 py-0.5 rounded-md w-max">14 November</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <hr className="border-slate-100" />
+                <hr className="border-slate-100/80 my-2" />
 
                 {/* ── 4. MTQ ── */}
-                <div>
-                  <div className="flex items-center gap-2 mb-4">
-                    <span className="w-2.5 h-2.5 rounded-full bg-green-500 shrink-0"></span>
-                    <h3 className="font-black text-slate-800 text-sm uppercase tracking-wide">MTQ</h3>
+                <div className="group/timeline">
+                  <div className="flex items-center gap-3 mb-6 transition-transform group-hover/timeline:translate-x-1 duration-300">
+                    <span className="w-3.5 h-3.5 rounded-full bg-green-500 ring-4 ring-green-100 shrink-0"></span>
+                    <h3 className="font-black text-slate-800 text-sm uppercase tracking-wider">MTQ</h3>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Gel I */}
-                    <div className="bg-green-50/60 border border-green-100 rounded-2xl p-4 space-y-2.5">
-                      <p className="text-[10px] font-black text-green-600 uppercase tracking-widest mb-3">Gelombang I</p>
-                      <div><p className="text-xs font-bold text-slate-700">Pendaftaran & Video</p><p className="text-[11px] text-green-600 font-semibold">16 Juli – 3 September</p></div>
-                      <div><p className="text-xs font-bold text-slate-700">Pengumuman</p><p className="text-[11px] text-green-600 font-semibold">14 September</p></div>
+                  
+                  <div className="relative pl-6 border-l-2 border-dashed border-slate-200/80 space-y-8 ml-[5px]">
+                    {/* Gelombang I */}
+                    <div className="relative">
+                      <div className="absolute -left-[30px] top-1.5 w-3.5 h-3.5 rounded-full bg-white border-4 border-green-500 shadow-sm animate-pulse"></div>
+                      <span className="text-[10px] font-black text-green-600 uppercase tracking-widest bg-green-50 px-2.5 py-1 rounded-lg border border-green-100">Gelombang I</span>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+                        <div className="bg-white border border-slate-100 hover:border-green-300 hover:shadow-lg hover:shadow-green-50/50 p-4 rounded-2xl transition-all duration-300 transform hover:-translate-y-0.5">
+                          <p className="text-xs font-bold text-slate-700 flex items-center gap-1.5">📝 Pendaftaran & Video</p>
+                          <p className="text-[11px] text-green-600 font-bold mt-1.5 bg-green-50 px-2 py-0.5 rounded-md w-max">16 Juli – 3 September</p>
+                        </div>
+                        <div className="bg-white border border-slate-100 hover:border-green-300 hover:shadow-lg hover:shadow-green-50/50 p-4 rounded-2xl transition-all duration-300 transform hover:-translate-y-0.5">
+                          <p className="text-xs font-bold text-slate-700 flex items-center gap-1.5">📢 Pengumuman</p>
+                          <p className="text-[11px] text-green-600 font-bold mt-1.5 bg-green-50 px-2 py-0.5 rounded-md w-max">14 September</p>
+                        </div>
+                      </div>
                     </div>
-                    {/* Gel II */}
-                    <div className="bg-slate-50/80 border border-slate-100 rounded-2xl p-4 space-y-2.5">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Gelombang II</p>
-                      <div><p className="text-xs font-bold text-slate-600">Pendaftaran</p><p className="text-[11px] text-slate-400 font-semibold">1 – 25 Oktober</p></div>
-                      <div><p className="text-xs font-bold text-slate-600">Pengumuman</p><p className="text-[11px] text-slate-400 font-semibold">14 November</p></div>
+
+                    {/* Gelombang II */}
+                    <div className="relative">
+                      <div className="absolute -left-[30px] top-1.5 w-3.5 h-3.5 rounded-full bg-white border-4 border-slate-300 shadow-sm"></div>
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100">Gelombang II</span>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+                        <div className="bg-white border border-slate-100 hover:border-slate-300 hover:shadow-md p-4 rounded-2xl transition-all duration-300 opacity-80 hover:opacity-100">
+                          <p className="text-xs font-bold text-slate-600 flex items-center gap-1.5">📝 Pendaftaran</p>
+                          <p className="text-[11px] text-slate-400 font-bold mt-1.5 bg-slate-50 px-2 py-0.5 rounded-md w-max">1 – 25 Oktober</p>
+                        </div>
+                        <div className="bg-white border border-slate-100 hover:border-slate-300 hover:shadow-md p-4 rounded-2xl transition-all duration-300 opacity-80 hover:opacity-100">
+                          <p className="text-xs font-bold text-slate-600 flex items-center gap-1.5">📢 Pengumuman</p>
+                          <p className="text-[11px] text-slate-400 font-bold mt-1.5 bg-slate-50 px-2 py-0.5 rounded-md w-max">14 November</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <hr className="border-slate-100" />
+                <hr className="border-slate-100/80 my-2" />
 
                 {/* ── 📌 TM SEMUA LOMBA ── */}
-                <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-5 flex items-center gap-4">
-                  <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center shrink-0">
-                    <Pin size={20} className="text-white" />
+                <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 rounded-2xl p-5 flex items-center gap-4 hover:shadow-lg hover:shadow-indigo-100 transition-all duration-300 group">
+                  <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-all duration-300">
+                    <Pin size={24} className="text-white animate-bounce" />
                   </div>
                   <div>
-                    <p className="font-black text-white text-sm">Technical Meeting – Semua Lomba</p>
-                    <p className="text-indigo-200 text-xs font-semibold mt-0.5">18 November • Semua Cabang Lomba</p>
+                    <p className="font-black text-white text-sm tracking-wide">Technical Meeting – Semua Lomba</p>
+                    <p className="text-indigo-100 text-xs font-semibold mt-1 bg-white/10 px-2.5 py-0.5 rounded-md w-max">18 November • Semua Cabang Lomba</p>
                   </div>
                 </div>
 
