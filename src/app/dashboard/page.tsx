@@ -62,6 +62,31 @@ export default function UserDashboard() {
     participant2_name: "",
     participant2_nisn: ""
   });
+  const [submissionUrl, setSubmissionUrl] = useState("");
+  const [isSavingUrl, setIsSavingUrl] = useState(false);
+
+  const handleSaveSubmissionUrl = async () => {
+    if (!submissionUrl) {
+      return showToast("Masukkan link Google Drive Anda terlebih dahulu!", "error");
+    }
+    
+    setIsSavingUrl(true);
+    try {
+      const { error } = await supabase
+        .from('competition_entries')
+        .update({ submission_url: submissionUrl })
+        .eq('id', userEntry?.id);
+
+      if (error) throw error;
+      
+      showToast("Link karya berhasil disimpan!", "success");
+      setUserEntry((prev: any) => ({ ...prev, submission_url: submissionUrl }));
+    } catch (err: any) {
+      showToast(`Gagal menyimpan: ${err.message}`, "error");
+    } finally {
+      setIsSavingUrl(false);
+    }
+  };
 
   // Notifikasi Toast
   const [toast, setToast] = useState({ show: false, message: "", type: "success" });
@@ -93,6 +118,7 @@ export default function UserDashboard() {
           
         if (entryData) {
           setUserEntry(entryData);
+          setSubmissionUrl(entryData.submission_url || "");
         }
         
         const userStatus = entryData?.payment_status === 'Verified' ? 'Verified' : 'Pending';
@@ -288,6 +314,43 @@ export default function UserDashboard() {
                 >
                   <IdCard size={18} /> Lihat & Cetak ID Card
                 </button>
+              </div>
+            )}
+            {userEntry?.payment_status === 'Verified' && (
+              <div className="bg-white/90 backdrop-blur-md border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl p-6 mt-6">
+                <h3 className="font-bold text-slate-800 mb-2 flex items-center gap-2">
+                  <FolderOpen size={18} className="text-blue-500" />
+                  Pengumpulan Karya (Link GDrive)
+                </h3>
+                <p className="text-xs text-slate-500 font-medium leading-relaxed mb-4">
+                  Silakan kumpulkan berkas karya lomba Anda melalui link penyimpanan cloud Google Drive.
+                </p>
+
+                <div className="space-y-3">
+                  <div className="relative">
+                    <input 
+                      type="url" 
+                      placeholder="https://drive.google.com/..." 
+                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                      value={submissionUrl}
+                      onChange={(e) => setSubmissionUrl(e.target.value)}
+                    />
+                  </div>
+                  
+                  {/* Catatan Penting */}
+                  <div className="p-3 bg-amber-50 border border-amber-100 rounded-xl text-[10px] text-amber-700 font-medium leading-relaxed flex items-start gap-2">
+                    <AlertCircle size={14} className="text-amber-500 shrink-0 mt-0.5" />
+                    <span><strong>Catatan Penting:</strong> Pastikan link Google Drive sudah diubah hak aksesnya menjadi <strong>"Siapa saja yang memiliki link dapat melihat"</strong> agar panitia dan juri dapat menilai karya Anda.</span>
+                  </div>
+
+                  <button 
+                    onClick={handleSaveSubmissionUrl}
+                    disabled={isSavingUrl}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-all shadow-md shadow-blue-200 text-xs flex items-center justify-center gap-2"
+                  >
+                    {isSavingUrl ? "Menyimpan..." : "Simpan Link Karya"}
+                  </button>
+                </div>
               </div>
             )}
 
