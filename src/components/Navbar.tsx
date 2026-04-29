@@ -19,12 +19,12 @@ import Link from "next/link";
 import MagneticWrapper from "./ui/MagneticWrapper";
 
 const navItems = [
-  { icon: Home, label: "Beranda", href: "#beranda" },
-  { icon: Layers, label: "Kategori", href: "#kategori" },
+  { icon: Home, label: "Beranda", href: "/#beranda" },
+  { icon: Layers, label: "Kategori", href: "/#kategori" },
   { icon: ClipboardList, label: "Leaderboard", href: "/leaderboard" },
-  { icon: Calendar, label: "Jadwal", href: "#jadwal" },
+  { icon: Calendar, label: "Jadwal", href: "/#jadwal" },
   { icon: UserPlus, label: "Pendaftaran", href: "/daftar" },
-  { icon: Mail, label: "Kontak", href: "#kontak" },
+  { icon: Mail, label: "Kontak", href: "/#kontak" },
 ];
 
 export default function Navbar() {
@@ -200,12 +200,9 @@ export default function Navbar() {
             {navItems.map((item, i) => {
               const Icon = item.icon;
               return (
-                <motion.a
+                <Link
                   key={item.label}
                   href={item.href}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.05 }}
                   onClick={() => {
                     setActiveItem(item.label);
                     setMobileOpen(false);
@@ -218,7 +215,7 @@ export default function Navbar() {
                 >
                   <Icon size={18} />
                   <span>{item.label}</span>
-                </motion.a>
+                </Link>
               );
             })}
           </motion.div>
