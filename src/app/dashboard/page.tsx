@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import * as htmlToImage from 'html-to-image';
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase"; 
-import { Bell, Megaphone, User, Clock, CheckCircle2, AlertCircle, LogOut, IdCard, Printer, Calendar, BookOpen, Image as ImageIcon, MessageCircle, Pin, X, MapPin, School } from "lucide-react";
+import { Bell, Megaphone, User, Clock, CheckCircle2, AlertCircle, LogOut, IdCard, Printer, Calendar, BookOpen, Image as ImageIcon, MessageCircle, Pin, X, MapPin, School, FolderOpen } from "lucide-react";
 
 export default function UserDashboard() {
   const [announcements, setAnnouncements] = useState<any[]>([]);
