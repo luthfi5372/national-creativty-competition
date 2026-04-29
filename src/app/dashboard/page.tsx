@@ -65,6 +65,17 @@ export default function UserDashboard() {
   const [submissionUrl, setSubmissionUrl] = useState("");
   const [isSavingUrl, setIsSavingUrl] = useState(false);
   const [isSubmissionOpen, setIsSubmissionOpen] = useState(false);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [profileForm, setProfileForm] = useState({
+    full_name: "",
+    school_name: "",
+    phone: "",
+    nisn: "",
+    province: "",
+    team_name: "",
+    participant2_name: "",
+    participant2_nisn: ""
+  });
 
   const handleSaveSubmissionUrl = async () => {
     if (!submissionUrl) {
@@ -86,6 +97,46 @@ export default function UserDashboard() {
       showToast(`Gagal menyimpan: ${err.message}`, "error");
     } finally {
       setIsSavingUrl(false);
+    }
+  };
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('competition_entries')
+        .update({
+          full_name: profileForm.full_name,
+          school_name: profileForm.school_name,
+          phone: profileForm.phone,
+          nisn: profileForm.nisn,
+          province: profileForm.province,
+          team_name: profileForm.team_name,
+          participant2_name: profileForm.participant2_name,
+          participant2_nisn: profileForm.participant2_nisn
+        })
+        .eq('id', userEntry?.id);
+
+      if (error) throw error;
+      
+      showToast("Profil berhasil diperbarui!", "success");
+      setUserEntry((prev: any) => ({
+        ...prev,
+        full_name: profileForm.full_name,
+        school_name: profileForm.school_name,
+        phone: profileForm.phone,
+        nisn: profileForm.nisn,
+        province: profileForm.province,
+        team_name: profileForm.team_name,
+        participant2_name: profileForm.participant2_name,
+        participant2_nisn: profileForm.participant2_nisn
+      }));
+      setIsEditingProfile(false);
+    } catch (err: any) {
+      showToast(`Gagal memperbarui profil: ${err.message}`, "error");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -120,6 +171,16 @@ export default function UserDashboard() {
         if (entryData) {
           setUserEntry(entryData);
           setSubmissionUrl(entryData.submission_url || "");
+          setProfileForm({
+            full_name: entryData.full_name || "",
+            school_name: entryData.school_name || entryData.school || "",
+            phone: entryData.phone || "",
+            nisn: entryData.nisn || "",
+            province: entryData.province || "",
+            team_name: entryData.team_name || "",
+            participant2_name: entryData.participant2_name || "",
+            participant2_nisn: entryData.participant2_nisn || ""
+          });
         }
         
         // --- 🔒 CHECK PORTAL AKSES GLOBAL ---
@@ -349,6 +410,163 @@ export default function UserDashboard() {
                 </button>
               </div>
             )}
+            {userEntry && (
+              <div className="bg-white/90 backdrop-blur-md border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl p-6 mt-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                    <User size={18} className="text-indigo-500" />
+                    Pratinjau Profil
+                  </h3>
+                  <button 
+                    onClick={() => setIsEditingProfile(!isEditingProfile)}
+                    className="text-xs font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-xl transition-all"
+                  >
+                    {isEditingProfile ? "Batal" : "Ubah Profil"}
+                  </button>
+                </div>
+
+                {!isEditingProfile ? (
+                  <div className="space-y-3 text-xs">
+                    <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                      <span className="text-slate-400 font-medium">Nama Lengkap</span>
+                      <span className="text-slate-800 font-bold">{userEntry.full_name || "Peserta"}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                      <span className="text-slate-400 font-medium">Asal Sekolah</span>
+                      <span className="text-slate-800 font-bold">{userEntry.school_name || userEntry.school || "-"}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                      <span className="text-slate-400 font-medium">Nomor WhatsApp</span>
+                      <span className="text-slate-800 font-bold">{userEntry.phone || "-"}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                      <span className="text-slate-400 font-medium">NISN</span>
+                      <span className="text-slate-800 font-bold">{userEntry.nisn || "-"}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                      <span className="text-slate-400 font-medium">Provinsi</span>
+                      <span className="text-slate-800 font-bold">{userEntry.province || "-"}</span>
+                    </div>
+
+                    {(userEntry.competition_type === "Olimpiade MIPA" || userEntry.competition_type === "LKTI Nasional") && (
+                      <>
+                        <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                          <span className="text-slate-400 font-medium">Nama Tim</span>
+                          <span className="text-slate-800 font-bold">{userEntry.team_name || "-"}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                          <span className="text-slate-400 font-medium">Anggota 2</span>
+                          <span className="text-slate-800 font-bold">{userEntry.participant2_name || "-"}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                          <span className="text-slate-400 font-medium">NISN Anggota 2</span>
+                          <span className="text-slate-800 font-bold">{userEntry.participant2_nisn || "-"}</span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  <form onSubmit={handleUpdateProfile} className="space-y-3 text-xs">
+                    <div>
+                      <label className="block text-slate-500 font-medium mb-1">Nama Lengkap</label>
+                      <input 
+                        type="text"
+                        required
+                        className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                        value={profileForm.full_name}
+                        onChange={(e) => setProfileForm({...profileForm, full_name: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-500 font-medium mb-1">Asal Sekolah</label>
+                      <input 
+                        type="text"
+                        required
+                        className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:ring-offset-0 focus:border-indigo-300"
+                        value={profileForm.school_name}
+                        onChange={(e) => setProfileForm({...profileForm, school_name: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-500 font-medium mb-1">Nomor WhatsApp</label>
+                      <input 
+                        type="text"
+                        required
+                        className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                        value={profileForm.phone}
+                        onChange={(e) => setProfileForm({...profileForm, phone: e.target.value})}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-slate-500 font-medium mb-1">NISN</label>
+                        <input 
+                          type="text"
+                          required
+                          className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                          value={profileForm.nisn}
+                          onChange={(e) => setProfileForm({...profileForm, nisn: e.target.value})}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-500 font-medium mb-1">Provinsi</label>
+                        <input 
+                          type="text"
+                          required
+                          className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                          value={profileForm.province}
+                          onChange={(e) => setProfileForm({...profileForm, province: e.target.value})}
+                        />
+                      </div>
+                    </div>
+
+                    {(userEntry.competition_type === "Olimpiade MIPA" || userEntry.competition_type === "LKTI Nasional") && (
+                      <div className="pt-2 border-t border-slate-100 space-y-3">
+                        <div>
+                          <label className="block text-slate-500 font-medium mb-1">Nama Tim</label>
+                          <input 
+                            type="text"
+                            required
+                            className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                            value={profileForm.team_name}
+                            onChange={(e) => setProfileForm({...profileForm, team_name: e.target.value})}
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-slate-500 font-medium mb-1">Anggota 2</label>
+                            <input 
+                              type="text"
+                              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                              value={profileForm.participant2_name}
+                              onChange={(e) => setProfileForm({...profileForm, participant2_name: e.target.value})}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-slate-500 font-medium mb-1">NISN Anggota 2</label>
+                            <input 
+                              type="text"
+                              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                              value={profileForm.participant2_nisn}
+                              onChange={(e) => setProfileForm({...profileForm, participant2_nisn: e.target.value})}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <button 
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl transition-all shadow-md shadow-indigo-200 mt-2"
+                    >
+                      {isSubmitting ? "Memproses..." : "Simpan Perubahan"}
+                    </button>
+                  </form>
+                )}
+              </div>
+            )}
+
             {userEntry?.payment_status === 'Verified' && isSubmissionOpen && (
               <div className="bg-white/90 backdrop-blur-md border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl p-6 mt-6">
                 <h3 className="font-bold text-slate-800 mb-2 flex items-center gap-2">
