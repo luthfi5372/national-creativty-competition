@@ -84,7 +84,7 @@ const fragmentShader = `
     float value = 0.0;
     float amplitude = 0.5;
     float frequency = 1.0;
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 3; i++) {
       value += amplitude * snoise(p * frequency);
       amplitude *= 0.5;
       frequency *= 2.0;
@@ -223,7 +223,7 @@ export default function FluidBackground() {
           stencil: false,
           depth: false,
         }}
-        dpr={[1, 1.5]}
+        dpr={[0.5, 1]}
         camera={{ position: [0, 0, 1] }}
         style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }}
       >

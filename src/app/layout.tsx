@@ -83,7 +83,6 @@ export default function RootLayout({
         className="min-h-full flex flex-col bg-background text-foreground relative"
         suppressHydrationWarning
       >
-        <div className="glass-grain" />
         {children}
       </body>
     </html>

@@ -400,7 +400,7 @@ export default function UserDashboard() {
           
           {/* Bagian Kanan Header (Status + Logout) */}
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-3 bg-white/90 backdrop-blur-md border border-white/80 px-4 py-2 rounded-2xl shadow-sm">
+            <div className="flex items-center gap-3 bg-white  border border-white/80 px-4 py-2 rounded-2xl shadow-sm">
               {(() => {
                 let photoUrl = "";
                 if (userEntry?.notes) {
@@ -444,7 +444,7 @@ export default function UserDashboard() {
             <button 
               onClick={handleLogout}
               title="Keluar dari Akun"
-              className="p-3 bg-white/90 backdrop-blur-md border border-white/80 text-red-500 hover:bg-red-50 hover:text-red-600 rounded-2xl shadow-sm transition-all flex items-center justify-center active:scale-95"
+              className="p-3 bg-white  border border-white/80 text-red-500 hover:bg-red-50 hover:text-red-600 rounded-2xl shadow-sm transition-all flex items-center justify-center active:scale-95"
             >
               <LogOut size={20} />
             </button>
@@ -457,7 +457,7 @@ export default function UserDashboard() {
           <div className="space-y-6">
             
             {!userEntry && (
-              <div className="bg-white/90 backdrop-blur-md border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl p-6">
+              <div className="bg-white  border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl p-6">
                 <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
                   <AlertCircle size={18} className="text-blue-500" />
                   Langkah Selanjutnya
@@ -480,13 +480,13 @@ export default function UserDashboard() {
 
             {userEntry?.payment_status === 'Pending' && (
               <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-3xl p-6 text-white shadow-lg shadow-amber-200 relative overflow-hidden">
-                <div className="absolute top-[-10%] right-[-10%] w-32 h-32 bg-white/20 rounded-full blur-2xl pointer-events-none"></div>
+                <div className="absolute top-[-10%] right-[-10%] w-32 h-32 bg-slate-100 rounded-full blur-2xl pointer-events-none"></div>
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-white/20 rounded-xl backdrop-blur-md"><Clock size={24} className="text-white" /></div>
+                  <div className="p-2 bg-slate-100 rounded-xl "><Clock size={24} className="text-white" /></div>
                   <h3 className="font-bold text-lg">Proses Verifikasi</h3>
                 </div>
                 <p className="text-sm text-amber-50 font-medium leading-relaxed mb-4">
-                  Berkas pendaftaran <strong className="text-white bg-white/20 px-1 rounded">{userEntry?.competition_type || "Kompetisi"}</strong> Anda sedang diperiksa oleh Markas Besar. 
+                  Berkas pendaftaran <strong className="text-white bg-slate-100 px-1 rounded">{userEntry?.competition_type || "Kompetisi"}</strong> Anda sedang diperiksa oleh Markas Besar. 
                 </p>
                 <div className="bg-black/10 rounded-xl p-3 text-xs font-bold uppercase tracking-wider text-center border border-white/20">
                   Mohon Tunggu 1x24 Jam
@@ -496,9 +496,9 @@ export default function UserDashboard() {
 
             {userEntry?.payment_status === 'Verified' && (
               <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-6 text-white shadow-lg shadow-blue-200 relative overflow-hidden">
-                <div className="absolute top-[-10%] right-[-10%] w-32 h-32 bg-white/20 rounded-full blur-2xl pointer-events-none"></div>
+                <div className="absolute top-[-10%] right-[-10%] w-32 h-32 bg-slate-100 rounded-full blur-2xl pointer-events-none"></div>
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-white/20 rounded-xl backdrop-blur-md"><CheckCircle2 size={24} className="text-white" /></div>
+                  <div className="p-2 bg-slate-100 rounded-xl "><CheckCircle2 size={24} className="text-white" /></div>
                   <h3 className="font-bold text-lg">Resmi Terdaftar!</h3>
                 </div>
                 <p className="text-sm text-blue-100 font-medium leading-relaxed mb-4">
@@ -511,14 +511,14 @@ export default function UserDashboard() {
                 {/* 👇 TOMBOL ID CARD BARU 👇 */}
                 <button 
                   onClick={() => setShowIdCard(true)}
-                  className="mt-4 w-full bg-white/20 hover:bg-white/30 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-sm border border-white/30"
+                  className="mt-4 w-full bg-slate-100 hover:bg-white/30 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-sm border border-white/30"
                 >
                   <IdCard size={18} /> Lihat & Cetak ID Card
                 </button>
               </div>
             )}
             {userEntry && (
-              <div className="bg-white/90 backdrop-blur-md border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl p-6 mt-6">
+              <div className="bg-white  border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl p-6 mt-6">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="font-bold text-slate-800 flex items-center gap-2">
                     <User size={18} className="text-indigo-500" />
@@ -735,7 +735,7 @@ export default function UserDashboard() {
             )}
 
             {userEntry?.payment_status === 'Verified' && isSubmissionOpen && (
-              <div className="bg-white/90 backdrop-blur-md border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl p-6 mt-6">
+              <div className="bg-white  border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl p-6 mt-6">
                 <h3 className="font-bold text-slate-800 mb-2 flex items-center gap-2">
                   <FolderOpen size={18} className="text-blue-500" />
                   Pengumpulan Karya (Link GDrive)
@@ -774,7 +774,7 @@ export default function UserDashboard() {
 
             {/* --- WIDGET BARU: PUSAT UNDUHAN & HELPDESK --- */}
             <div className="grid grid-cols-1 gap-4 mt-6">
-              <a href="#" target="_blank" className="flex items-center gap-4 p-4 bg-white/60 backdrop-blur-xl border border-slate-200 hover:border-blue-300 hover:bg-blue-50/50 rounded-2xl transition-all group shadow-sm">
+              <a href="#" target="_blank" className="flex items-center gap-4 p-4 bg-white  border border-slate-200 hover:border-blue-300 hover:bg-blue-50/50 rounded-2xl transition-all group shadow-sm">
                 <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
                   <BookOpen size={20} />
                 </div>
@@ -784,7 +784,7 @@ export default function UserDashboard() {
                 </div>
               </a>
 
-              <a href="#" target="_blank" className="flex items-center gap-4 p-4 bg-white/60 backdrop-blur-xl border border-slate-200 hover:border-purple-300 hover:bg-purple-50/50 rounded-2xl transition-all group shadow-sm">
+              <a href="#" target="_blank" className="flex items-center gap-4 p-4 bg-white  border border-slate-200 hover:border-purple-300 hover:bg-purple-50/50 rounded-2xl transition-all group shadow-sm">
                 <div className="w-10 h-10 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
                   <ImageIcon size={20} />
                 </div>
@@ -794,7 +794,7 @@ export default function UserDashboard() {
                 </div>
               </a>
 
-              <a href="https://wa.me/6281234567890" target="_blank" className="flex items-center gap-4 p-4 bg-white/60 backdrop-blur-xl border border-slate-200 hover:border-green-300 hover:bg-green-50/50 rounded-2xl transition-all group shadow-sm">
+              <a href="https://wa.me/6281234567890" target="_blank" className="flex items-center gap-4 p-4 bg-white  border border-slate-200 hover:border-green-300 hover:bg-green-50/50 rounded-2xl transition-all group shadow-sm">
                 <div className="w-10 h-10 bg-green-100 text-green-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
                   <MessageCircle size={20} />
                 </div>
@@ -808,7 +808,7 @@ export default function UserDashboard() {
 
           {/* KOLOM KANAN: PAPAN PENGUMUMAN */}
           <div className="lg:col-span-2">
-            <div className="bg-white/90 backdrop-blur-md border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl p-8 min-h-[400px]">
+            <div className="bg-white  border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl p-8 min-h-[400px]">
               <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-200/50">
                 <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
                   <Megaphone size={22} className="text-blue-600" /> Papan Pengumuman Resmi
@@ -839,7 +839,7 @@ export default function UserDashboard() {
                     const formattedTime = isValidDate ? dateObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : "-";
 
                     return (
-                      <div key={announcement?.id || idx} className="bg-white/80 border border-slate-100 p-5 rounded-2xl hover:shadow-md transition-shadow">
+                      <div key={announcement?.id || idx} className="bg-white border border-slate-100 p-5 rounded-2xl hover:shadow-md transition-shadow">
                         <div className="flex justify-between items-start mb-2">
                           <h3 className="font-bold text-slate-800 text-lg">{announcement?.title || "Tanpa Judul"}</h3>
                           <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-md whitespace-nowrap">
@@ -857,7 +857,7 @@ export default function UserDashboard() {
             </div>
 
             {/* --- WIDGET JADWAL PENTING (TIMELINE RESMI NCC 13TH) --- */}
-            <div className="bg-white/60 backdrop-blur-xl border border-slate-200 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl p-8 mt-8">
+            <div className="bg-white  border border-slate-200 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl p-8 mt-8">
               <div className="flex items-center gap-3 mb-8 pb-5 border-b border-slate-200/50">
                 <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center">
                   <Calendar size={20} />
@@ -1088,7 +1088,7 @@ export default function UserDashboard() {
 
                 {/* ── 📌 TM SEMUA LOMBA ── */}
                 <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 rounded-2xl p-5 flex items-center gap-4 hover:shadow-lg hover:shadow-indigo-100 transition-all duration-300 group">
-                  <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-all duration-300">
+                  <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-all duration-300">
                     <Pin size={24} className="text-white animate-bounce" />
                   </div>
                   <div>
@@ -1105,7 +1105,7 @@ export default function UserDashboard() {
 
       {/* TOAST NOTIFICATION */}
       <div className={`fixed top-8 right-8 z-[100] transition-all duration-500 transform ${toast.show ? 'translate-y-0 opacity-100' : '-translate-y-10 opacity-0 pointer-events-none'}`}>
-        <div className="bg-white/95 backdrop-blur-md border border-white/60 shadow-2xl rounded-2xl p-4 flex items-center gap-3">
+        <div className="bg-white  border border-white/60 shadow-2xl rounded-2xl p-4 flex items-center gap-3">
           {toast.type === 'success' ? (
             <div className="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center"><CheckCircle2 size={18} /></div>
           ) : (
@@ -1120,8 +1120,8 @@ export default function UserDashboard() {
 
       {/* MODAL FORM REGISTRASI */}
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md">
-          <div className="bg-white/95 backdrop-blur-md w-full max-w-2xl rounded-3xl border border-white/60 p-8 shadow-2xl overflow-y-auto max-h-[90vh]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60">
+          <div className="bg-white w-full max-w-2xl rounded-3xl border border-white/60 p-8 shadow-2xl overflow-y-auto max-h-[90vh]">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-black text-slate-800">Finalisasi Pendaftaran</h2>
               <button onClick={() => setShowForm(false)} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"><X size={18} /></button>
