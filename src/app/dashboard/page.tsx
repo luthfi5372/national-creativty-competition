@@ -83,8 +83,9 @@ export default function UserDashboard() {
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
            
+        const entryData = entries && entries.length > 0 ? entries[0] : null;
         if (entries && entries.length > 0) {
-          setUserEntry(entries[0]); // Ambil yang paling baru jika ada banyak
+          setUserEntry(entryData); 
         } else if (entryError) {
           console.error("Entry fetch error:", entryError);
         }
@@ -106,6 +107,10 @@ export default function UserDashboard() {
             else if (userCategory === "LKTI Nasional") matchingKeyPrefix = "lkti";
             else if (userCategory === "MTQ") matchingKeyPrefix = "mtq";
 
+            if (matchingKeyPrefix) {
+              const statusArray = parsed.submissionStatus || [];
+              const isGel1Open = statusArray.find((s: any) => s.id === matchingKeyPrefix + "_g1")?.isOpen;
+              const isGel2Open = statusArray.find((s: any) => s.id === matchingKeyPrefix + "_g2")?.isOpen;
               setIsSubmissionOpen(!!(isGel1Open || isGel2Open));
             } else {
               setIsSubmissionOpen(true);

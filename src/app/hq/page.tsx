@@ -527,8 +527,8 @@ export default function ModernHQDashboard() {
             { id: "Peserta", icon: <Users size={18} />, label: "Buku Peserta", count: realEntries.filter((e: any) => e.payment_status === 'Verified' || e.payment_status === 'success').length },
             { id: "Verifikasi", icon: <CheckCircle size={18} />, label: "Verifikasi Berkas", count: realEntries.filter((e: any) => e.payment_status === 'Pending').length },
             { id: "Pengumuman", icon: <Megaphone size={18} />, label: "Siaran Info" },
+            { id: "Media", icon: <ImageIcon size={18} />, label: "✨ Kelola Media" },
             { id: "Kegiatan", icon: <CalendarDays size={18} />, label: "Kegiatan" },
-            { id: "Media", icon: <ImageIcon size={18} />, label: "Kelola Media" },
             { id: "Pengaturan", icon: <Settings size={18} />, label: "Pengaturan" }
           ].map((item) => (
             <button
