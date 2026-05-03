@@ -245,8 +245,13 @@ export default function StatusCards({
                 { label: "WhatsApp", value: userEntry.phone },
                 { label: "NISN", value: userEntry.nisn },
                 { label: "Provinsi", value: userEntry.province },
+                // Tambahkan data Anggota 2 jika kategori Tim
+                ...((userEntry.competition_type === "LKTI Nasional" || userEntry.competition_type === "Olimpiade MIPA") ? [
+                  { label: "Nama Anggota 2", value: userEntry.participant2_name },
+                  { label: "NISN Anggota 2", value: userEntry.participant2_nisn }
+                ] : [])
               ].map((item, i) => (
-                <div key={i} className="flex justify-between items-center py-2 border-b border-slate-100">
+                <div key={i} className="flex justify-between items-center py-2 border-b border-slate-100 last:border-0">
                   <span className="text-slate-400 font-medium">{item.label}</span>
                   <span className="text-slate-800 font-bold">{item.value || "-"}</span>
                 </div>
@@ -286,11 +291,22 @@ export default function StatusCards({
             </div>
           ) : (
             <form onSubmit={handleUpdateProfile} className="space-y-3 text-xs">
-              <input type="text" placeholder="Nama Lengkap" className="w-full p-2.5 bg-slate-50 border rounded-xl" value={profileForm.full_name} onChange={(e) => setProfileForm({...profileForm, full_name: e.target.value})} />
+              <input type="text" placeholder="Nama Lengkap (Anggota 1)" className="w-full p-2.5 bg-slate-50 border rounded-xl" value={profileForm.full_name} onChange={(e) => setProfileForm({...profileForm, full_name: e.target.value})} />
               <input type="text" placeholder="Sekolah" className="w-full p-2.5 bg-slate-50 border rounded-xl" value={profileForm.school_name} onChange={(e) => setProfileForm({...profileForm, school_name: e.target.value})} />
               <input type="text" placeholder="WhatsApp" className="w-full p-2.5 bg-slate-50 border rounded-xl" value={profileForm.phone} onChange={(e) => setProfileForm({...profileForm, phone: e.target.value})} />
-              <input type="text" placeholder="NISN" className="w-full p-2.5 bg-slate-50 border rounded-xl" value={profileForm.nisn} onChange={(e) => setProfileForm({...profileForm, nisn: e.target.value})} />
-              <input type="text" placeholder="Provinsi" className="w-full p-2.5 bg-slate-50 border rounded-xl" value={profileForm.province} onChange={(e) => setProfileForm({...profileForm, province: e.target.value})} />
+              <div className="grid grid-cols-2 gap-2">
+                <input type="text" placeholder="NISN 1" className="w-full p-2.5 bg-slate-50 border rounded-xl" value={profileForm.nisn} onChange={(e) => setProfileForm({...profileForm, nisn: e.target.value})} />
+                <input type="text" placeholder="Provinsi" className="w-full p-2.5 bg-slate-50 border rounded-xl" value={profileForm.province} onChange={(e) => setProfileForm({...profileForm, province: e.target.value})} />
+              </div>
+              
+              {/* Form Tambahan Anggota 2 jika kategori Tim */}
+              {(userEntry.competition_type === "LKTI Nasional" || userEntry.competition_type === "Olimpiade MIPA") && (
+                <div className="pt-2 space-y-2 border-t border-dashed border-slate-200 mt-2">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Data Anggota 2</p>
+                  <input type="text" placeholder="Nama Anggota 2" className="w-full p-2.5 bg-slate-50 border rounded-xl" value={profileForm.participant2_name} onChange={(e) => setProfileForm({...profileForm, participant2_name: e.target.value})} />
+                  <input type="text" placeholder="NISN Anggota 2" className="w-full p-2.5 bg-slate-50 border rounded-xl" value={profileForm.participant2_nisn} onChange={(e) => setProfileForm({...profileForm, participant2_nisn: e.target.value})} />
+                </div>
+              )}
               <button type="submit" disabled={isSubmitting} className="w-full bg-indigo-600 text-white font-bold py-2.5 rounded-xl">Simpan</button>
             </form>
           )}
