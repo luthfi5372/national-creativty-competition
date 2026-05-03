@@ -37,33 +37,15 @@ export function useLiveStats() {
       const { createClient } = await import("@/lib/supabase/client");
       const supabase = createClient();
       
-      // 1. Fetch from Supabase
+      // 1. Fetch from Supabase (Only verified participants)
       const { data: supabaseEntries, error } = await supabase
         .from("competition_entries")
-        .select("category, city");
+        .select("category, city, payment_status");
 
       if (error) console.warn("Supabase stats fetch error:", error);
 
-      // 2. Fetch from Local Storage (Critical for hybrid mode)
-      let localEntries: any[] = [];
-      try {
-        const raw = localStorage.getItem("ncc_competition_entries");
-        localEntries = raw ? JSON.parse(raw) : [];
-      } catch (err) {
-        console.error("Local stats fetch error:", err);
-      }
-
-      // 3. Merge entries (Simple concat, we can deduplicate if needed but counts are better slightly over-stated than 0)
-      const allEntries = [...(supabaseEntries || [])];
-      
-      // Deduplicate by city/category if we find exact matches to avoid double counting
-      localEntries.forEach(local => {
-        const exists = allEntries.find(s => 
-          s.category === local.category && 
-          s.city?.toUpperCase() === local.city?.toUpperCase()
-        );
-        if (!exists) allEntries.push(local);
-      });
+      // 3. Use only verified database entries for accurate stats
+      const allEntries = (supabaseEntries || []).filter(e => e.payment_status === 'Verified');
 
       const breakdown = { "Olimpiade MIPA": 0, "Speech Contest": 0, "LKTI Nasional": 0, "MTQ Nasional": 0 };
       const regionStats = { "Sumatera": 0, "Jawa": 0, "Kalimantan": 0, "Sulawesi": 0, "Papua": 0, "Bali & Nusa Tenggara": 0 };
