@@ -11,6 +11,7 @@ import AnnouncementBoard from "@/components/dashboard/AnnouncementBoard";
 import TimelineWidget from "@/components/dashboard/TimelineWidget";
 import RegistrationModal from "@/components/dashboard/RegistrationModal";
 import IdCardModal from "@/components/dashboard/IdCardModal";
+import WelcomeOverlay from "@/components/dashboard/WelcomeOverlay";
 
 export default function UserDashboard() {
   const [announcements, setAnnouncements] = useState<any[]>([]);
@@ -216,6 +217,7 @@ export default function UserDashboard() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans p-6 md:p-12 relative overflow-hidden">
+      <WelcomeOverlay />
       {/* 🚀 PERFORMANCE FIX: Remove heavy blur/filters that cause lag */}
       <div className="absolute top-[-5%] left-[-5%] w-64 h-64 bg-blue-400/10 rounded-full pointer-events-none"></div>
       <div className="absolute bottom-[-5%] right-[-2%] w-64 h-64 bg-indigo-400/10 rounded-full pointer-events-none"></div>
