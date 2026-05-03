@@ -247,8 +247,8 @@ export default function StatusCards({
                 { label: "Provinsi", value: userEntry.province },
                 // Tambahkan data Anggota 2 jika kategori Tim
                 ...((userEntry.competition_type === "LKTI Nasional" || userEntry.competition_type === "Olimpiade MIPA") ? [
-                  { label: "Nama Anggota 2", value: userEntry.participant2_name },
-                  { label: "NISN Anggota 2", value: userEntry.participant2_nisn }
+                  { label: "Nama Anggota Tim", value: userEntry.participant2_name },
+                  { label: "NISN Anggota Tim", value: userEntry.participant2_nisn }
                 ] : [])
               ].map((item, i) => (
                 <div key={i} className="flex justify-between items-center py-2 border-b border-slate-100 last:border-0">

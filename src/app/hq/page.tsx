@@ -1831,13 +1831,13 @@ export default function ModernHQDashboard() {
                 {/* Tambahan Data Anggota 2 jika kategori Tim */}
                 {(selectedParticipant.competition_type === "LKTI Nasional" || selectedParticipant.competition_type === "Olimpiade MIPA") && (
                   <div className="p-4 bg-blue-50/50 border border-blue-100 rounded-xl shadow-sm space-y-3">
-                    <p className="text-[11px] font-bold text-blue-400 uppercase tracking-wider mb-1">Data Anggota 2 (Tim)</p>
+                    <p className="text-[11px] font-bold text-blue-400 uppercase tracking-wider mb-1">Informasi Anggota Tim</p>
                     <div>
-                      <p className="text-[10px] text-slate-400 font-medium">Nama Anggota 2</p>
+                      <p className="text-[10px] text-slate-400 font-medium">Nama Anggota</p>
                       <p className="font-semibold text-slate-800">{selectedParticipant.participant2_name || "Belum diisi"}</p>
                     </div>
                     <div>
-                      <p className="text-[10px] text-slate-400 font-medium">NISN Anggota 2</p>
+                      <p className="text-[10px] text-slate-400 font-medium">NISN Anggota</p>
                       <p className="font-semibold text-slate-800">{selectedParticipant.participant2_nisn || "Belum diisi"}</p>
                     </div>
                   </div>
