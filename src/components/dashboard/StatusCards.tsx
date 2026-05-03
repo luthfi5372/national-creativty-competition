@@ -12,7 +12,6 @@ interface StatusCardsProps {
   setShowIdCard: (val: boolean) => void;
   showToast: (msg: string, type: "success" | "error") => void;
   progress: number;
-  portalSettings: any;
 }
 
 export default function StatusCards({
@@ -23,8 +22,7 @@ export default function StatusCards({
   setShowForm,
   setShowIdCard,
   showToast,
-  progress,
-  portalSettings
+  progress
 }: StatusCardsProps) {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -318,30 +316,10 @@ export default function StatusCards({
 
       <div className="grid grid-cols-1 gap-4">
         {[
-          { 
-            label: "Buku Panduan", 
-            sub: "Syarat & Ketentuan Lomba (PDF)", 
-            icon: BookOpen, 
-            color: "blue",
-            assetKey: "card_buku_panduan"
-          },
-          { 
-            label: "Twibbon Resmi", 
-            sub: "Unduh aset kampanye IG", 
-            icon: ImageIcon, 
-            color: "purple",
-            assetKey: "card_twibbon"
-          },
-          { 
-            label: "Hubungi Panitia", 
-            sub: "Bantuan via WhatsApp", 
-            icon: MessageCircle, 
-            color: "green",
-            assetKey: "card_kontak"
-          },
-        ].map((item, i) => {
-          const customImg = portalSettings?.dashboardAssets?.[item.assetKey];
-          return (
+          { label: "Buku Panduan", sub: "Syarat & Ketentuan Lomba (PDF)", icon: BookOpen, color: "blue" },
+          { label: "Twibbon Resmi", sub: "Unduh aset kampanye IG", icon: ImageIcon, color: "purple" },
+          { label: "Hubungi Panitia", sub: "Bantuan via WhatsApp", icon: MessageCircle, color: "green" },
+        ].map((item, i) => (
           <a key={i} href="#" className="flex items-center gap-4 p-5 bg-white border border-slate-200 hover:border-indigo-300 rounded-2xl transition-all shadow-sm group relative overflow-hidden">
             {item.label === "Buku Panduan" && (
               <div className="absolute top-0 left-0 w-full h-1 bg-slate-50 overflow-hidden">
@@ -353,20 +331,15 @@ export default function StatusCards({
                 />
               </div>
             )}
-            <div className={`w-12 h-12 ${customImg ? 'p-0 overflow-hidden' : `bg-${item.color}-100 text-${item.color}-600`} rounded-2xl flex items-center justify-center group-hover:scale-110 transition-all border border-slate-100`}>
-              {customImg ? (
-                <img src={customImg} alt={item.label} className="w-full h-full object-cover" />
-              ) : (
-                <item.icon size={24} />
-              )}
+            <div className={`w-12 h-12 bg-${item.color}-100 text-${item.color}-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-all`}>
+              <item.icon size={24} />
             </div>
             <div>
               <h4 className="font-bold text-slate-800 text-sm">{item.label}</h4>
               <p className="text-[11px] text-slate-400 mt-0.5">{item.sub}</p>
             </div>
           </a>
-          );
-        })}
+        ))}
       </div>
     </div>
   );

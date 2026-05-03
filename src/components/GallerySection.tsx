@@ -11,64 +11,7 @@ import { cn } from "@/lib/utils";
 
 const filters = ["ALL", "ACADEMIC", "SPEECH", "ARTS", "GALLERY"];
 
-const portfolioItems = [
-  { 
-    id: 1, 
-    category: "GALLERY", 
-    label: "NCC Grand Championship", 
-    src: "/gallery/IMG_8067.JPG", 
-    span: "col-span-1 md:col-span-2 row-span-2", 
-    bg: "from-indigo-600/80 to-blue-700/80" 
-  },
-  { 
-    id: 2, 
-    category: "ACADEMIC", 
-    label: "LKTI Research Winners", 
-    src: "/gallery/IMG_8109.JPG", 
-    span: "col-span-1 md:col-span-2 row-span-1", 
-    bg: "from-sky-500/80 to-blue-600/80" 
-  },
-  { 
-    id: 3, 
-    category: "SPEECH", 
-    label: "Language Excellence", 
-    src: "/gallery/IMG_7993.JPG", 
-    span: "col-span-1 row-span-1", 
-    bg: "from-orange-500/80 to-red-600/80" 
-  },
-  { 
-    id: 4, 
-    category: "ARTS", 
-    label: "MTQ Quran Recital", 
-    src: "/gallery/IMG_8103.JPG", 
-    span: "col-span-1 row-span-2", 
-    bg: "from-amber-500/80 to-orange-600/80" 
-  },
-  { 
-    id: 5, 
-    category: "ARTS", 
-    label: "Choral Symphony", 
-    src: "/gallery/IMG_8143.JPG", 
-    span: "col-span-1 row-span-1", 
-    bg: "from-purple-500/80 to-indigo-600/80" 
-  },
-  { 
-    id: 6, 
-    category: "GALLERY", 
-    label: "Ceremonial Parade", 
-    src: "/gallery/ECL09816.JPG", 
-    span: "col-span-1 row-span-1", 
-    bg: "from-slate-700/80 to-slate-900/80" 
-  },
-  { 
-    id: 7, 
-    category: "ARTS", 
-    label: "Stage Performance", 
-    src: "/gallery/ECL09791.JPG", 
-    span: "col-span-1 md:col-span-2 row-span-1", 
-    bg: "from-fuchsia-500/80 to-rose-600/80" 
-  },
-];
+const portfolioItems: any[] = [];
 
 export default function GallerySection() {
   const [activeFilter, setActiveFilter] = useState("ALL");

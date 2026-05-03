@@ -32,8 +32,6 @@ export default function ModernHQDashboard() {
   const [broadcastTitle, setBroadcastTitle] = useState("");
   const [broadcastMessage, setBroadcastMessage] = useState("");
   const [broadcastTarget, setBroadcastTarget] = useState("All");
-  const [broadcastImage, setBroadcastImage] = useState("");
-  const [isUploadingBroadcastImage, setIsUploadingBroadcastImage] = useState(false);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [isSending, setIsSending] = useState(false);
 
@@ -89,8 +87,48 @@ export default function ModernHQDashboard() {
     card_buku_panduan: "",
     card_twibbon: "",
     card_kontak: "",
-    gallery_images: []
+    gallery_images: [
+      "/gallery/IMG_8067.JPG",
+      "/gallery/IMG_8109.JPG",
+      "/gallery/IMG_7993.JPG",
+      "/gallery/IMG_8103.JPG",
+      "/gallery/IMG_8143.JPG",
+      "/gallery/ECL09816.JPG",
+      "/gallery/ECL09791.JPG"
+    ]
   });
+
+  const [isUploadingAsset, setIsUploadingAsset] = useState<string | null>(null);
+
+  const handleAssetUpload = async (e: React.ChangeEvent<HTMLInputElement>, key: string) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingAsset(key);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `assets/${key}-${Math.random()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage.from('payment-proofs').upload(fileName, file);
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage.from('payment-proofs').getPublicUrl(fileName);
+      
+      if (key === 'gallery_add') {
+        setDashboardAssets((prev: any) => ({ 
+          ...prev, 
+          gallery_images: [...(prev.gallery_images || []), urlData.publicUrl] 
+        }));
+        showToast("Foto galeri baru berhasil ditambahkan!", "success");
+      } else {
+        setDashboardAssets((prev: any) => ({ ...prev, [key]: urlData.publicUrl }));
+        showToast(`Gambar ${key} berhasil diperbarui!`, "success");
+      }
+    } catch (error: any) {
+      showToast(`Gagal upload: ${error.message}`, "error");
+    } finally {
+      setIsUploadingAsset(null);
+    }
+  };
 
   const supabase = createClient();
 
@@ -263,7 +301,6 @@ export default function ModernHQDashboard() {
           {
             title: broadcastTitle,
             content: broadcastMessage,
-            image_url: broadcastImage,
             target_audience: broadcastTarget,
             target_user_ids: broadcastTarget === 'specific' ? selectedUserIds : []
           }
@@ -274,7 +311,6 @@ export default function ModernHQDashboard() {
       showToast("Pengumuman resmi berhasil mengudara ke peserta!", "success");
       setBroadcastTitle("");
       setBroadcastMessage("");
-      setBroadcastImage("");
       setSelectedUserIds([]);
     } catch (error: any) {
       showToast(`Gagal menyiarkan: ${error.message}`, "error");
@@ -351,37 +387,6 @@ export default function ModernHQDashboard() {
       supabase.removeChannel(radarSubscription);
     };
   }, []);
-
-  const [isUploadingAsset, setIsUploadingAsset] = useState<string | null>(null);
-  const handleAssetUpload = async (e: React.ChangeEvent<HTMLInputElement>, key: string) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setIsUploadingAsset(key);
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `assets/${key}-${Math.random()}.${fileExt}`;
-      const { error: uploadError } = await supabase.storage.from('payment-proofs').upload(fileName, file);
-      if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage.from('payment-proofs').getPublicUrl(fileName);
-      
-      if (key === 'gallery_add') {
-        setDashboardAssets((prev: any) => ({ 
-          ...prev, 
-          gallery_images: [...(prev.gallery_images || []), urlData.publicUrl] 
-        }));
-        showToast("Foto galeri baru berhasil ditambahkan!", "success");
-      } else {
-        setDashboardAssets((prev: any) => ({ ...prev, [key]: urlData.publicUrl }));
-        showToast(`Gambar ${key} berhasil diperbarui!`, "success");
-      }
-    } catch (error: any) {
-      showToast(`Gagal upload: ${error.message}`, "error");
-    } finally {
-      setIsUploadingAsset(null);
-    }
-  };
 
   // --- MESIN PENGOLAH DATA GRAFIK REAL-TIME (DENGAN FILTER WAKTU) ---
   useEffect(() => {
@@ -528,8 +533,8 @@ export default function ModernHQDashboard() {
             { id: "Peserta", icon: <Users size={18} />, label: "Buku Peserta", count: realEntries.filter((e: any) => e.payment_status === 'Verified' || e.payment_status === 'success').length },
             { id: "Verifikasi", icon: <CheckCircle size={18} />, label: "Verifikasi Berkas", count: realEntries.filter((e: any) => e.payment_status === 'Pending').length },
             { id: "Pengumuman", icon: <Megaphone size={18} />, label: "Siaran Info" },
-            { id: "Media", icon: <ImageIcon size={18} />, label: "Kelola Media" },
             { id: "Kegiatan", icon: <CalendarDays size={18} />, label: "Kegiatan" },
+            { id: "Media", icon: <ImageIcon size={18} />, label: "Kelola Media" },
             { id: "Pengaturan", icon: <Settings size={18} />, label: "Pengaturan" }
           ].map((item) => (
             <button
@@ -570,7 +575,6 @@ export default function ModernHQDashboard() {
               {activeTab === "Peserta" && "Manajemen seluruh data peserta kompetisi."}
               {activeTab === "Verifikasi" && "Pusat verifikasi pembayaran dan dokumen."}
               {activeTab === "Kegiatan" && "Kawal gerbang pendaftaran dan fail karya."}
-              {activeTab === "Media" && "Kustomisasi aset visual dan galeri sistem."}
               {activeTab === "Pengaturan" && "Konfigurasi sistem Markas Besar."}
             </p>
           </div>
@@ -996,6 +1000,7 @@ export default function ModernHQDashboard() {
           </div>
         )}
 
+
         {/* 🎛️ KONTEN TAB: PENGUMUMAN (BROADCAST CENTER) */}
         {activeTab === "Pengumuman" && (
           <div className="bg-white/90 backdrop-blur-md border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-2xl p-8 md:p-12 min-h-[500px]">
@@ -1116,60 +1121,6 @@ export default function ModernHQDashboard() {
                   ></textarea>
                 </div>
 
-                {/* Tambahan: Upload Gambar Pengumuman */}
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Lampiran Gambar (Opsional)</label>
-                  <div className="flex flex-col sm:flex-row items-center gap-4">
-                    <label className="w-full sm:w-auto cursor-pointer">
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        className="hidden" 
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (!file) return;
-                          setIsUploadingBroadcastImage(true);
-                          try {
-                            const fileExt = file.name.split('.').pop();
-                            const fileName = `announcements/${Math.random()}.${fileExt}`;
-                            const { error: uploadError } = await supabase.storage.from('payment-proofs').upload(fileName, file);
-                            if (uploadError) throw uploadError;
-                            const { data: urlData } = supabase.storage.from('payment-proofs').getPublicUrl(fileName);
-                            setBroadcastImage(urlData.publicUrl);
-                            showToast("Gambar pengumuman berhasil diunggah!", "success");
-                          } catch (err: any) {
-                            showToast(`Gagal upload: ${err.message}`, "error");
-                          } finally {
-                            setIsUploadingBroadcastImage(false);
-                          }
-                        }}
-                      />
-                      <div className="px-6 py-3 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-xl text-xs font-bold transition-all flex items-center gap-2">
-                        <ImageIcon size={16} /> {broadcastImage ? "Ganti Gambar" : "Unggah Gambar"}
-                      </div>
-                    </label>
-                    
-                    {broadcastImage && (
-                      <div className="relative group">
-                        <img src={broadcastImage} alt="Preview" className="w-12 h-12 rounded-lg object-cover border border-slate-200" />
-                        <button 
-                          onClick={() => setBroadcastImage("")}
-                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <X size={10} />
-                        </button>
-                      </div>
-                    )}
-                    
-                    {isUploadingBroadcastImage && (
-                      <div className="flex items-center gap-2 text-xs text-slate-400">
-                        <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                        Mengunggah...
-                      </div>
-                    )}
-                  </div>
-                </div>
-
                 {/* Tombol Eksekusi */}
                 <button 
                   onClick={handleSendClick}
@@ -1187,7 +1138,220 @@ export default function ModernHQDashboard() {
           </div>
         )}
 
-        {/* 🎛️ KONTEN TAB: KEGIATAN (PUSAT KAWALAN PENDAFTARAN & FAIL) */}
+        {/* ========================================================= */}
+        {/* 🌟 TAB PENGATURAN — PUSAT KENDALI PORTAL & GELOMBANG */}
+        {/* ========================================================= */}
+        {activeTab === "Pengaturan" && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            
+            {/* 1. SAKLAR UTAMA PORTAL */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-sm border border-white/60">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="flex items-center gap-5">
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 ${
+                    isPortalOpen 
+                      ? 'bg-emerald-100 text-emerald-600 shadow-lg shadow-emerald-100' 
+                      : 'bg-rose-100 text-rose-600 shadow-lg shadow-rose-100'
+                  }`}>
+                    <Power size={28} />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black text-slate-800">Gerbang Pendaftaran</h3>
+                    <p className="text-sm font-medium text-slate-500 mt-1">
+                      Status saat ini:{" "}
+                      <strong className={`${
+                        isPortalOpen ? 'text-emerald-500' : 'text-rose-500'
+                      }`}>
+                        {isPortalOpen ? '✔ TERBUKA UNTUK PUBLIK' : '✖ DITUTUP SEMENTARA'}
+                      </strong>
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Toggle Switch Modern */}
+                <button 
+                  onClick={() => {
+                    setIsPortalOpen(!isPortalOpen);
+                    showToast(
+                      isPortalOpen ? 'Portal pendaftaran DITUTUP.' : 'Portal pendaftaran DIBUKA kembali!', 
+                      isPortalOpen ? 'error' : 'success'
+                    );
+                  }}
+                  className={`relative w-20 h-10 rounded-full transition-colors duration-300 focus:outline-none shadow-inner shrink-0 ${
+                    isPortalOpen ? 'bg-emerald-500' : 'bg-slate-300'
+                  }`}
+                >
+                  <div className={`absolute top-1 left-1 bg-white w-8 h-8 rounded-full shadow-md transition-transform duration-300 flex items-center justify-center ${
+                    isPortalOpen ? 'translate-x-10' : 'translate-x-0'
+                  }`}>
+                    {isPortalOpen 
+                      ? <CheckCircle2 size={16} className="text-emerald-500" /> 
+                      : <XCircle size={16} className="text-slate-400" />
+                    }
+                  </div>
+                </button>
+              </div>
+
+              {/* Peringatan saat ditutup */}
+              {!isPortalOpen && (
+                <div className="mt-6 p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-3">
+                  <AlertCircle size={18} className="text-rose-500 mt-0.5 shrink-0" />
+                  <p className="text-sm text-rose-700">
+                    <strong>Perhatian:</strong> Peserta baru tidak dapat mendaftar saat portal ditutup. 
+                    Peserta yang sudah mendaftar tetap bisa login dan melihat status mereka.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* 2. MANAJEMEN GELOMBANG */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-sm border border-white/60">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                <div>
+                  <h3 className="text-xl font-black text-slate-800">Manajemen Gelombang</h3>
+                  <p className="text-sm text-slate-500 mt-1">Atur jadwal pendaftaran per gelombang.</p>
+                </div>
+                <button 
+                  onClick={() => {
+                    const newId = waves.length + 1;
+                    setWaves([...waves, {
+                      id: newId,
+                      name: `Gelombang ${newId}`,
+                      status: 'Tutup',
+                      startDate: '',
+                      endDate: '',
+                    }]);
+                    showToast(`Gelombang ${newId} berhasil ditambahkan.`, 'success');
+                  }}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-md transition-all active:scale-95 flex items-center gap-2 shrink-0"
+                >
+                  + Tambah Gelombang
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                {waves.map((wave) => (
+                  <div 
+                    key={wave.id} 
+                    className={`border-2 rounded-2xl p-6 transition-all duration-300 ${
+                      wave.status === 'Aktif' 
+                        ? 'border-blue-400 bg-blue-50/40 shadow-md shadow-blue-50' 
+                        : 'border-slate-100 bg-slate-50/50 hover:border-slate-200'
+                    }`}
+                  >
+                    <div className="flex justify-between items-start mb-4">
+                      <h4 className="font-bold text-lg text-slate-800">{wave.name}</h4>
+                      <span className={`px-3 py-1 rounded-full text-[11px] font-bold ${
+                        wave.status === 'Aktif' 
+                          ? 'bg-emerald-100 text-emerald-600' 
+                          : 'bg-slate-200 text-slate-500'
+                      }`}>
+                        {wave.status === 'Aktif' ? '● Live' : '○ Tutup'}
+                      </span>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Tanggal Mulai</label>
+                        <input 
+                          type="date" 
+                          value={wave.startDate}
+                          onChange={(e) => setWaves(prev => prev.map(w => w.id === wave.id ? {...w, startDate: e.target.value} : w))}
+                          className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all" 
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Tanggal Selesai</label>
+                        <input 
+                          type="date" 
+                          value={wave.endDate}
+                          onChange={(e) => setWaves(prev => prev.map(w => w.id === wave.id ? {...w, endDate: e.target.value} : w))}
+                          className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all" 
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mt-5 pt-4 border-t border-slate-100 flex gap-2">
+                      <button 
+                        onClick={() => toggleWaveStatus(wave.id)}
+                        className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all active:scale-95 flex items-center justify-center gap-1.5 ${
+                          wave.status === 'Aktif'
+                            ? 'bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200'
+                            : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200'
+                        }`}
+                      >
+                        {wave.status === 'Aktif' ? <><XCircle size={13}/> Nonaktifkan</> : <><CheckCircle2 size={13}/> Aktifkan</>}
+                      </button>
+                      <button 
+                        onClick={() => {
+                          setWaves(prev => prev.filter(w => w.id !== wave.id));
+                          showToast(`${wave.name} dihapus.`, 'error');
+                        }}
+                        className="px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-500 hover:bg-slate-200 transition-all active:scale-95"
+                      >
+                        <Trash2 size={13}/>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 3. AKSI CEPAT ADMIN */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/60 shadow-sm">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
+                    <Shield size={18} className="text-blue-600" />
+                  </div>
+                  <h4 className="font-bold text-slate-800">Keamanan</h4>
+                </div>
+                <p className="text-xs text-slate-500 mb-4">Ubah kata sandi akun admin HQ.</p>
+                <button className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-bold text-slate-600 transition-colors">Ubah Password</button>
+              </div>
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/60 shadow-sm">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center">
+                    <Download size={18} className="text-emerald-600" />
+                  </div>
+                  <h4 className="font-bold text-slate-800">Ekspor Data</h4>
+                </div>
+                <p className="text-xs text-slate-500 mb-4">Unduh seluruh data peserta sebagai CSV.</p>
+                <button 
+                  onClick={() => {
+                    const csv = realEntries.map((e: any) => 
+                      `${e.full_name},${e.email},${e.competition_type},${e.school_name},${e.status}`
+                    ).join('\n');
+                    const blob = new Blob([`Nama,Email,Lomba,Sekolah,Status\n${csv}`], { type: 'text/csv' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'Data_Peserta_NCC13.csv';
+                    a.click();
+                    showToast('Data berhasil diekspor sebagai CSV!', 'success');
+                  }}
+                  className="w-full py-2.5 bg-emerald-50 hover:bg-emerald-100 rounded-xl text-xs font-bold text-emerald-600 transition-colors"
+                >
+                  Unduh CSV
+                </button>
+              </div>
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/60 shadow-sm">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center">
+                    <Clock size={18} className="text-amber-600" />
+                  </div>
+                  <h4 className="font-bold text-slate-800">Zona Waktu</h4>
+                </div>
+                <p className="text-xs text-slate-500 mb-4">Sistem menggunakan zona waktu WIB (GMT+7).</p>
+                <div className="w-full py-2.5 bg-amber-50 rounded-xl text-xs font-bold text-amber-600 text-center">WIB (UTC+7)</div>
+              </div>
+            </div>
+            
+          </div>
+        )}
+        {/* ========================================================= */}
+        {/* 🌟 TAB KEGIATAN (PUSAT KAWALAN PENDAFTARAN & FAIL) */}
+        {/* ========================================================= */}
         {activeTab === "Kegiatan" && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             
@@ -1209,6 +1373,7 @@ export default function ModernHQDashboard() {
                 </div>
               </div>
               
+              {/* Suis (Toggle) Gaya Moden */}
               <button 
                 onClick={() => {
                   setIsRegistrationOpen(!isRegistrationOpen);
@@ -1221,7 +1386,6 @@ export default function ModernHQDashboard() {
                 </div>
               </button>
             </div>
-            
             {/* 1.5 PENGATURAN GELOMBANG PENDAFTARAN */}
             <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-sm border border-white/60">
               <div className="flex items-center gap-3 mb-8 pb-4 border-b border-slate-100">
@@ -1229,7 +1393,7 @@ export default function ModernHQDashboard() {
                   <Calendar size={20} />
                 </div>
                 <div>
-                  <h3 className="text-xl font-black text-slate-800">Gelombang Pendaftaran</h3>
+                  <h3 className="text-xl font-black text-slate-800">Gelombang Pendaftaran (Gelombang I & II)</h3>
                   <p className="text-xs text-slate-500 font-medium">Buka atau tutup gelombang pendaftaran peserta sesuai timeline kompetisi.</p>
                 </div>
               </div>
@@ -1260,24 +1424,23 @@ export default function ModernHQDashboard() {
                 ))}
               </div>
             </div>
-            
-            {/* 2. KAWALAN PENGUMPULAN FAIL PER KATEGORI - GELOMBANG I & II */}
+            {/* 2. KAWALAN PENGUMPULAN FAIL PER KATEGORI - GELOMBANG I */}
             <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-sm border border-white/60">
               <div className="flex items-center gap-3 mb-8 pb-4 border-b border-slate-100">
                 <div className="p-2.5 bg-indigo-100 text-indigo-600 rounded-xl">
                   <FolderOpen size={20} />
                 </div>
                 <div>
-                  <h3 className="text-xl font-black text-slate-800">Akses Pengumpulan Fail Karya</h3>
-                  <p className="text-xs text-slate-500 font-medium">Buka atau tutup portal pengumpulan karya tiap gelombang.</p>
+                  <h3 className="text-xl font-black text-slate-800">Akses Pengumpulan Fail Karya (Gelombang I)</h3>
+                  <p className="text-xs text-slate-500 font-medium">Buka atau tutup portal pengumpulan karya Gelombang I.</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {submissionStatus.map((category) => (
+                {submissionStatus.filter(c => c.id.endsWith('_g1')).map((category) => (
                   <div key={category.id} className={`flex items-center justify-between p-5 rounded-2xl border-2 transition-all duration-300 ${category.isOpen ? 'border-indigo-400 bg-indigo-50/40 shadow-sm' : 'border-slate-100 bg-slate-50/50 hover:border-slate-200'}`}>
                     <div>
-                      <h4 className="font-bold text-slate-800 text-sm">{category.name}</h4>
+                      <h4 className="font-bold text-slate-800">{category.name}</h4>
                       <p className={`text-[10px] font-bold tracking-widest uppercase mt-1 ${category.isOpen ? 'text-indigo-600' : 'text-slate-400'}`}>
                         {category.isOpen ? '● Portal Terbuka' : '○ Portal Ditutup'}
                       </p>
@@ -1292,6 +1455,44 @@ export default function ModernHQDashboard() {
                     >
                       <div className={`absolute top-0.5 left-0.5 bg-white w-6 h-6 rounded-full shadow-md transition-transform duration-300 flex items-center justify-center ${category.isOpen ? 'translate-x-7' : 'translate-x-0'}`}>
                         {category.isOpen ? <FileCheck size={10} className="text-indigo-600" /> : <X size={10} className="text-slate-400" />}
+                      </div>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 2.5 KAWALAN PENGUMPULAN FAIL PER KATEGORI - GELOMBANG II */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-sm border border-white/60">
+              <div className="flex items-center gap-3 mb-8 pb-4 border-b border-slate-100">
+                <div className="p-2.5 bg-violet-100 text-violet-600 rounded-xl">
+                  <FolderOpen size={20} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-slate-800">Akses Pengumpulan Fail Karya (Gelombang II)</h3>
+                  <p className="text-xs text-slate-500 font-medium">Buka atau tutup portal pengumpulan karya Gelombang II.</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {submissionStatus.filter(c => c.id.endsWith('_g2')).map((category) => (
+                  <div key={category.id} className={`flex items-center justify-between p-5 rounded-2xl border-2 transition-all duration-300 ${category.isOpen ? 'border-violet-400 bg-violet-50/40 shadow-sm' : 'border-slate-100 bg-slate-50/50 hover:border-slate-200'}`}>
+                    <div>
+                      <h4 className="font-bold text-slate-800">{category.name}</h4>
+                      <p className={`text-[10px] font-bold tracking-widest uppercase mt-1 ${category.isOpen ? 'text-violet-600' : 'text-slate-400'}`}>
+                        {category.isOpen ? '● Portal Terbuka' : '○ Portal Ditutup'}
+                      </p>
+                    </div>
+                    
+                    <button 
+                      onClick={() => {
+                        toggleSubmission(category.id);
+                        showToast(`${category.name} ${!category.isOpen ? 'Portal Dibuka' : 'Portal Ditutup'}`, !category.isOpen ? 'success' : 'error');
+                      }}
+                      className={`relative w-14 h-7 rounded-full transition-colors duration-300 focus:outline-none shadow-inner shrink-0 ${category.isOpen ? 'bg-violet-500' : 'bg-slate-300'}`}
+                    >
+                      <div className={`absolute top-0.5 left-0.5 bg-white w-6 h-6 rounded-full shadow-md transition-transform duration-300 flex items-center justify-center ${category.isOpen ? 'translate-x-7' : 'translate-x-0'}`}>
+                        {category.isOpen ? <FileCheck size={10} className="text-violet-600" /> : <X size={10} className="text-slate-400" />}
                       </div>
                     </button>
                   </div>
@@ -1338,7 +1539,7 @@ export default function ModernHQDashboard() {
           </div>
         )}
 
-        {/* 🎛️ KONTEN TAB: KELOLA MEDIA (PUSAT ASET VISUAL) */}
+        {/* 🎛️ KONTEN TAB: MEDIA (KUSTOMISASI ASET VISUAL) */}
         {activeTab === "Media" && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* 1. MANAJEMEN ASET DASHBOARD */}
@@ -1469,103 +1670,8 @@ export default function ModernHQDashboard() {
           </div>
         )}
 
-        {/* 🌟 TAB PENGATURAN — PUSAT KENDALI SISTEM */}
-        {activeTab === "Pengaturan" && (
-          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {/* 1. SAKLAR UTAMA PORTAL */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-sm border border-white/60">
-              <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-                <div className="flex items-center gap-5">
-                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 ${
-                    isPortalOpen 
-                      ? 'bg-emerald-100 text-emerald-600 shadow-lg shadow-emerald-100' 
-                      : 'bg-rose-100 text-rose-600 shadow-lg shadow-rose-100'
-                  }`}>
-                    <Power size={28} />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-black text-slate-800">Gerbang Pendaftaran</h3>
-                    <p className="text-sm font-medium text-slate-500 mt-1">
-                      Status saat ini:{" "}
-                      <strong className={`${
-                        isPortalOpen ? 'text-emerald-500' : 'text-rose-500'
-                      }`}>
-                        {isPortalOpen ? '✔ TERBUKA UNTUK PUBLIK' : '✖ DITUTUP SEMENTARA'}
-                      </strong>
-                    </p>
-                  </div>
-                </div>
-                
-                <button 
-                  onClick={() => setIsPortalOpen(!isPortalOpen)}
-                  className={`relative w-20 h-10 rounded-full transition-colors duration-300 focus:outline-none shadow-inner shrink-0 ${
-                    isPortalOpen ? 'bg-emerald-500' : 'bg-slate-300'
-                  }`}
-                >
-                  <div className={`absolute top-1 left-1 bg-white w-8 h-8 rounded-full shadow-md transition-transform duration-300 flex items-center justify-center ${
-                    isPortalOpen ? 'translate-x-10' : 'translate-x-0'
-                  }`}>
-                    {isPortalOpen 
-                      ? <CheckCircle2 size={16} className="text-emerald-500" /> 
-                      : <XCircle size={16} className="text-slate-400" />
-                    }
-                  </div>
-                </button>
-              </div>
-            </div>
 
-            {/* 2. AKSI CEPAT ADMIN */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/60 shadow-sm">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
-                    <Shield size={18} className="text-blue-600" />
-                  </div>
-                  <h4 className="font-bold text-slate-800">Keamanan</h4>
-                </div>
-                <p className="text-xs text-slate-500 mb-4">Ubah kata sandi akun admin HQ.</p>
-                <button className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-bold text-slate-600 transition-colors">Ubah Password</button>
-              </div>
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/60 shadow-sm">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center">
-                    <Download size={18} className="text-emerald-600" />
-                  </div>
-                  <h4 className="font-bold text-slate-800">Ekspor Data</h4>
-                </div>
-                <p className="text-xs text-slate-500 mb-4">Unduh seluruh data peserta sebagai CSV.</p>
-                <button 
-                  onClick={() => {
-                    const csv = realEntries.map((e: any) => 
-                      `${e.full_name},${e.email},${e.competition_type},${e.school_name},${e.status}`
-                    ).join('\n');
-                    const blob = new Blob([`Nama,Email,Lomba,Sekolah,Status\n${csv}`], { type: 'text/csv' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'Data_Peserta_NCC13.csv';
-                    a.click();
-                    showToast('Data berhasil diekspor sebagai CSV!', 'success');
-                  }}
-                  className="w-full py-2.5 bg-emerald-50 hover:bg-emerald-100 rounded-xl text-xs font-bold text-emerald-600 transition-colors"
-                >
-                  Unduh CSV
-                </button>
-              </div>
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/60 shadow-sm">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center">
-                    <Clock size={18} className="text-amber-600" />
-                  </div>
-                  <h4 className="font-bold text-slate-800">Zona Waktu</h4>
-                </div>
-                <p className="text-xs text-slate-500 mb-4">Sistem menggunakan zona waktu WIB (GMT+7).</p>
-                <div className="w-full py-2.5 bg-amber-50 rounded-xl text-xs font-bold text-amber-600 text-center">WIB (UTC+7)</div>
-              </div>
-            </div>
-          </div>
-        )}
-
+        {/* ================= PANEL 1: SLIDE-OUT DETAIL PESERTA ================= */}
         {selectedParticipant && (
           <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/20 backdrop-blur-sm transition-all duration-300">
             {/* Area kosong untuk klik tutup */}
