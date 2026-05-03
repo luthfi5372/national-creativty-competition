@@ -15,7 +15,9 @@ const portfolioItems: any[] = [];
 
 export default function GallerySection() {
   const [activeFilter, setActiveFilter] = useState("ALL");
-  const [adminMedia, setAdminMedia] = useState<string[]>([]);
+  const [adminMedia, setAdminMedia] = useState<any[]>([]);
+  const [galleryTitle, setGalleryTitle] = useState("Moments of Excellence");
+  const [gallerySubtitle, setGallerySubtitle] = useState("A glimpse into the spirit, competition, and victory at NCC. Capturing the journey of future leaders across diverse categories.");
   const [hovered, setHovered] = useState<number | string | null>(null);
   const containerRef = useRef<HTMLElement>(null);
   const supabase = createClient();
@@ -34,6 +36,12 @@ export default function GallerySection() {
           if (parsed.dashboardAssets?.gallery_images) {
             setAdminMedia(parsed.dashboardAssets.gallery_images);
           }
+          if (parsed.dashboardAssets?.gallery_title) {
+            setGalleryTitle(parsed.dashboardAssets.gallery_title);
+          }
+          if (parsed.dashboardAssets?.gallery_subtitle) {
+            setGallerySubtitle(parsed.dashboardAssets.gallery_subtitle);
+          }
         }
       } catch (err) {
         console.error("Failed to fetch gallery:", err);
@@ -42,14 +50,17 @@ export default function GallerySection() {
     fetchGallery();
   }, []);
 
-  const dynamicItems = adminMedia.map((url, index) => ({
-    id: `admin-${index}`,
-    category: "GALLERY",
-    label: `Event Moment ${index + 1}`,
-    src: url,
-    span: index % 3 === 0 ? "col-span-1 md:col-span-2 row-span-1" : "col-span-1 row-span-1",
-    bg: "from-indigo-500/80 to-purple-600/80"
-  }));
+  const dynamicItems = adminMedia.map((item, index) => {
+    const isObject = typeof item === 'object' && item !== null;
+    return {
+      id: `admin-${index}`,
+      category: isObject ? (item.category || "GALLERY") : "GALLERY",
+      label: isObject ? (item.label || `Event Moment ${index + 1}`) : `Event Moment ${index + 1}`,
+      src: isObject ? item.url : item,
+      span: index % 3 === 0 ? "col-span-1 md:col-span-2 row-span-1" : "col-span-1 row-span-1",
+      bg: "from-indigo-500/80 to-purple-600/80"
+    };
+  });
 
   const allGalleryItems = [...portfolioItems, ...dynamicItems];
 
@@ -85,10 +96,10 @@ export default function GallerySection() {
       </div>
       
       <h3 className="gsap-gallery-header text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 leading-tight mb-4 uppercase text-center" style={{ fontFamily: "var(--font-display)" }}>
-        Moments of Excellence
+        {galleryTitle}
       </h3>
       <p className="gsap-gallery-header text-slate-500 text-center max-w-2xl mb-12">
-        A glimpse into the spirit, competition, and victory at NCC. Capturing the journey of future leaders across diverse categories.
+        {gallerySubtitle}
       </p>
 
       {/* Filter Tabs */}

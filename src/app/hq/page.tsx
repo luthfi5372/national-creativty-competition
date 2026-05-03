@@ -87,14 +87,16 @@ export default function ModernHQDashboard() {
     card_buku_panduan: "",
     card_twibbon: "",
     card_kontak: "",
+    gallery_title: "Moments of Excellence",
+    gallery_subtitle: "A glimpse into the spirit, competition, and victory at NCC. Capturing the journey of future leaders across diverse categories.",
     gallery_images: [
-      "/gallery/IMG_8067.JPG",
-      "/gallery/IMG_8109.JPG",
-      "/gallery/IMG_7993.JPG",
-      "/gallery/IMG_8103.JPG",
-      "/gallery/IMG_8143.JPG",
-      "/gallery/ECL09816.JPG",
-      "/gallery/ECL09791.JPG"
+      { url: "/gallery/IMG_8067.JPG", category: "GALLERY", label: "NCC Grand Championship" },
+      { url: "/gallery/IMG_8109.JPG", category: "ACADEMIC", label: "LKTI Research Winners" },
+      { url: "/gallery/IMG_7993.JPG", category: "SPEECH", label: "Language Excellence" },
+      { url: "/gallery/IMG_8103.JPG", category: "ARTS", label: "MTQ Quran Recital" },
+      { url: "/gallery/IMG_8143.JPG", category: "ARTS", label: "Choral Symphony" },
+      { url: "/gallery/ECL09816.JPG", category: "GALLERY", label: "Ceremonial Parade" },
+      { url: "/gallery/ECL09791.JPG", category: "ARTS", label: "Stage Performance" }
     ]
   });
 
@@ -116,7 +118,7 @@ export default function ModernHQDashboard() {
       if (key === 'gallery_add') {
         setDashboardAssets((prev: any) => ({ 
           ...prev, 
-          gallery_images: [...(prev.gallery_images || []), urlData.publicUrl] 
+          gallery_images: [...(prev.gallery_images || []), { url: urlData.publicUrl, category: "GALLERY", label: "New NCC Moment" }] 
         }));
         showToast("Foto galeri baru berhasil ditambahkan!", "success");
       } else {
@@ -1612,17 +1614,17 @@ export default function ModernHQDashboard() {
 
             {/* 2. MANAJEMEN GALERI BERANDA */}
             <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-sm border border-white/60">
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4 border-b border-slate-100 pb-6">
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 bg-indigo-100 text-indigo-600 rounded-xl">
                     <Camera size={20} />
                   </div>
                   <div>
                     <h3 className="text-xl font-black text-slate-800">Manajemen Galeri Beranda</h3>
-                    <p className="text-sm text-slate-500 mt-1">Kelola foto-foto yang tampil pada section Galeri di halaman utama.</p>
+                    <p className="text-sm text-slate-500 mt-1">Konfigurasi teks dan foto pada section Galeri.</p>
                   </div>
                 </div>
-                <label className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-md transition-all active:scale-95 flex items-center gap-2 cursor-pointer">
+                <label className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer">
                   <input 
                     type="file" 
                     accept="image/*" 
@@ -1639,28 +1641,85 @@ export default function ModernHQDashboard() {
                 </label>
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {/* Edit Title & Subtitle */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 bg-slate-50/50 p-6 rounded-2xl border border-slate-100">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Judul Utama Galeri</label>
+                  <input 
+                    type="text"
+                    value={dashboardAssets.gallery_title || ""}
+                    onChange={(e) => setDashboardAssets((prev: any) => ({ ...prev, gallery_title: e.target.value }))}
+                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none"
+                    placeholder="Contoh: Moments of Excellence"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Subjudul / Deskripsi</label>
+                  <textarea 
+                    value={dashboardAssets.gallery_subtitle || ""}
+                    onChange={(e) => setDashboardAssets((prev: any) => ({ ...prev, gallery_subtitle: e.target.value }))}
+                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm font-medium text-slate-500 focus:ring-2 focus:ring-indigo-500 outline-none h-[42px] resize-none"
+                    placeholder="Masukkan deskripsi singkat galeri..."
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {(dashboardAssets.gallery_images || []).length === 0 ? (
                   <div className="col-span-full py-12 flex flex-col items-center justify-center text-slate-400 bg-slate-50/50 rounded-2xl border-2 border-dashed border-slate-200">
                     <ImageIcon size={40} className="mb-2 opacity-20" />
                     <p className="text-xs font-bold uppercase tracking-widest">Belum ada foto galeri</p>
                   </div>
                 ) : (
-                  dashboardAssets.gallery_images.map((img: string, idx: number) => (
-                    <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden group shadow-sm border border-slate-100">
-                      <img src={img} alt={`Gallery ${idx}`} className="w-full h-full object-cover" />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <button 
-                          onClick={() => {
-                            const newGallery = [...dashboardAssets.gallery_images];
-                            newGallery.splice(idx, 1);
-                            setDashboardAssets((prev: any) => ({ ...prev, gallery_images: newGallery }));
-                            showToast("Foto galeri dihapus.", "error");
-                          }}
-                          className="p-2 bg-rose-500 text-white rounded-xl hover:bg-rose-600 transition-colors shadow-lg"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                  dashboardAssets.gallery_images.map((item: any, idx: number) => (
+                    <div key={idx} className="bg-white border border-slate-100 rounded-2xl overflow-hidden group shadow-sm hover:border-indigo-200 transition-all flex flex-col">
+                      <div className="relative aspect-video">
+                        <img src={typeof item === 'string' ? item : item.url} alt={`Gallery ${idx}`} className="w-full h-full object-cover" />
+                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button 
+                            onClick={() => {
+                              const newGallery = [...dashboardAssets.gallery_images];
+                              newGallery.splice(idx, 1);
+                              setDashboardAssets((prev: any) => ({ ...prev, gallery_images: newGallery }));
+                              showToast("Foto galeri dihapus.", "error");
+                            }}
+                            className="p-1.5 bg-rose-500 text-white rounded-lg hover:bg-rose-600 transition-colors shadow-lg"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="p-4 space-y-3">
+                         <div className="space-y-1">
+                           <label className="text-[9px] font-bold text-slate-400 uppercase">Kategori</label>
+                           <select 
+                              value={item.category || "GALLERY"}
+                              onChange={(e) => {
+                                const newGallery = [...dashboardAssets.gallery_images];
+                                const current = typeof item === 'string' ? { url: item, category: "GALLERY", label: "" } : item;
+                                newGallery[idx] = { ...current, category: e.target.value };
+                                setDashboardAssets((prev: any) => ({ ...prev, gallery_images: newGallery }));
+                              }}
+                              className="w-full text-[11px] font-bold bg-slate-50 border-none rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer"
+                           >
+                             {["GALLERY", "ACADEMIC", "SPEECH", "ARTS"].map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                           </select>
+                         </div>
+                         <div className="space-y-1">
+                           <label className="text-[9px] font-bold text-slate-400 uppercase">Label / Judul Foto</label>
+                           <input 
+                              type="text"
+                              value={item.label || ""}
+                              onChange={(e) => {
+                                const newGallery = [...dashboardAssets.gallery_images];
+                                const current = typeof item === 'string' ? { url: item, category: "GALLERY", label: "" } : item;
+                                newGallery[idx] = { ...current, label: e.target.value };
+                                setDashboardAssets((prev: any) => ({ ...prev, gallery_images: newGallery }));
+                              }}
+                              className="w-full text-[11px] font-medium bg-slate-50 border-none rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-indigo-500 outline-none"
+                              placeholder="Label foto..."
+                           />
+                         </div>
                       </div>
                     </div>
                   ))
