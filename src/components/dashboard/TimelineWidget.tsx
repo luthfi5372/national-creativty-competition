@@ -104,9 +104,10 @@ const TIMELINE_DATA = [
 
 interface TimelineProps {
   userCategory?: string;
+  userStatus?: string;
 }
 
-export default function TimelineWidget({ userCategory }: TimelineProps) {
+export default function TimelineWidget({ userCategory, userStatus }: TimelineProps) {
   // Mapping antara kategori di database dengan kategori di TIMELINE_DATA
   const categoryMap: Record<string, string> = {
     "LKTI Nasional": "LKTI – Lomba Karya Tulis Ilmiah",
@@ -123,17 +124,37 @@ export default function TimelineWidget({ userCategory }: TimelineProps) {
 
   const isFiltered = !!targetCategoryName && filteredData.length > 0;
 
-  const getColorClasses = (color: string, active: boolean) => {
-    if (!active) return {
-      dot: "bg-slate-300",
-      ring: "ring-slate-100",
-      text: "text-slate-400",
+  // Logika Menentukan Tahap Mana yang Harus Menyala
+  const getProgressLevel = (status?: string) => {
+    if (!status) return 0;
+    const s = status.toLowerCase();
+    if (s.includes('final') || s.includes('tahap 3') || s.includes('tahap iii')) return 3;
+    if (s.includes('semi') || s.includes('tahap 2') || s.includes('tahap ii') || s.includes('seleksi 2')) return 2;
+    if (s.includes('verified') || s.includes('tahap 1') || s.includes('tahap i') || s.includes('seleksi 1')) return 1;
+    return 1;
+  };
+
+  const userProgress = getProgressLevel(userStatus);
+
+  const getItemActiveState = (itemLabel: string) => {
+    if (!isFiltered) return true;
+    const label = itemLabel.toLowerCase();
+    if (label.includes('tahap ii') || label.includes('fullpaper') || label.includes('seleksi 2')) return userProgress >= 2;
+    if (label.includes('tahap iii') || label.includes('grand final')) return userProgress >= 3;
+    return userProgress >= 1;
+  };
+
+  const getColorClasses = (color: string, isActive: boolean) => {
+    if (!isActive) return {
+      dot: "bg-slate-200",
+      ring: "ring-slate-50",
+      text: "text-slate-300",
       bg: "bg-slate-50",
       border: "border-slate-100",
-      accent: "text-slate-400",
-      cardBorder: "hover:border-slate-300",
-      cardShadow: "hover:shadow-md",
-      opacity: "opacity-80 hover:opacity-100"
+      accent: "text-slate-300",
+      cardBorder: "border-slate-100",
+      cardShadow: "shadow-none",
+      opacity: "opacity-40 grayscale pointer-events-none"
     };
 
     const maps: any = {
@@ -216,21 +237,26 @@ export default function TimelineWidget({ userCategory }: TimelineProps) {
                     </span>
                     
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-5">
-                      {wave.items.map((item, iIdx) => (
-                        <div key={iIdx} className={`bg-white border border-slate-100 ${styles.cardBorder} hover:shadow-xl ${styles.cardShadow} p-5 rounded-2xl transition-all duration-300 transform hover:-translate-y-1 flex flex-col justify-between min-w-0 relative z-10 ${styles.opacity || ''}`}>
-                          <div className="flex items-start gap-3 mb-4">
-                             <div className={`p-2 rounded-xl ${styles.bg} ${styles.text} shrink-0`}>
-                               <item.icon size={16} />
-                             </div>
-                             <p className="text-xs font-bold text-slate-700 leading-relaxed break-words">{item.label}</p>
+                      {wave.items.map((item, iIdx) => {
+                        const isItemActive = getItemActiveState(item.label);
+                        const itemStyles = getColorClasses(category.color, isItemActive);
+                        
+                        return (
+                          <div key={iIdx} className={`bg-white border border-slate-100 ${itemStyles.cardBorder} hover:shadow-xl ${itemStyles.cardShadow} p-5 rounded-2xl transition-all duration-300 transform ${isItemActive ? 'hover:-translate-y-1' : ''} flex flex-col justify-between min-w-0 relative z-10 ${itemStyles.opacity || ''}`}>
+                            <div className="flex items-start gap-3 mb-4">
+                               <div className={`p-2 rounded-xl ${itemStyles.bg} ${itemStyles.text} shrink-0`}>
+                                 <item.icon size={16} />
+                               </div>
+                               <p className="text-xs font-bold text-slate-700 leading-relaxed break-words">{item.label}</p>
+                            </div>
+                            <div className="mt-auto">
+                              <p className={`text-[10px] ${itemStyles.accent} font-black bg-white border ${itemStyles.border} px-3 py-1.5 rounded-lg inline-block break-all sm:break-normal`}>
+                                {item.date}
+                              </p>
+                            </div>
                           </div>
-                          <div className="mt-auto">
-                            <p className={`text-[10px] ${styles.accent} font-black bg-white border ${styles.border} px-3 py-1.5 rounded-lg inline-block break-all sm:break-normal`}>
-                              {item.date}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 );
