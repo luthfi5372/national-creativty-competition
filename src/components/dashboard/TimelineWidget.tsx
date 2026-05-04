@@ -102,7 +102,27 @@ const TIMELINE_DATA = [
   }
 ];
 
-export default function TimelineWidget() {
+interface TimelineProps {
+  userCategory?: string;
+}
+
+export default function TimelineWidget({ userCategory }: TimelineProps) {
+  // Mapping antara kategori di database dengan kategori di TIMELINE_DATA
+  const categoryMap: Record<string, string> = {
+    "LKTI Nasional": "LKTI – Lomba Karya Tulis Ilmiah",
+    "Olimpiade MIPA": "Olimpiade MIPA",
+    "Speech Contest": "Speech Contest",
+    "MTQ": "MTQ"
+  };
+
+  // Tentukan apakah kita harus memfilter data
+  const targetCategoryName = userCategory ? categoryMap[userCategory] : null;
+  const filteredData = targetCategoryName 
+    ? TIMELINE_DATA.filter(item => item.category === targetCategoryName)
+    : TIMELINE_DATA;
+
+  const isFiltered = !!targetCategoryName && filteredData.length > 0;
+
   const getColorClasses = (color: string, active: boolean) => {
     if (!active) return {
       dot: "bg-slate-300",
@@ -168,13 +188,17 @@ export default function TimelineWidget() {
           <Calendar size={20} />
         </div>
         <div>
-          <h2 className="text-lg font-bold text-slate-800">Jadwal Perlombaan NCC 13th</h2>
-          <p className="text-xs text-slate-400 mt-0.5">Seluruh cabang lomba • Gelombang I & II</p>
+          <h2 className="text-lg font-bold text-slate-800">
+            {isFiltered ? `Jadwal Khusus ${userCategory}` : "Jadwal Perlombaan NCC 13th"}
+          </h2>
+          <p className="text-xs text-slate-400 mt-0.5">
+            {isFiltered ? "Berdasarkan kategori lomba yang Anda ikuti" : "Seluruh cabang lomba • Gelombang I & II"}
+          </p>
         </div>
       </div>
 
       <div className="space-y-12">
-        {TIMELINE_DATA.map((category, idx) => (
+        {filteredData.map((category, idx) => (
           <div key={idx} className="group/timeline">
             <div className="flex items-center gap-3 mb-6 transition-transform group-hover/timeline:translate-x-1 duration-300">
               <span className={`w-3.5 h-3.5 rounded-full ${getColorClasses(category.color, true).dot} ring-4 ${getColorClasses(category.color, true).ring} shrink-0`}></span>
@@ -210,7 +234,7 @@ export default function TimelineWidget() {
                 );
               })}
             </div>
-            {idx < TIMELINE_DATA.length - 1 && <hr className="border-slate-100/80 mt-12 mb-0" />}
+            {idx < filteredData.length - 1 && <hr className="border-slate-100/80 mt-12 mb-0" />}
           </div>
         ))}
 

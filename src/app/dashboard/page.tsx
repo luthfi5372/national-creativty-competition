@@ -259,7 +259,7 @@ export default function UserDashboard() {
           {/* Kolom Kanan */}
           <div className="lg:col-span-2">
             <AnnouncementBoard announcements={announcements} isLoading={isLoading} />
-            <TimelineWidget />
+            <TimelineWidget userCategory={userEntry?.competition_type} />
           </div>
         </div>
       </div>
