@@ -1517,17 +1517,17 @@ export default function ModernHQDashboard() {
                 </button>
               </div>
 
-              <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 border border-white/60 shadow-sm">
-                {/* 🏷️ Filter Kategori */}
-                <div className="flex flex-wrap gap-4 mb-8">
+              {/* 🏷️ Filter Kategori Cepat */}
+                <div className="flex flex-wrap items-center gap-3 mb-8">
+                  <div className="text-xs font-black text-slate-400 uppercase tracking-widest mr-2">Filter Cepat:</div>
                   {['All', 'LKTI', 'MIPA', 'Speech', 'MTQ'].map(cat => (
                     <button 
                       key={cat} 
                       onClick={() => setFilterCategory(cat)}
-                      className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all active:scale-95 ${
+                      className={`px-5 py-2 rounded-2xl font-bold text-xs transition-all active:scale-95 border ${
                         filterCategory === cat 
-                          ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' 
-                          : 'bg-slate-100 text-slate-600 hover:bg-indigo-50 hover:text-indigo-600'
+                          ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-100' 
+                          : 'bg-white text-slate-500 border-slate-200 hover:border-indigo-300 hover:text-indigo-600 shadow-sm'
                       }`}
                     >
                       {cat === 'All' ? 'Semua Mapel' : cat}
@@ -1535,61 +1535,62 @@ export default function ModernHQDashboard() {
                   ))}
                 </div>
 
-                <div className="overflow-hidden border border-slate-100 rounded-2xl">
-                  <table className="w-full text-left border-collapse">
-                    <thead className="bg-slate-50/50 border-b border-slate-100">
-                      <tr>
-                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Kategori & Gelombang</th>
-                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Nama Kegiatan</th>
-                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-1/3">Teks Tanggal (Real-time)</th>
-                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Aksi</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-50">
-                      {timelineData
-                        .filter(cat => filterCategory === 'All' || cat.category.toLowerCase().includes(filterCategory.toLowerCase()))
-                        .map((cat) => (
-                          <React.Fragment key={cat.category}>
-                            {cat.waves.map((wave: any, wIdx: number) => (
-                              <React.Fragment key={`${cat.category}-${wave.label}`}>
-                                {wave.items.map((item: any, iIdx: number) => (
-                                  <tr key={`${cat.category}-${wave.label}-${item.label}`} className="hover:bg-slate-50/50 transition-colors group">
-                                    <td className="px-6 py-4">
-                                      <div className="flex flex-col">
-                                        <span className="text-[10px] font-bold text-indigo-500 uppercase tracking-tighter">{cat.category}</span>
-                                        <span className="text-sm font-black text-slate-700">{wave.label}</span>
-                                      </div>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                      <div className="flex items-center gap-3">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-400"></div>
-                                        <span className="text-sm font-bold text-slate-600">{item.label}</span>
-                                      </div>
-                                    </td>
-                                    <td className="px-6 py-4">
+                {/* 📂 Grid Konten Berdasarkan Kategori */}
+                <div className="grid grid-cols-1 gap-10">
+                  {timelineData
+                    .filter(cat => filterCategory === 'All' || cat.category.toLowerCase().includes(filterCategory.toLowerCase()))
+                    .map((cat) => (
+                      <div key={cat.category} className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+                        {/* Header Kategori */}
+                        <div className="flex items-center gap-4 mb-6">
+                          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
+                          <div className="flex items-center gap-3 bg-white px-6 py-2 rounded-full border border-slate-100 shadow-sm">
+                            <Sparkles size={16} className="text-amber-500" />
+                            <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest">{cat.category}</h3>
+                          </div>
+                          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
+                        </div>
+
+                        {/* Gelombang Grid */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                          {cat.waves.map((wave: any) => (
+                            <div key={`${cat.category}-${wave.label}`} className="bg-white/60 backdrop-blur-sm rounded-[2rem] p-8 border border-white/80 shadow-sm hover:shadow-md transition-all group">
+                              <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-3">
+                                  <div className={`w-2 h-8 rounded-full ${wave.label.includes('I') && !wave.label.includes('II') ? 'bg-indigo-500' : 'bg-emerald-500'}`}></div>
+                                  <h4 className="text-lg font-black text-slate-800 tracking-tight">{wave.label}</h4>
+                                </div>
+                                <div className={`px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase ${wave.label.includes('I') && !wave.label.includes('II') ? 'bg-indigo-50 text-indigo-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                                  Active Phase
+                                </div>
+                              </div>
+
+                              <div className="space-y-5">
+                                {wave.items.map((item: any) => (
+                                  <div key={`${cat.category}-${wave.label}-${item.label}`} className="relative">
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">
+                                      {item.label}
+                                    </label>
+                                    <div className="relative group/input">
                                       <input 
                                         type="text" 
                                         value={item.date}
                                         onChange={(e) => updateTimelineItem(cat.category, wave.label, item.label, e.target.value)}
-                                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all shadow-sm"
+                                        className="w-full bg-slate-50/50 border border-slate-200 rounded-2xl px-5 py-3.5 text-sm font-bold text-slate-700 focus:bg-white focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 outline-none transition-all shadow-inner"
                                         placeholder="Contoh: 16 Juli – 3 September"
                                       />
-                                    </td>
-                                    <td className="px-6 py-4 text-center">
-                                      <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <div className="p-2 text-emerald-500 bg-emerald-50 rounded-lg" title="Data Terhubung">
-                                          <ShieldCheck size={14} />
-                                        </div>
+                                      <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover/input:opacity-100 transition-opacity">
+                                        <Calendar size={14} className="text-slate-300" />
                                       </div>
-                                    </td>
-                                  </tr>
+                                    </div>
+                                  </div>
                                 ))}
-                              </React.Fragment>
-                            ))}
-                          </React.Fragment>
-                        ))}
-                    </tbody>
-                  </table>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
                 </div>
               </div>
             </div>
