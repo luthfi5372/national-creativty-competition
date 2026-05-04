@@ -21,7 +21,103 @@ export default function ModernHQDashboard() {
   const [realEntries, setRealEntries] = useState<any[]>([]);
   const [dynamicChartData, setDynamicChartData] = useState<any[]>([]);
   const [dynamicBarData, setDynamicBarData] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState("Dashboard");
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [timelineData, setTimelineData] = useState<any[]>([
+    {
+      category: "LKTI Nasional",
+      waves: [
+        { label: "Gelombang I", items: [
+          { label: "Pendaftaran & Abstrak", date: "16 Juli – 3 September" },
+          { label: "Pengumuman Tahap I", date: "10 September" },
+          { label: "Pengumpulan Fullpaper", date: "12 – 18 September" },
+          { label: "Pengumuman Tahap II", date: "26 September" }
+        ]},
+        { label: "Gelombang II", items: [
+          { label: "Pendaftaran & Abstrak", date: "1 – 25 Oktober" },
+          { label: "Pengumuman Tahap I", date: "31 Oktober" },
+          { label: "Pengumpulan Fullpaper", date: "1 – 9 November" },
+          { label: "Pengumuman Tahap II", date: "16 November" }
+        ]}
+      ]
+    },
+    {
+      category: "Olimpiade MIPA",
+      waves: [
+        { label: "Gelombang I", items: [
+          { label: "Pendaftaran", date: "16 Juli – 3 September" },
+          { label: "Seleksi 1", date: "10 September" },
+          { label: "Seleksi 2", date: "14 September" },
+          { label: "Pengumuman Tahap I", date: "21 September" }
+        ]},
+        { label: "Gelombang II", items: [
+          { label: "Pendaftaran", date: "1 – 25 Oktober" },
+          { label: "Simulasi", date: "29 Oktober" },
+          { label: "Seleksi", date: "2 November" },
+          { label: "Pengumuman", date: "8 November" }
+        ]}
+      ]
+    },
+    {
+      category: "Speech Contest",
+      waves: [
+        { label: "Gelombang I", items: [{ label: "Pendaftaran & Naskah", date: "16 Juli – 3 September" }, { label: "Pengumuman", date: "14 September" }] },
+        { label: "Gelombang II", items: [{ label: "Pendaftaran & Naskah", date: "1 – 25 Oktober" }, { label: "Pengumuman", date: "14 November" }] }
+      ]
+    },
+    {
+      category: "MTQ",
+      waves: [
+        { label: "Gelombang I", items: [{ label: "Pendaftaran & Video", date: "16 Juli – 3 September" }, { label: "Pengumuman", date: "14 September" }] },
+        { label: "Gelombang II", items: [{ label: "Pendaftaran", date: "1 – 25 Oktober" }, { label: "Pengumuman", date: "14 November" }] }
+      ]
+    }
+  ]);
+  const [isSavingTimeline, setIsSavingTimeline] = useState(false);
+  const [filterCategory, setFilterCategory] = useState("LKTI Nasional");
+
+  useEffect(() => {
+    const fetchTimeline = async () => {
+      const { data } = await supabase.from('announcements').select('*').eq('type', 'SYSTEM_TIMELINE').single();
+      if (data) setTimelineData(JSON.parse(data.content));
+    };
+    fetchTimeline();
+  }, []);
+
+  const saveTimeline = async () => {
+    setIsSavingTimeline(true);
+    const { error } = await supabase.from('announcements').upsert({ 
+      type: 'SYSTEM_TIMELINE', 
+      content: JSON.stringify(timelineData),
+      title: 'Master Schedule Config',
+      updated_at: new Date()
+    }, { onConflict: 'type' });
+    if (!error) showToast('Jadwal berhasil diperbarui secara global!', 'success');
+    setIsSavingTimeline(false);
+  };
+
+  const updateTimelineItem = (catName: string, waveLabel: string, itemLabel: string, newDate: string) => {
+    const updatedData = timelineData.map(cat => {
+      if (cat.category === catName) {
+        return {
+          ...cat,
+          waves: cat.waves.map((wave: any) => {
+            if (wave.label === waveLabel) {
+              return {
+                ...wave,
+                items: wave.items.map((item: any) => {
+                  if (item.label === itemLabel) return { ...item, date: newDate };
+                  return item;
+                })
+              };
+            }
+            return wave;
+          })
+        };
+      }
+      return cat;
+    });
+    setTimelineData(updatedData);
+  };
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState("All");
   const [timeFilter, setTimeFilter] = useState("All"); // Opsi: 'Today', '7Days', '1Month', 'All'
@@ -36,7 +132,31 @@ export default function ModernHQDashboard() {
   const [isSending, setIsSending] = useState(false);
 
   // --- MEMORI KENDALI PORTAL & GELOMBANG ---
-  const [isPortalOpen, setIsPortalOpen] = useState(true);
+  const updateTimelineItem = (catName: string, waveLabel: string, itemLabel: string, newDate: string) => {
+    const updatedData = timelineData.map(cat => {
+      if (cat.category === catName || cat.category.startsWith(catName)) {
+        return {
+          ...cat,
+          waves: cat.waves.map((wave: any) => {
+            if (wave.label === waveLabel) {
+              return {
+                ...wave,
+                items: wave.items.map((item: any) => {
+                  if (item.label === itemLabel) {
+                    return { ...item, date: newDate };
+                  }
+                  return item;
+                })
+              };
+            }
+            return wave;
+          })
+        };
+      }
+      return cat;
+    });
+    setTimelineData(updatedData);
+  };
   // --- MEMORI KAWALAN KEGIATAN & PORTAL ---
   const [isRegistrationOpen, setIsRegistrationOpen] = useState(true);
   
@@ -620,6 +740,7 @@ export default function ModernHQDashboard() {
             { id: "Verifikasi", icon: <CheckCircle size={18} />, label: "Verifikasi Berkas", count: realEntries.filter((e: any) => e.payment_status === 'Pending').length },
             { id: "Pengumuman", icon: <Megaphone size={18} />, label: "Siaran Info" },
             { id: "Kegiatan", icon: <CalendarDays size={18} />, label: "Kegiatan" },
+            { id: "Schedule", icon: <Calendar size={18} />, label: "Schedule Lomba" },
             { id: "Media", icon: <ImageIcon size={18} />, label: "Kelola Media" },
             { id: "Pengaturan", icon: <Settings size={18} />, label: "Pengaturan" }
           ].map((item) => (
@@ -1393,12 +1514,90 @@ export default function ModernHQDashboard() {
                         <Trash2 size={13}/>
                       </button>
                     </div>
+                    <div className="space-y-1">
+                        <label className="text-[9px] font-bold text-slate-400 uppercase flex items-center gap-1">
+                          <Calendar size={10} /> Auto-Open
+                        </label>
+                        <input 
+                          type="datetime-local" 
+                          value={category.openDate || ''}
+                          onChange={(e) => updateSchedule(category.id, 'openDate', e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-[10px] text-slate-700 outline-none"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-bold text-slate-400 uppercase flex items-center gap-1">
+                          <Calendar size={10} /> Auto-Close
+                        </label>
+                        <input 
+                          type="datetime-local" 
+                          value={category.closeDate || ''}
+                          onChange={(e) => updateSchedule(category.id, 'closeDate', e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-[10px] text-slate-700 outline-none"
+                        />
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* 3. AKSI CEPAT ADMIN */}
+            {/* 6. TAB: SCHEDULE LOMBA (MASTER SCHEDULE) */}
+          {activeTab === 'Schedule' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-3xl font-black text-slate-800">Master Schedule Lomba</h2>
+                  <p className="text-slate-500 font-medium">Atur semua tanggal perlombaan secara terpusat dan real-time.</p>
+                </div>
+                <button 
+                  onClick={() => {/* Simpan ke DB */}}
+                  className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-100 hover:scale-105 transition-all"
+                >
+                  <Save size={18} /> Simpan Semua Perubahan
+                </button>
+              </div>
+
+              <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 border border-white/60 shadow-sm">
+                <div className="flex flex-wrap gap-4 mb-8">
+                  {['LKTI', 'MIPA', 'Speech', 'MTQ'].map(cat => (
+                    <button key={cat} className="px-5 py-2.5 bg-slate-100 rounded-xl font-bold text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition-all">
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="overflow-hidden border border-slate-100 rounded-2xl">
+                  <table className="w-full text-left">
+                    <thead className="bg-slate-50 border-b border-slate-100">
+                      <tr>
+                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Gelombang</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Nama Kegiatan</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Teks Tanggal (Real-time)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                      {/* Mapping Data Jadwal */}
+                      <tr>
+                        <td className="px-6 py-4 font-bold text-indigo-600 text-sm">Gelombang I</td>
+                        <td className="px-6 py-4 font-bold text-slate-700 text-sm">Pendaftaran & Abstrak</td>
+                        <td className="px-6 py-4">
+                          <input 
+                            type="text" 
+                            defaultValue="16 Juli – 3 September"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                          />
+                        </td>
+                      </tr>
+                      {/* Dummy lainnya... */}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 7. TAB: KELOLA MEDIA */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/60 shadow-sm">
                 <div className="flex items-center gap-3 mb-3">
@@ -1446,8 +1645,39 @@ export default function ModernHQDashboard() {
                 <p className="text-xs text-slate-500 mb-4">Sistem menggunakan zona waktu WIB (GMT+7).</p>
                 <div className="w-full py-2.5 bg-amber-50 rounded-xl text-xs font-bold text-amber-600 text-center">WIB (UTC+7)</div>
               </div>
+                          <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300">
+                            <Edit3 size={16} />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
-            
+
+            {/* Bagian Umum (TM) */}
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-[2.5rem] p-10 text-white shadow-xl shadow-blue-100 relative overflow-hidden">
+               <div className="absolute top-[-20%] right-[-5%] w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
+               <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+                 <div className="flex items-center gap-6">
+                   <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/30">
+                     <Pin size={32} />
+                   </div>
+                   <div>
+                     <h3 className="text-2xl font-black tracking-tight">Technical Meeting – Semua Lomba</h3>
+                     <p className="text-blue-100 font-medium mt-1">Acara wajib bagi seluruh peserta dari semua cabang lomba.</p>
+                   </div>
+                 </div>
+                 <div className="w-full md:w-64">
+                   <input 
+                    type="text" 
+                    defaultValue="18 November"
+                    className="w-full bg-white/20 border border-white/30 rounded-2xl px-6 py-4 text-center font-black text-white placeholder:text-white/50 outline-none focus:bg-white/30 transition-all"
+                   />
+                 </div>
+               </div>
+            </div>
           </div>
         )}
         {/* ========================================================= */}
