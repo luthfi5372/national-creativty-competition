@@ -261,7 +261,8 @@ export default function UserDashboard() {
             <AnnouncementBoard announcements={announcements} isLoading={isLoading} />
             <TimelineWidget 
               userCategory={userEntry?.competition_type} 
-              userStatus={userEntry?.status}
+              userStatus={userEntry?.payment_status}
+              notes={userEntry?.notes}
             />
           </div>
         </div>

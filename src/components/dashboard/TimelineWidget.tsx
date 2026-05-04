@@ -105,9 +105,10 @@ const TIMELINE_DATA = [
 interface TimelineProps {
   userCategory?: string;
   userStatus?: string;
+  notes?: string;
 }
 
-export default function TimelineWidget({ userCategory, userStatus }: TimelineProps) {
+export default function TimelineWidget({ userCategory, userStatus, notes }: TimelineProps) {
   // Mapping antara kategori di database dengan kategori di TIMELINE_DATA
   const categoryMap: Record<string, string> = {
     "LKTI Nasional": "LKTI – Lomba Karya Tulis Ilmiah",
@@ -125,22 +126,35 @@ export default function TimelineWidget({ userCategory, userStatus }: TimelinePro
   const isFiltered = !!targetCategoryName && filteredData.length > 0;
 
   // Logika Menentukan Tahap Mana yang Harus Menyala
-  const getProgressLevel = (status?: string) => {
-    if (!status) return 0;
+  const getProgressLevel = (status?: string, notesStr?: string) => {
+    // 1. Cek dari notes (current_stage) yang diatur admin
+    if (notesStr) {
+      try {
+        const parsed = JSON.parse(notesStr);
+        if (parsed.current_stage) return parseInt(parsed.current_stage);
+      } catch (e) {}
+    }
+
+    // 2. Fallback ke status string jika notes tidak ada
+    if (!status) return 1;
     const s = status.toLowerCase();
-    if (s.includes('final') || s.includes('tahap 3') || s.includes('tahap iii')) return 3;
-    if (s.includes('semi') || s.includes('tahap 2') || s.includes('tahap ii') || s.includes('seleksi 2')) return 2;
-    if (s.includes('verified') || s.includes('tahap 1') || s.includes('tahap i') || s.includes('seleksi 1')) return 1;
+    if (s.includes('final') || s.includes('tahap 3')) return 3;
+    if (s.includes('semi') || s.includes('tahap 2') || s.includes('seleksi 2')) return 2;
+    if (s.includes('verified') || s.includes('success') || s.includes('tahap 1')) return 1;
+    
     return 1;
   };
 
-  const userProgress = getProgressLevel(userStatus);
+  const userProgress = getProgressLevel(userStatus, notes);
 
   const getItemActiveState = (itemLabel: string) => {
     if (!isFiltered) return true;
     const label = itemLabel.toLowerCase();
-    if (label.includes('tahap ii') || label.includes('fullpaper') || label.includes('seleksi 2')) return userProgress >= 2;
-    if (label.includes('tahap iii') || label.includes('grand final')) return userProgress >= 3;
+    
+    // Logika highlight berdasarkan level progres
+    if (label.includes('tahap iii') || label.includes('grand final') || label.includes('final')) return userProgress >= 3;
+    if (label.includes('tahap ii') || label.includes('fullpaper') || label.includes('seleksi 2') || label.includes('semi final')) return userProgress >= 2;
+    
     return userProgress >= 1;
   };
 
