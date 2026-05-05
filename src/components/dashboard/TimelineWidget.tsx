@@ -1,6 +1,5 @@
 import { 
-  Calendar, Pin, FileText, Megaphone, Upload, 
-  Trophy, Brain, Zap, MonitorPlay, Star, Video 
+  Calendar, Pin, Trophy, Brain, Zap, MonitorPlay, Star, Video, FileText, Megaphone, Upload 
 } from "lucide-react";
 
 const TIMELINE_DATA = [
