@@ -123,41 +123,31 @@ export default function ModernHQDashboard() {
     fetchTimeline();
   }, []);
 
-  const saveTimeline = async () => {
-    setIsSavingTimeline(true);
-    try {
-      // Membersihkan data dari sisa-sisa format lama sebelum simpan
-      const cleanData = timelineData.map(cat => ({
-        ...cat,
-        waves: cat.waves.map((wave: any) => ({
-          ...wave,
-          items: wave.items.map((item: any) => {
-            const newItem = { ...item };
-            delete (newItem as any).date; // Hapus field date lama agar tidak bingung
-            return newItem;
+  // --- MEMORI KENDALI PORTAL & GELOMBANG ---
+  const updateTimelineItem = (catName: string, waveLabel: string, itemLabel: string, type: 'start' | 'end', value: string) => {
+    const updatedData = timelineData.map(cat => {
+      if (cat.category === catName) {
+        return {
+          ...cat,
+          waves: cat.waves.map((wave: any) => {
+            if (wave.label === waveLabel) {
+              return {
+                ...wave,
+                items: wave.items.map((item: any) => {
+                  if (item.label === itemLabel) {
+                    return { ...item, [type]: value };
+                  }
+                  return item;
+                })
+              };
+            }
+            return wave;
           })
-        }))
-      }));
-
-      const { error } = await supabase
-        .from('announcements')
-          .from('announcements')
-          .insert({ 
-            title: 'SYSTEM_TIMELINE_CONFIG', 
-            content: JSON.stringify(timelineData) 
-          });
-        
-        if (insertError) throw insertError;
-      } else if (updateError) {
-        throw updateError;
+        };
       }
-      
-      showToast('Konfigurasi Jadwal Berhasil Disimpan!', 'success');
-    } catch (err: any) {
-      showToast(`Gagal menyimpan: ${err.message}`, 'error');
-    } finally {
-      setIsSavingTimeline(false);
-    }
+      return cat;
+    });
+    setTimelineData(updatedData);
   };
 
   const [searchQuery, setSearchQuery] = useState("");
