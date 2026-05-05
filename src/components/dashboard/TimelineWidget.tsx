@@ -8,16 +8,16 @@ const TIMELINE_DATA = [
     color: "blue",
     waves: [
       { label: "Gelombang I", items: [
-        { label: "Pendaftaran & Abstrak", start: "", end: "" },
-        { label: "Pengumuman Tahap I", start: "", end: "" },
-        { label: "Pengumpulan Fullpaper", start: "", end: "" },
-        { label: "Pengumuman Tahap II", start: "", end: "" }
+        { icon: FileText, label: "Pendaftaran & Abstrak", start: "", end: "" },
+        { icon: Megaphone, label: "Pengumuman Tahap I", start: "", end: "" },
+        { icon: Upload, label: "Pengumpulan Fullpaper", start: "", end: "" },
+        { icon: Trophy, label: "Pengumuman Tahap II", start: "", end: "" }
       ]},
       { label: "Gelombang II", items: [
-        { label: "Pendaftaran & Abstrak", start: "", end: "" },
-        { label: "Pengumuman Tahap I", start: "", end: "" },
-        { label: "Pengumpulan Fullpaper", start: "", end: "" },
-        { label: "Pengumuman Tahap II", start: "", end: "" }
+        { icon: FileText, label: "Pendaftaran & Abstrak", start: "", end: "" },
+        { icon: Megaphone, label: "Pengumuman Tahap I", start: "", end: "" },
+        { icon: Upload, label: "Pengumpulan Fullpaper", start: "", end: "" },
+        { icon: Trophy, label: "Pengumuman Tahap II", start: "", end: "" }
       ]}
     ]
   },
@@ -26,16 +26,16 @@ const TIMELINE_DATA = [
     color: "amber",
     waves: [
       { label: "Gelombang I", items: [
-        { label: "Pendaftaran", start: "", end: "" },
-        { label: "Seleksi 1", start: "", end: "" },
-        { label: "Seleksi 2", start: "", end: "" },
-        { label: "Pengumuman Tahap I", start: "", end: "" }
+        { icon: FileText, label: "Pendaftaran", start: "", end: "" },
+        { icon: Brain, label: "Seleksi 1", start: "", end: "" },
+        { icon: Zap, label: "Seleksi 2", start: "", end: "" },
+        { icon: Star, label: "Pengumuman Tahap I", start: "", end: "" }
       ]},
       { label: "Gelombang II", items: [
-        { label: "Pendaftaran", start: "", end: "" },
-        { label: "Simulasi", start: "", end: "" },
-        { label: "Seleksi", start: "", end: "" },
-        { label: "Pengumuman", start: "", end: "" }
+        { icon: FileText, label: "Pendaftaran", start: "", end: "" },
+        { icon: MonitorPlay, label: "Simulasi", start: "", end: "" },
+        { icon: Zap, label: "Seleksi", start: "", end: "" },
+        { icon: Megaphone, label: "Pengumuman", start: "", end: "" }
       ]}
     ]
   },
@@ -44,12 +44,12 @@ const TIMELINE_DATA = [
     color: "purple",
     waves: [
       { label: "Gelombang I", items: [
-        { label: "Pendaftaran & Naskah", start: "", end: "" },
-        { label: "Pengumuman", start: "", end: "" }
+        { icon: FileText, label: "Pendaftaran & Naskah", start: "", end: "" },
+        { icon: Megaphone, label: "Pengumuman", start: "", end: "" }
       ]},
       { label: "Gelombang II", items: [
-        { label: "Pendaftaran & Naskah", start: "", end: "" },
-        { label: "Pengumuman", start: "", end: "" }
+        { icon: FileText, label: "Pendaftaran & Naskah", start: "", end: "" },
+        { icon: Megaphone, label: "Pengumuman", start: "", end: "" }
       ]}
     ]
   },
@@ -58,12 +58,12 @@ const TIMELINE_DATA = [
     color: "emerald",
     waves: [
       { label: "Gelombang I", items: [
-        { label: "Pendaftaran & Video", start: "", end: "" },
-        { label: "Pengumuman", start: "", end: "" }
+        { icon: Video, label: "Pendaftaran & Video", start: "", end: "" },
+        { icon: Megaphone, label: "Pengumuman", start: "", end: "" }
       ]},
       { label: "Gelombang II", items: [
-        { label: "Pendaftaran", start: "", end: "" },
-        { label: "Pengumuman", start: "", end: "" }
+        { icon: FileText, label: "Pendaftaran", start: "", end: "" },
+        { icon: Megaphone, label: "Pengumuman", start: "", end: "" }
       ]}
     ]
   }
