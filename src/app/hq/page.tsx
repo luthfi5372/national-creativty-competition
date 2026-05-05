@@ -89,8 +89,7 @@ export default function ModernHQDashboard() {
       // Menggunakan upsert dengan title sebagai target konflik (karena title unik di tabel ini)
       const { error } = await supabase.from('announcements').upsert({ 
         title: 'SYSTEM_TIMELINE_CONFIG', 
-        content: JSON.stringify(timelineData),
-        updated_at: new Date()
+        content: JSON.stringify(timelineData)
       }, { onConflict: 'title' });
       
       if (!error) {
