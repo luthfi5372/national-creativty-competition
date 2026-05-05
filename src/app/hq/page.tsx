@@ -125,19 +125,27 @@ export default function ModernHQDashboard() {
   const parseIndoDate = (indoStr: string) => {
     if (!indoStr) return "";
     const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-    const parts = indoStr.trim().split(" ");
+    
+    // Bersihkan karakter aneh dan split
+    const parts = indoStr.trim().split(/\s+/).filter(p => p.length > 1 || !isNaN(parseInt(p)));
     if (parts.length < 2) return "";
     
     const day = parts[0].padStart(2, '0');
-    const monthIndex = months.findIndex(m => m.toLowerCase() === parts[1].toLowerCase());
-    const year = parts[2] || new Date().getFullYear().toString();
+    // Cari bulan (case-insensitive)
+    const monthIndex = months.findIndex(m => parts.some(p => p.toLowerCase() === m.toLowerCase()));
     
-    if (monthIndex === -1) return "";
+    // Cari tahun (cari part yang panjangnya 4 angka)
+    let year = parts.find(p => p.length === 4 && !isNaN(parseInt(p))) || new Date().getFullYear().toString();
+    
+    if (monthIndex === -1 || isNaN(parseInt(day))) return "";
     return `${year}-${(monthIndex + 1).toString().padStart(2, '0')}-${day}`;
   };
 
   // --- MEMORI KENDALI PORTAL & GELOMBANG ---
   const updateTimelineItem = (catName: string, waveLabel: string, itemLabel: string, newDate: string) => {
+    // Sanitasi: Bersihkan double space atau angka aneh yang tidak sengaja masuk
+    const sanitizedDate = newDate.replace(/\s+/g, ' ').trim();
+    
     const updatedData = timelineData.map(cat => {
       // Gunakan Strict Matching (Harus sama persis kategorinya)
       if (cat.category === catName) {
@@ -149,7 +157,7 @@ export default function ModernHQDashboard() {
                 ...wave,
                 items: wave.items.map((item: any) => {
                   if (item.label === itemLabel) {
-                    return { ...item, date: newDate };
+                    return { ...item, date: sanitizedDate };
                   }
                   return item;
                 })
