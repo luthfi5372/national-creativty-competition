@@ -126,16 +126,21 @@ export default function ModernHQDashboard() {
   const saveTimeline = async () => {
     setIsSavingTimeline(true);
     try {
-      // Tahap 1: Coba Update dulu
-      const { data: updated, error: updateError } = await supabase
-        .from('announcements')
-        .update({ content: JSON.stringify(timelineData) })
-        .eq('title', 'SYSTEM_TIMELINE_CONFIG')
-        .select();
+      // Membersihkan data dari sisa-sisa format lama sebelum simpan
+      const cleanData = timelineData.map(cat => ({
+        ...cat,
+        waves: cat.waves.map((wave: any) => ({
+          ...wave,
+          items: wave.items.map((item: any) => {
+            const newItem = { ...item };
+            delete (newItem as any).date; // Hapus field date lama agar tidak bingung
+            return newItem;
+          })
+        }))
+      }));
 
-      // Tahap 2: Jika data tidak ada (update tidak menghasilkan apa-apa), lakukan Insert
-      if (!updateError && (!updated || updated.length === 0)) {
-        const { error: insertError } = await supabase
+      const { error } = await supabase
+        .from('announcements')
           .from('announcements')
           .insert({ 
             title: 'SYSTEM_TIMELINE_CONFIG', 
@@ -390,16 +395,47 @@ export default function ModernHQDashboard() {
 
   // --- 📡 REAL-TIME TIMELINE AUTO-SYNC ---
   useEffect(() => {
-    if (isFirstRender.current) return;
-    
-    const syncTimeline = async () => {
-       await supabase
-        .from('announcements')
-        .update({ content: JSON.stringify(timelineData) })
-        .eq('title', 'SYSTEM_TIMELINE_CONFIG');
-    };
-    syncTimeline();
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    const timer = setTimeout(() => {
+      saveTimeline();
+    }, 1000);
+    return () => clearTimeout(timer);
   }, [timelineData]);
+
+  const saveTimeline = async () => {
+    setIsSavingTimeline(true);
+    try {
+      const cleanData = timelineData.map(cat => ({
+        ...cat,
+        waves: cat.waves.map((wave: any) => ({
+          ...wave,
+          items: wave.items.map((item: any) => {
+            const newItem = { ...item };
+            delete (newItem as any).date; 
+            return newItem;
+          })
+        }))
+      }));
+
+      const { error } = await supabase
+        .from('announcements')
+        .upsert({ 
+          title: 'SYSTEM_TIMELINE_CONFIG', 
+          content: JSON.stringify(cleanData),
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'title' });
+
+      if (error) throw error;
+      showToast("Sinkronisasi Berhasil!", "success");
+    } catch (error: any) {
+      console.error("Save error:", error);
+    } finally {
+      setIsSavingTimeline(false);
+    }
+  };
 
   // --- 🚪 FUNGSI PINTU EVAKUASI ---
   const handleLogout = async () => {
