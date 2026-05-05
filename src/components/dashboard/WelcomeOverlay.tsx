@@ -24,20 +24,20 @@ export default function WelcomeOverlay({ userEntry, currentUser }: WelcomeOverla
   useEffect(() => {
     if (!currentUser?.id) return;
 
-    // Kunci unik per User ID yang menyimpan Tahap TERAKHIR yang dilihat
     const stageKey = `ncc_last_stage_seen_${currentUser.id}`;
     const lastSeenStage = sessionStorage.getItem(stageKey);
     
     // Trigger animasi jika:
-    // 1. Belum pernah lihat sama sekali (null)
-    // 2. Tahap sekarang berbeda dengan yang terakhir dicatat (berarti ada update dari Admin)
-    if (lastSeenStage === null || parseInt(lastSeenStage) !== stage) {
+    // 1. Tahap > 1 (Berarti ada info kelolosan/penting)
+    // 2. Belum pernah lihat sama sekali (null)
+    // 3. Tahap sekarang berbeda dengan yang terakhir dicatat
+    if (stage > 1 && (lastSeenStage === null || parseInt(lastSeenStage) !== stage)) {
       setIsVisible(true);
       sessionStorage.setItem(stageKey, stage.toString());
       
       const timer = setTimeout(() => {
         setIsVisible(false);
-      }, 5500);
+      }, 8000); // Beri waktu lebih lama untuk baca kabar gembira
       return () => clearTimeout(timer);
     }
   }, [stage, currentUser?.id]); 

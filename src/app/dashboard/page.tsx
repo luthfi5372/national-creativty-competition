@@ -148,12 +148,14 @@ export default function UserDashboard() {
         setAnnouncements((announcementsData || []).filter((item: any) => item.title !== 'SYS_PORTAL_SETTINGS' && item.title !== 'SYSTEM_TIMELINE_CONFIG'));
         
         // 3. Tarik Konfigurasi Jadwal Global (Bypass Cache)
+        // 3. Tarik Konfigurasi Jadwal Global (Bypass Cache Total)
+        const cacheBuster = Date.now();
         const { data: timelineConfig } = await supabase
           .from('announcements')
           .select('content')
           .eq('title', 'SYSTEM_TIMELINE_CONFIG')
-          // Menambahkan filter dummy untuk bypass cache Vercel
-          .not('created_at', 'is', null) 
+          .not('created_at', 'is', null) // Trik bypass cache
+          .limit(1)
           .single();
         
         if (timelineConfig && timelineConfig.content) {
