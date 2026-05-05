@@ -1,4 +1,4 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
@@ -6,7 +6,25 @@ import { revalidatePath } from 'next/cache';
 export async function POST(request: Request) {
   try {
     const { cleanData } = await request.json();
-    const supabase = createRouteHandlerClient({ cookies });
+    const cookieStore = cookies();
+
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
+          set(name: string, value: string, options: CookieOptions) {
+            cookieStore.set({ name, value, ...options });
+          },
+          remove(name: string, options: CookieOptions) {
+            cookieStore.set({ name, value: '', ...options });
+          },
+        },
+      }
+    );
 
     // 1. Cari data lama
     const { data: existing } = await supabase
@@ -34,9 +52,8 @@ export async function POST(request: Request) {
       if (insertError) throw insertError;
     }
 
-    // ⚡ KUNCI UTAMA: Hapus cache dashboard user secara instan!
+    // ⚡ REVALIDASI CACHE
     revalidatePath('/dashboard');
-    revalidatePath('/hq');
 
     return NextResponse.json({ message: 'Sync Success' });
   } catch (error: any) {
