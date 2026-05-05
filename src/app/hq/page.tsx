@@ -138,6 +138,20 @@ export default function ModernHQDashboard() {
     return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
   };
 
+  const parseIndoDate = (indoStr: string) => {
+    if (!indoStr) return "";
+    const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+    const parts = indoStr.trim().split(" ");
+    if (parts.length < 2) return "";
+    
+    const day = parts[0].padStart(2, '0');
+    const monthIndex = months.findIndex(m => m.toLowerCase() === parts[1].toLowerCase());
+    const year = parts[2] || new Date().getFullYear().toString();
+    
+    if (monthIndex === -1) return "";
+    return `${year}-${(monthIndex + 1).toString().padStart(2, '0')}-${day}`;
+  };
+
   // --- MEMORI KENDALI PORTAL & GELOMBANG ---
   const updateTimelineItem = (catName: string, waveLabel: string, itemLabel: string, newDate: string) => {
     const updatedData = timelineData.map(cat => {
@@ -1665,6 +1679,7 @@ export default function ModernHQDashboard() {
                                           <p className="text-[9px] font-black text-slate-400 uppercase ml-1">Mulai</p>
                                           <input 
                                             type="date" 
+                                            value={parseIndoDate(item.date.includes(" – ") ? item.date.split(" – ")[0] : item.date)}
                                             onChange={(e) => {
                                               const start = formatIndoDate(e.target.value);
                                               const currentEnd = item.date.includes(" – ") ? item.date.split(" – ")[1] : "";
@@ -1680,6 +1695,7 @@ export default function ModernHQDashboard() {
                                             <p className="text-[9px] font-black text-slate-400 uppercase ml-1">Selesai</p>
                                             <input 
                                               type="date" 
+                                              value={parseIndoDate(item.date.includes(" – ") ? item.date.split(" – ")[1] : "")}
                                               onChange={(e) => {
                                                 const end = formatIndoDate(e.target.value);
                                                 const currentStart = item.date.includes(" – ") ? item.date.split(" – ")[0] : item.date;
