@@ -193,32 +193,6 @@ export default function ModernHQDashboard() {
     return `${year}-${(monthIndex + 1).toString().padStart(2, '0')}-${day}`;
   };
 
-  // --- MEMORI KENDALI PORTAL & GELOMBANG ---
-  const updateTimelineItem = (catName: string, waveLabel: string, itemLabel: string, type: 'start' | 'end', value: string) => {
-    const updatedData = timelineData.map(cat => {
-      if (cat.category === catName) {
-        return {
-          ...cat,
-          waves: cat.waves.map((wave: any) => {
-            if (wave.label === waveLabel) {
-              return {
-                ...wave,
-                items: wave.items.map((item: any) => {
-                  if (item.label === itemLabel) {
-                    return { ...item, [type]: value };
-                  }
-                  return item;
-                })
-              };
-            }
-            return wave;
-          })
-        };
-      }
-      return cat;
-    });
-    setTimelineData(updatedData);
-  };
   // --- MEMORI KAWALAN KEGIATAN & PORTAL ---
   const [isRegistrationOpen, setIsRegistrationOpen] = useState(true);
   
