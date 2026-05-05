@@ -311,7 +311,7 @@ export default function TimelineWidget({ userCategory, userStatus, notes, global
                             </div>
                             <div className="mt-auto">
                               <p className={`text-[10px] ${itemStyles.accent} font-black bg-white border ${itemStyles.border} px-3 py-1.5 rounded-lg inline-block break-all sm:break-normal`}>
-                                {item.date ? item.date.split(' – ').map((d: string) => d.match(/\d{4}/) ? d : `${d} 2026`).join(' – ') : ""}
+                                {item.date ? item.date.split(' – ').map((d: string) => d.match(/\d{4}/) ? d : `${d} ${new Date().getFullYear()}`).join(' – ') : ""}
                               </p>
                             </div>
                           </div>

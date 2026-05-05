@@ -1568,23 +1568,24 @@ export default function ModernHQDashboard() {
                 <div className="flex items-center gap-3">
                   <button 
                     onClick={() => {
+                      const currentYear = new Date().getFullYear();
                       const fixed = timelineData.map(cat => ({
                         ...cat,
                         waves: cat.waves.map((wave: any) => ({
                           ...wave,
                           items: wave.items.map((item: any) => ({
                             ...item,
-                            date: item.date.split(' – ').map((d: string) => d.match(/\d{4}/) ? d : `${d} 2026`).join(' – ')
+                            date: item.date.split(' – ').map((d: string) => d.match(/\d{4}/) ? d : `${d} ${currentYear}`).join(' – ')
                           }))
                         }))
                       }));
                       setTimelineData(fixed);
-                      showToast("Tahun 2026 berhasil ditambahkan ke semua jadwal!", "success");
+                      showToast(`Tahun ${currentYear} berhasil ditambahkan ke semua jadwal!`, "success");
                     }}
                     className="flex items-center gap-2 px-4 py-3 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all text-xs"
-                    title="Tambahkan tahun 2026 ke semua jadwal yang belum ada tahunnya"
+                    title={`Tambahkan tahun ${new Date().getFullYear()} ke semua jadwal yang belum ada tahunnya`}
                   >
-                    <Sparkles size={14} /> Lengkapi Tahun (2026)
+                    <Sparkles size={14} /> Lengkapi Tahun ({new Date().getFullYear()})
                   </button>
                   <button 
                     onClick={saveTimeline}
@@ -1661,7 +1662,7 @@ export default function ModernHQDashboard() {
                                         <div className="flex items-center gap-2">
                                           <div className="w-1.5 h-1.5 rounded-full bg-indigo-400"></div>
                                           <span className="text-[10px] font-black text-indigo-600 bg-white px-2 py-0.5 rounded-md border border-indigo-100 shadow-sm">
-                                            {item.date ? item.date.split(' – ').map((d: string) => d.match(/\d{4}/) ? d : `${d} 2026`).join(' – ') : "Belum Set"}
+                                            {item.date ? item.date.split(' – ').map((d: string) => d.match(/\d{4}/) ? d : `${d} ${new Date().getFullYear()}`).join(' – ') : "Belum Set"}
                                           </span>
                                         </div>
                                       </div>
