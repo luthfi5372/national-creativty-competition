@@ -1559,14 +1559,36 @@ export default function ModernHQDashboard() {
                   <h2 className="text-3xl font-black text-slate-800">Master Schedule Lomba</h2>
                   <p className="text-slate-500 font-medium">Atur semua tanggal perlombaan secara terpusat dan real-time.</p>
                 </div>
-                <button 
-                  onClick={saveTimeline}
-                  disabled={isSavingTimeline}
-                  className={`flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-100 hover:scale-105 transition-all ${isSavingTimeline ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  {isSavingTimeline ? <Clock className="animate-spin" size={18} /> : <Save size={18} />} 
-                  {isSavingTimeline ? 'Menyimpan...' : 'Simpan Semua Perubahan'}
-                </button>
+                <div className="flex items-center gap-3">
+                  <button 
+                    onClick={() => {
+                      const fixed = timelineData.map(cat => ({
+                        ...cat,
+                        waves: cat.waves.map((wave: any) => ({
+                          ...wave,
+                          items: wave.items.map((item: any) => ({
+                            ...item,
+                            date: item.date.split(' – ').map((d: string) => d.match(/\d{4}/) ? d : `${d} 2026`).join(' – ')
+                          }))
+                        }))
+                      }));
+                      setTimelineData(fixed);
+                      showToast("Tahun 2026 berhasil ditambahkan ke semua jadwal!", "success");
+                    }}
+                    className="flex items-center gap-2 px-4 py-3 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all text-xs"
+                    title="Tambahkan tahun 2026 ke semua jadwal yang belum ada tahunnya"
+                  >
+                    <Sparkles size={14} /> Lengkapi Tahun (2026)
+                  </button>
+                  <button 
+                    onClick={saveTimeline}
+                    disabled={isSavingTimeline}
+                    className={`flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-100 hover:scale-105 transition-all ${isSavingTimeline ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    {isSavingTimeline ? <Clock className="animate-spin" size={18} /> : <Save size={18} />} 
+                    {isSavingTimeline ? 'Menyimpan...' : 'Simpan Semua Perubahan'}
+                  </button>
+                </div>
               </div>
 
               {/* 🏷️ Filter Kategori Cepat */}
