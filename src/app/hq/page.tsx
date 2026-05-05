@@ -25,50 +25,34 @@ export default function ModernHQDashboard() {
   const [timelineData, setTimelineData] = useState<any[]>([
     {
       category: "LKTI Nasional",
+      color: "blue",
       waves: [
-        { label: "Gelombang I", items: [
-          { label: "Pendaftaran & Abstrak", date: "16 Juli – 3 September" },
-          { label: "Pengumuman Tahap I", date: "10 September" },
-          { label: "Pengumpulan Fullpaper", date: "12 – 18 September" },
-          { label: "Pengumuman Tahap II", date: "26 September" }
-        ]},
-        { label: "Gelombang II", items: [
-          { label: "Pendaftaran & Abstrak", date: "1 – 25 Oktober" },
-          { label: "Pengumuman Tahap I", date: "31 Oktober" },
-          { label: "Pengumpulan Fullpaper", date: "1 – 9 November" },
-          { label: "Pengumuman Tahap II", date: "16 November" }
-        ]}
+        { label: "Gelombang I", items: [{ label: "Pendaftaran & Abstrak", date: "16 Juli – 3 September 2026" }, { label: "Pengumuman Tahap I", date: "10 September 2026" }, { label: "Pengumpulan Fullpaper", date: "12–18 September 2026" }, { label: "Pengumuman Tahap II", date: "26 September 2026" }] },
+        { label: "Gelombang II", items: [{ label: "Pendaftaran & Abstrak", date: "1 – 25 Oktober 2026" }, { label: "Pengumuman Tahap I", date: "31 Oktober 2026" }, { label: "Pengumpulan Fullpaper", date: "1 – 9 November 2026" }, { label: "Pengumuman Tahap II", date: "16 November 2026" }] }
       ]
     },
     {
       category: "Olimpiade MIPA",
+      color: "amber",
       waves: [
-        { label: "Gelombang I", items: [
-          { label: "Pendaftaran", date: "16 Juli – 3 September" },
-          { label: "Seleksi 1", date: "10 September" },
-          { label: "Seleksi 2", date: "14 September" },
-          { label: "Pengumuman Tahap I", date: "21 September" }
-        ]},
-        { label: "Gelombang II", items: [
-          { label: "Pendaftaran", date: "1 – 25 Oktober" },
-          { label: "Simulasi", date: "29 Oktober" },
-          { label: "Seleksi", date: "2 November" },
-          { label: "Pengumuman", date: "8 November" }
-        ]}
+        { label: "Gelombang I", items: [{ label: "Pendaftaran", date: "16 Juli – 3 September 2026" }, { label: "Seleksi 1", date: "10 September 2026" }, { label: "Seleksi 2", date: "14 September 2026" }, { label: "Pengumuman Tahap I", date: "21 September 2026" }] },
+        { label: "Gelombang II", items: [{ label: "Pendaftaran", date: "1 – 25 Oktober 2026" }, { label: "Simulasi", date: "29 Oktober 2026" }, { label: "Seleksi", date: "2 November 2026" }, { label: "Pengumuman", date: "8 November 2026" }] }
       ]
     },
     {
       category: "Speech Contest",
+      color: "purple",
       waves: [
-        { label: "Gelombang I", items: [{ label: "Pendaftaran & Naskah", date: "16 Juli – 3 September" }, { label: "Pengumuman", date: "14 September" }] },
-        { label: "Gelombang II", items: [{ label: "Pendaftaran & Naskah", date: "1 – 25 Oktober" }, { label: "Pengumuman", date: "14 November" }] }
+        { label: "Gelombang I", items: [{ label: "Pendaftaran & Naskah", date: "16 Juli – 3 September 2026" }, { label: "Pengumuman", date: "14 September 2026" }] },
+        { label: "Gelombang II", items: [{ label: "Pendaftaran & Naskah", date: "1 – 25 Oktober 2026" }, { label: "Pengumuman", date: "14 November 2026" }] }
       ]
     },
     {
       category: "MTQ",
+      color: "emerald",
       waves: [
-        { label: "Gelombang I", items: [{ label: "Pendaftaran & Video", date: "16 Juli – 3 September" }, { label: "Pengumuman", date: "14 September" }] },
-        { label: "Gelombang II", items: [{ label: "Pendaftaran", date: "1 – 25 Oktober" }, { label: "Pengumuman", date: "14 November" }] }
+        { label: "Gelombang I", items: [{ label: "Pendaftaran & Video", date: "16 Juli – 3 September 2026" }, { label: "Pengumuman", date: "14 September 2026" }] },
+        { label: "Gelombang II", items: [{ label: "Pendaftaran", date: "1 – 25 Oktober 2026" }, { label: "Pengumuman", date: "14 November 2026" }] }
       ]
     }
   ]);
@@ -155,8 +139,8 @@ export default function ModernHQDashboard() {
   // --- MEMORI KENDALI PORTAL & GELOMBANG ---
   const updateTimelineItem = (catName: string, waveLabel: string, itemLabel: string, newDate: string) => {
     const updatedData = timelineData.map(cat => {
-      // Menangani kategori yang mungkin punya prefix atau nama lengkap
-      if (cat.category === catName || catName.startsWith(cat.category) || cat.category.startsWith(catName)) {
+      // Gunakan Strict Matching (Harus sama persis kategorinya)
+      if (cat.category === catName) {
         return {
           ...cat,
           waves: cat.waves.map((wave: any) => {

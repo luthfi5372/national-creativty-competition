@@ -159,9 +159,14 @@ export default function TimelineWidget({ userCategory, userStatus, notes, global
   const targetCategoryName = userCategory ? categoryMap[userCategory] : null;
   
   // Jika user sudah terdaftar di kategori tertentu, hanya tampilkan kategori tersebut
-  // Jika belum, tampilkan semua (untuk info)
+  // Gunakan pencocokan yang lebih fleksibel (case-insensitive)
   const filteredData = targetCategoryName 
-    ? baseData.filter(item => item.category === targetCategoryName || item.category === userCategory)
+    ? baseData.filter(item => {
+        const cat = item.category.toLowerCase();
+        const target = targetCategoryName.toLowerCase();
+        const userCat = userCategory?.toLowerCase();
+        return cat === target || cat === userCat || cat.includes(userCat || "");
+      })
     : baseData;
 
   const isFiltered = !!targetCategoryName && filteredData.length > 0;
