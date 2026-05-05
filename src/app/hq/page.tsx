@@ -385,18 +385,39 @@ export default function ModernHQDashboard() {
         }))
       }));
 
-      const { error } = await supabase
+      // 🔄 Cari data yang sudah ada
+      const { data: existing } = await supabase
         .from('announcements')
-        .upsert({ 
-          title: 'SYSTEM_TIMELINE_CONFIG', 
-          content: JSON.stringify(cleanData),
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'title' });
+        .select('id')
+        .eq('title', 'SYSTEM_TIMELINE_CONFIG')
+        .single();
 
-      if (error) throw error;
+      if (existing) {
+        // Update jika ada
+        const { error: updateError } = await supabase
+          .from('announcements')
+          .update({ 
+            content: JSON.stringify(cleanData),
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existing.id);
+        if (updateError) throw updateError;
+      } else {
+        // Insert jika belum ada
+        const { error: insertError } = await supabase
+          .from('announcements')
+          .insert([{ 
+            title: 'SYSTEM_TIMELINE_CONFIG', 
+            content: JSON.stringify(cleanData),
+            target_audience: 'All'
+          }]);
+        if (insertError) throw insertError;
+      }
+
       showToast("Sinkronisasi Berhasil!", "success");
-    } catch (error: any) {
-      console.error("Save error:", error);
+    } catch (err: any) {
+      console.error("Save error:", err);
+      showToast(`Gagal Sinkron: ${err.message}`, "error");
     } finally {
       setIsSavingTimeline(false);
     }
