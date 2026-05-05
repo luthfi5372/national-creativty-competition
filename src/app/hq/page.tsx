@@ -129,10 +129,20 @@ export default function ModernHQDashboard() {
   const [isSending, setIsSending] = useState(false);
 
 
+  // --- FUNGSI FORMAT TANGGAL INDONESIA ---
+  const formatIndoDate = (dateStr: string) => {
+    if (!dateStr) return "";
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return dateStr;
+    const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+    return `${date.getDate()} ${months[date.getMonth()]}`;
+  };
+
   // --- MEMORI KENDALI PORTAL & GELOMBANG ---
   const updateTimelineItem = (catName: string, waveLabel: string, itemLabel: string, newDate: string) => {
     const updatedData = timelineData.map(cat => {
-      if (cat.category === catName || cat.category.startsWith(catName)) {
+      // Menangani kategori yang mungkin punya prefix atau nama lengkap
+      if (cat.category === catName || catName.startsWith(cat.category) || cat.category.startsWith(catName)) {
         return {
           ...cat,
           waves: cat.waves.map((wave: any) => {
@@ -1595,25 +1605,59 @@ export default function ModernHQDashboard() {
                               </div>
 
                               <div className="space-y-5">
-                                {wave.items.map((item: any) => (
-                                  <div key={`${cat.category}-${wave.label}-${item.label}`} className="relative">
-                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">
-                                      {item.label}
-                                    </label>
-                                    <div className="relative group/input">
-                                      <input 
-                                        type="text" 
-                                        value={item.date}
-                                        onChange={(e) => updateTimelineItem(cat.category, wave.label, item.label, e.target.value)}
-                                        className="w-full bg-slate-50/50 border border-slate-200 rounded-2xl px-5 py-3.5 text-sm font-bold text-slate-700 focus:bg-white focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 outline-none transition-all shadow-inner"
-                                        placeholder="Contoh: 16 Juli – 3 September"
-                                      />
-                                      <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover/input:opacity-100 transition-opacity">
-                                        <Calendar size={14} className="text-slate-300" />
+                                {wave.items.map((item: any) => {
+                                  // Logika untuk mendeteksi apakah ini rentang waktu atau tanggal tunggal
+                                  const isRange = item.label.toLowerCase().includes("pendaftaran") || 
+                                                 item.label.toLowerCase().includes("pengumpulan") || 
+                                                 item.label.toLowerCase().includes("seleksi");
+                                  
+                                  return (
+                                    <div key={`${cat.category}-${wave.label}-${item.label}`} className="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 space-y-3 transition-all hover:border-indigo-100">
+                                      <div className="flex items-center justify-between">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                                          {item.label}
+                                        </label>
+                                        <div className="flex items-center gap-2">
+                                          <div className="w-1.5 h-1.5 rounded-full bg-indigo-400"></div>
+                                          <span className="text-[10px] font-black text-indigo-600 bg-white px-2 py-0.5 rounded-md border border-indigo-100 shadow-sm">
+                                            {item.date || "Belum Set"}
+                                          </span>
+                                        </div>
+                                      </div>
+
+                                      <div className="grid grid-cols-2 gap-3">
+                                        <div className="space-y-1">
+                                          <p className="text-[9px] font-black text-slate-400 uppercase ml-1">Mulai</p>
+                                          <input 
+                                            type="date" 
+                                            onChange={(e) => {
+                                              const start = formatIndoDate(e.target.value);
+                                              const currentEnd = item.date.includes(" – ") ? item.date.split(" – ")[1] : "";
+                                              const final = currentEnd ? `${start} – ${currentEnd}` : start;
+                                              updateTimelineItem(cat.category, wave.label, item.label, final);
+                                            }}
+                                            className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer"
+                                          />
+                                        </div>
+                                        
+                                        {isRange && (
+                                          <div className="space-y-1">
+                                            <p className="text-[9px] font-black text-slate-400 uppercase ml-1">Selesai</p>
+                                            <input 
+                                              type="date" 
+                                              onChange={(e) => {
+                                                const end = formatIndoDate(e.target.value);
+                                                const currentStart = item.date.includes(" – ") ? item.date.split(" – ")[0] : item.date;
+                                                updateTimelineItem(cat.category, wave.label, item.label, `${currentStart} – ${end}`);
+                                              }}
+                                              className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer"
+                                            />
+                                          </div>
+                                        )}
                                       </div>
                                     </div>
-                                  </div>
-                                ))}
+                                  );
+                                })}
                               </div>
                             </div>
                           ))}
