@@ -1,3 +1,4 @@
+import React from "react";
 import { 
   Calendar, Pin, Trophy, Brain, Zap, MonitorPlay, Star, Video, FileText, Megaphone, Upload 
 } from "lucide-react";
@@ -77,13 +78,15 @@ interface TimelineProps {
 }
 
 export default function TimelineWidget({ userCategory, userStatus, notes, globalTimeline }: TimelineProps) {
-  // Mapping antara kategori di database dengan kategori di TIMELINE_DATA
-  const categoryMap: Record<string, string> = {
-    "LKTI Nasional": "LKTI – Lomba Karya Tulis Ilmiah",
-    "Olimpiade MIPA": "Olimpiade MIPA",
-    "Speech Contest": "Speech Contest",
-    "MTQ": "MTQ"
-  };
+  // --- STATE LOADING INTERNAL ---
+  const [isInitializing, setIsInitializing] = React.useState(true);
+  
+  React.useEffect(() => {
+    if (globalTimeline !== undefined) {
+      const timer = setTimeout(() => setIsInitializing(false), 800);
+      return () => clearTimeout(timer);
+    }
+  }, [globalTimeline]);
 
   // Icon Mapper berdasarkan label item
   const getIcon = (label: string) => {
@@ -98,11 +101,20 @@ export default function TimelineWidget({ userCategory, userStatus, notes, global
 
   // Color Mapper berdasarkan kategori
   const getCategoryColor = (cat: string) => {
-    if (cat.includes('LKTI')) return 'blue';
-    if (cat.includes('MIPA')) return 'amber';
-    if (cat.includes('Speech')) return 'purple';
-    if (cat.includes('MTQ')) return 'green';
+    const c = cat.toLowerCase();
+    if (c.includes('lkti')) return 'blue';
+    if (c.includes('mipa')) return 'amber';
+    if (c.includes('speech')) return 'purple';
+    if (c.includes('mtq')) return 'green';
     return 'blue';
+  };
+
+  // Mapping antara kategori di database dengan kategori di TIMELINE_DATA
+  const categoryMap: Record<string, string> = {
+    "LKTI Nasional": "LKTI – Lomba Karya Tulis Ilmiah",
+    "Olimpiade MIPA": "Olimpiade MIPA",
+    "Speech Contest": "Speech Contest",
+    "MTQ": "MTQ"
   };
 
   // Gunakan globalTimeline jika ada, jika tidak fallback ke TIMELINE_DATA
@@ -112,11 +124,10 @@ export default function TimelineWidget({ userCategory, userStatus, notes, global
         color: getCategoryColor(cat.category),
         waves: cat.waves.map((wave: any) => ({
           label: wave.label,
-          active: true, // Untuk user, kita buat active secara default jika masuk di jadwal
+          active: true,
           items: wave.items.map((item: any) => ({
             icon: getIcon(item.label),
             label: item.label,
-            // Dukungan format ganda: start/end atau date lama
             start: item.start || "",
             end: item.end || "",
             date: item.date || ""
@@ -128,15 +139,11 @@ export default function TimelineWidget({ userCategory, userStatus, notes, global
   // Tentukan apakah kita harus memfilter data berdasarkan kategori user
   const targetCategoryName = userCategory ? categoryMap[userCategory] : null;
   
-  // Jika user sudah terdaftar di kategori tertentu, hanya tampilkan kategori tersebut
-  // Gunakan pencocokan yang lebih fleksibel (case-insensitive)
   const filteredData = targetCategoryName 
     ? baseData.filter(item => {
         const cat = item.category.toLowerCase();
         const target = targetCategoryName.toLowerCase();
         const userCat = userCategory?.toLowerCase() || "";
-        
-        // Pencocokan super fleksibel: Cek kesamaan persis ATAU cek apakah mengandung kata kunci utama
         const keywords = ["lkti", "mipa", "speech", "mtq"];
         const matchedKeyword = keywords.find(k => userCat.includes(k));
         
@@ -151,21 +158,16 @@ export default function TimelineWidget({ userCategory, userStatus, notes, global
 
   // Logika Menentukan Tahap Mana yang Harus Menyala
   const getProgressLevel = (status?: string, notesStr?: string) => {
-    // 1. Cek dari notes (current_stage) yang diatur admin
     if (notesStr) {
       try {
         const parsed = JSON.parse(notesStr);
         if (parsed.current_stage) return parseInt(parsed.current_stage);
       } catch (e) {}
     }
-
-    // 2. Fallback ke status string jika notes tidak ada
     if (!status) return 1;
     const s = status.toLowerCase();
     if (s.includes('final') || s.includes('tahap 3')) return 3;
     if (s.includes('semi') || s.includes('tahap 2') || s.includes('seleksi 2')) return 2;
-    if (s.includes('verified') || s.includes('success') || s.includes('tahap 1')) return 1;
-    
     return 1;
   };
 
@@ -174,11 +176,8 @@ export default function TimelineWidget({ userCategory, userStatus, notes, global
   const getItemActiveState = (itemLabel: string) => {
     if (!isFiltered) return true;
     const label = itemLabel.toLowerCase();
-    
-    // Logika highlight berdasarkan level progres
     if (label.includes('tahap iii') || label.includes('grand final') || label.includes('final')) return userProgress >= 3;
     if (label.includes('tahap ii') || label.includes('fullpaper') || label.includes('seleksi 2') || label.includes('semi final')) return userProgress >= 2;
-    
     return userProgress >= 1;
   };
 
@@ -197,50 +196,25 @@ export default function TimelineWidget({ userCategory, userStatus, notes, global
 
     const maps: any = {
       blue: {
-        dot: "bg-blue-500",
-        ring: "ring-blue-100",
-        text: "text-blue-600",
-        bg: "bg-blue-50",
-        border: "border-blue-100",
-        accent: "text-blue-600",
-        cardBorder: "hover:border-blue-300",
-        cardShadow: "hover:shadow-blue-50/50"
+        dot: "bg-blue-500", ring: "ring-blue-100", text: "text-blue-600", bg: "bg-blue-50",
+        border: "border-blue-100", accent: "text-blue-600", cardBorder: "hover:border-blue-300", cardShadow: "hover:shadow-blue-50/50"
       },
       amber: {
-        dot: "bg-amber-500",
-        ring: "ring-amber-100",
-        text: "text-amber-600",
-        bg: "bg-amber-50",
-        border: "border-amber-100",
-        accent: "text-amber-600",
-        cardBorder: "hover:border-amber-300",
-        cardShadow: "hover:shadow-amber-50/50"
+        dot: "bg-amber-500", ring: "ring-amber-100", text: "text-amber-600", bg: "bg-amber-50",
+        border: "border-amber-100", accent: "text-amber-600", cardBorder: "hover:border-amber-300", cardShadow: "hover:shadow-amber-50/50"
       },
       purple: {
-        dot: "bg-purple-500",
-        ring: "ring-purple-100",
-        text: "text-purple-600",
-        bg: "bg-purple-50",
-        border: "border-purple-100",
-        accent: "text-purple-600",
-        cardBorder: "hover:border-purple-300",
-        cardShadow: "hover:shadow-purple-50/50"
+        dot: "bg-purple-500", ring: "ring-purple-100", text: "text-purple-600", bg: "bg-purple-50",
+        border: "border-purple-100", accent: "text-purple-600", cardBorder: "hover:border-purple-300", cardShadow: "hover:shadow-purple-50/50"
       },
       green: {
-        dot: "bg-green-500",
-        ring: "ring-green-100",
-        text: "text-green-600",
-        bg: "bg-green-50",
-        border: "border-green-100",
-        accent: "text-green-600",
-        cardBorder: "hover:border-green-300",
-        cardShadow: "hover:shadow-green-50/50"
+        dot: "bg-green-500", ring: "ring-green-100", text: "text-green-600", bg: "bg-green-50",
+        border: "border-green-100", accent: "text-green-600", cardBorder: "hover:border-green-300", cardShadow: "hover:shadow-green-50/50"
       }
     };
     return maps[color] || maps.blue;
   };
 
-  // --- FUNGSI FORMAT TANGGAL INDONESIA ---
   const formatIndoDate = (dateStr: string) => {
     if (!dateStr) return "";
     const date = new Date(dateStr);
@@ -248,6 +222,24 @@ export default function TimelineWidget({ userCategory, userStatus, notes, global
     const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
     return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
   };
+
+  if (isInitializing) {
+    return (
+      <div className="bg-white border border-slate-200 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl p-8 mt-8 animate-pulse">
+        <div className="flex items-center gap-3 mb-8 pb-5 border-b border-slate-200/50">
+          <div className="w-10 h-10 bg-slate-100 rounded-xl"></div>
+          <div className="space-y-2">
+            <div className="h-4 w-48 bg-slate-100 rounded"></div>
+            <div className="h-3 w-32 bg-slate-100 rounded"></div>
+          </div>
+        </div>
+        <div className="space-y-8">
+          <div className="h-32 w-full bg-slate-50 rounded-2xl"></div>
+          <div className="h-32 w-full bg-slate-50 rounded-2xl"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white border border-slate-200 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl p-8 mt-8">
@@ -287,7 +279,6 @@ export default function TimelineWidget({ userCategory, userStatus, notes, global
                       {wave.items.map((item, iIdx) => {
                         const isItemActive = getItemActiveState(item.label);
                         const itemStyles = getColorClasses(category.color, isItemActive);
-                        
                         return (
                           <div key={iIdx} className={`bg-white border border-slate-100 ${itemStyles.cardBorder} hover:shadow-xl ${itemStyles.cardShadow} p-5 rounded-2xl transition-all duration-300 transform ${isItemActive ? 'hover:-translate-y-1' : ''} flex flex-col justify-between min-w-0 relative z-10 ${itemStyles.opacity || ''}`}>
                             <div className="flex items-start gap-3 mb-4">
@@ -298,7 +289,6 @@ export default function TimelineWidget({ userCategory, userStatus, notes, global
                             </div>
                               <div className="mt-auto">
                                 <p className={`text-[10px] ${itemStyles.accent} font-black bg-white border ${itemStyles.border} px-3 py-1.5 rounded-lg inline-block break-all sm:break-normal`}>
-                                  {/* Gunakan data baru (start/end) jika ada, jika tidak gunakan data lama (date) */}
                                   {item.start ? (
                                     <>
                                       {formatIndoDate(item.start)}
@@ -321,7 +311,6 @@ export default function TimelineWidget({ userCategory, userStatus, notes, global
           </div>
         ))}
 
-        {/* ── 📌 TM SEMUA LOMBA ── */}
         <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 rounded-[2rem] p-6 flex items-center gap-5 hover:shadow-xl hover:shadow-indigo-100 transition-all duration-500 group relative overflow-hidden">
           <div className="absolute top-[-20%] right-[-5%] w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
           <div className="w-14 h-14 bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-all duration-300">
@@ -336,4 +325,3 @@ export default function TimelineWidget({ userCategory, userStatus, notes, global
     </div>
   );
 }
-// Final Sync Trigger
