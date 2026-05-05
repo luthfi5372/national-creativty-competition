@@ -86,17 +86,28 @@ export default function ModernHQDashboard() {
   const saveTimeline = async () => {
     setIsSavingTimeline(true);
     try {
-      // Menggunakan upsert dengan title sebagai target konflik (karena title unik di tabel ini)
-      const { error } = await supabase.from('announcements').upsert({ 
-        title: 'SYSTEM_TIMELINE_CONFIG', 
-        content: JSON.stringify(timelineData)
-      }, { onConflict: 'title' });
-      
-      if (!error) {
-        showToast('Konfigurasi Jadwal Berhasil Disimpan!', 'success');
-      } else {
-        throw error;
+      // Tahap 1: Coba Update dulu
+      const { data: updated, error: updateError } = await supabase
+        .from('announcements')
+        .update({ content: JSON.stringify(timelineData) })
+        .eq('title', 'SYSTEM_TIMELINE_CONFIG')
+        .select();
+
+      // Tahap 2: Jika data tidak ada (update tidak menghasilkan apa-apa), lakukan Insert
+      if (!updateError && (!updated || updated.length === 0)) {
+        const { error: insertError } = await supabase
+          .from('announcements')
+          .insert({ 
+            title: 'SYSTEM_TIMELINE_CONFIG', 
+            content: JSON.stringify(timelineData) 
+          });
+        
+        if (insertError) throw insertError;
+      } else if (updateError) {
+        throw updateError;
       }
+      
+      showToast('Konfigurasi Jadwal Berhasil Disimpan!', 'success');
     } catch (err: any) {
       showToast(`Gagal menyimpan: ${err.message}`, 'error');
     } finally {
