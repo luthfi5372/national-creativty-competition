@@ -27,32 +27,64 @@ export default function ModernHQDashboard() {
       category: "LKTI Nasional",
       color: "blue",
       waves: [
-        { label: "Gelombang I", items: [{ label: "Pendaftaran & Abstrak", date: "16 Juli – 3 September 2026" }, { label: "Pengumuman Tahap I", date: "10 September 2026" }, { label: "Pengumpulan Fullpaper", date: "12–18 September 2026" }, { label: "Pengumuman Tahap II", date: "26 September 2026" }] },
-        { label: "Gelombang II", items: [{ label: "Pendaftaran & Abstrak", date: "1 – 25 Oktober 2026" }, { label: "Pengumuman Tahap I", date: "31 Oktober 2026" }, { label: "Pengumpulan Fullpaper", date: "1 – 9 November 2026" }, { label: "Pengumuman Tahap II", date: "16 November 2026" }] }
+        { label: "Gelombang I", items: [
+          { label: "Pendaftaran & Abstrak", start: "2026-07-16", end: "2026-09-03" },
+          { label: "Pengumuman Tahap I", start: "2026-09-10", end: "" },
+          { label: "Pengumpulan Fullpaper", start: "2026-09-12", end: "2026-09-18" },
+          { label: "Pengumuman Tahap II", start: "2026-09-26", end: "" }
+        ]},
+        { label: "Gelombang II", items: [
+          { label: "Pendaftaran & Abstrak", start: "2026-10-01", end: "2026-10-25" },
+          { label: "Pengumuman Tahap I", start: "2026-10-31", end: "" },
+          { label: "Pengumpulan Fullpaper", start: "2026-11-01", end: "2026-11-09" },
+          { label: "Pengumuman Tahap II", start: "2026-11-16", end: "" }
+        ]}
       ]
     },
     {
       category: "Olimpiade MIPA",
       color: "amber",
       waves: [
-        { label: "Gelombang I", items: [{ label: "Pendaftaran", date: "16 Juli – 3 September 2026" }, { label: "Seleksi 1", date: "10 September 2026" }, { label: "Seleksi 2", date: "14 September 2026" }, { label: "Pengumuman Tahap I", date: "21 September 2026" }] },
-        { label: "Gelombang II", items: [{ label: "Pendaftaran", date: "1 – 25 Oktober 2026" }, { label: "Simulasi", date: "29 Oktober 2026" }, { label: "Seleksi", date: "2 November 2026" }, { label: "Pengumuman", date: "8 November 2026" }] }
+        { label: "Gelombang I", items: [
+          { label: "Pendaftaran", start: "2026-07-16", end: "2026-09-03" },
+          { label: "Seleksi 1", start: "2026-09-10", end: "" },
+          { label: "Seleksi 2", start: "2026-09-14", end: "" },
+          { label: "Pengumuman Tahap I", start: "2026-09-21", end: "" }
+        ]},
+        { label: "Gelombang II", items: [
+          { label: "Pendaftaran", start: "2026-10-01", end: "2026-10-25" },
+          { label: "Simulasi", start: "2026-10-29", end: "" },
+          { label: "Seleksi", start: "2026-11-02", end: "" },
+          { label: "Pengumuman", start: "2026-11-08", end: "" }
+        ]}
       ]
     },
     {
       category: "Speech Contest",
       color: "purple",
       waves: [
-        { label: "Gelombang I", items: [{ label: "Pendaftaran & Naskah", date: "16 Juli – 3 September 2026" }, { label: "Pengumuman", date: "14 September 2026" }] },
-        { label: "Gelombang II", items: [{ label: "Pendaftaran & Naskah", date: "1 – 25 Oktober 2026" }, { label: "Pengumuman", date: "14 November 2026" }] }
+        { label: "Gelombang I", items: [
+          { label: "Pendaftaran & Naskah", start: "2026-07-16", end: "2026-09-03" },
+          { label: "Pengumuman", start: "2026-09-14", end: "" }
+        ]},
+        { label: "Gelombang II", items: [
+          { label: "Pendaftaran & Naskah", start: "2026-10-01", end: "2026-10-25" },
+          { label: "Pengumuman", start: "2026-11-14", end: "" }
+        ]}
       ]
     },
     {
       category: "MTQ",
       color: "emerald",
       waves: [
-        { label: "Gelombang I", items: [{ label: "Pendaftaran & Video", date: "16 Juli – 3 September 2026" }, { label: "Pengumuman", date: "14 September 2026" }] },
-        { label: "Gelombang II", items: [{ label: "Pendaftaran", date: "1 – 25 Oktober 2026" }, { label: "Pengumuman", date: "14 November 2026" }] }
+        { label: "Gelombang I", items: [
+          { label: "Pendaftaran & Video", start: "2026-07-16", end: "2026-09-03" },
+          { label: "Pengumuman", start: "2026-09-14", end: "" }
+        ]},
+        { label: "Gelombang II", items: [
+          { label: "Pendaftaran", start: "2026-10-01", end: "2026-10-25" },
+          { label: "Pengumuman", start: "2026-11-14", end: "" }
+        ]}
       ]
     }
   ]);
@@ -142,12 +174,8 @@ export default function ModernHQDashboard() {
   };
 
   // --- MEMORI KENDALI PORTAL & GELOMBANG ---
-  const updateTimelineItem = (catName: string, waveLabel: string, itemLabel: string, newDate: string) => {
-    // Sanitasi: Bersihkan double space atau angka aneh yang tidak sengaja masuk
-    const sanitizedDate = newDate.replace(/\s+/g, ' ').trim();
-    
+  const updateTimelineItem = (catName: string, waveLabel: string, itemLabel: string, type: 'start' | 'end', value: string) => {
     const updatedData = timelineData.map(cat => {
-      // Gunakan Strict Matching (Harus sama persis kategorinya)
       if (cat.category === catName) {
         return {
           ...cat,
@@ -157,7 +185,7 @@ export default function ModernHQDashboard() {
                 ...wave,
                 items: wave.items.map((item: any) => {
                   if (item.label === itemLabel) {
-                    return { ...item, date: sanitizedDate };
+                    return { ...item, [type]: value };
                   }
                   return item;
                 })
@@ -1575,17 +1603,18 @@ export default function ModernHQDashboard() {
                           ...wave,
                           items: wave.items.map((item: any) => ({
                             ...item,
-                            date: item.date.split(' – ').map((d: string) => d.match(/\d{4}/) ? d : `${d} ${currentYear}`).join(' – ')
+                            start: item.start ? `${currentYear}${item.start.substring(4)}` : "",
+                            end: item.end ? `${currentYear}${item.end.substring(4)}` : ""
                           }))
                         }))
                       }));
                       setTimelineData(fixed);
-                      showToast(`Tahun ${currentYear} berhasil ditambahkan ke semua jadwal!`, "success");
+                      showToast(`Tahun ${currentYear} berhasil diterapkan!`, "success");
                     }}
                     className="flex items-center gap-2 px-4 py-3 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all text-xs"
-                    title={`Tambahkan tahun ${new Date().getFullYear()} ke semua jadwal yang belum ada tahunnya`}
+                    title={`Update semua jadwal ke tahun ${new Date().getFullYear()}`}
                   >
-                    <Sparkles size={14} /> Lengkapi Tahun ({new Date().getFullYear()})
+                    <Sparkles size={14} /> Update Tahun ({new Date().getFullYear()})
                   </button>
                   <button 
                     onClick={saveTimeline}
@@ -1662,7 +1691,8 @@ export default function ModernHQDashboard() {
                                         <div className="flex items-center gap-2">
                                           <div className="w-1.5 h-1.5 rounded-full bg-indigo-400"></div>
                                           <span className="text-[10px] font-black text-indigo-600 bg-white px-2 py-0.5 rounded-md border border-indigo-100 shadow-sm">
-                                            {item.date ? item.date.split(' – ').map((d: string) => d.match(/\d{4}/) ? d : `${d} ${new Date().getFullYear()}`).join(' – ') : "Belum Set"}
+                                            {item.start ? formatIndoDate(item.start) : "Belum Set"}
+                                            {item.end ? ` – ${formatIndoDate(item.end)}` : ""}
                                           </span>
                                         </div>
                                       </div>
@@ -1672,13 +1702,8 @@ export default function ModernHQDashboard() {
                                           <p className="text-[9px] font-black text-slate-400 uppercase ml-1">Mulai</p>
                                           <input 
                                             type="date" 
-                                            value={parseIndoDate(item.date.includes(" – ") ? item.date.split(" – ")[0] : item.date)}
-                                            onChange={(e) => {
-                                              const start = formatIndoDate(e.target.value);
-                                              const currentEnd = item.date.includes(" – ") ? item.date.split(" – ")[1] : "";
-                                              const final = currentEnd ? `${start} – ${currentEnd}` : start;
-                                              updateTimelineItem(cat.category, wave.label, item.label, final);
-                                            }}
+                                            value={item.start || ""}
+                                            onChange={(e) => updateTimelineItem(cat.category, wave.label, item.label, 'start', e.target.value)}
                                             className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer"
                                           />
                                         </div>
@@ -1688,12 +1713,8 @@ export default function ModernHQDashboard() {
                                             <p className="text-[9px] font-black text-slate-400 uppercase ml-1">Selesai</p>
                                             <input 
                                               type="date" 
-                                              value={parseIndoDate(item.date.includes(" – ") ? item.date.split(" – ")[1] : "")}
-                                              onChange={(e) => {
-                                                const end = formatIndoDate(e.target.value);
-                                                const currentStart = item.date.includes(" – ") ? item.date.split(" – ")[0] : item.date;
-                                                updateTimelineItem(cat.category, wave.label, item.label, `${currentStart} – ${end}`);
-                                              }}
+                                              value={item.end || ""}
+                                              onChange={(e) => updateTimelineItem(cat.category, wave.label, item.label, 'end', e.target.value)}
                                               className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer"
                                             />
                                           </div>

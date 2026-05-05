@@ -309,11 +309,12 @@ export default function TimelineWidget({ userCategory, userStatus, notes, global
                                </div>
                                <p className="text-xs font-bold text-slate-700 leading-relaxed break-words">{item.label}</p>
                             </div>
-                            <div className="mt-auto">
-                              <p className={`text-[10px] ${itemStyles.accent} font-black bg-white border ${itemStyles.border} px-3 py-1.5 rounded-lg inline-block break-all sm:break-normal`}>
-                                {item.date ? item.date.split(' – ').map((d: string) => d.match(/\d{4}/) ? d : `${d} ${new Date().getFullYear()}`).join(' – ') : ""}
-                              </p>
-                            </div>
+                              <div className="mt-auto">
+                                <p className={`text-[10px] ${itemStyles.accent} font-black bg-white border ${itemStyles.border} px-3 py-1.5 rounded-lg inline-block break-all sm:break-normal`}>
+                                  {item.start ? formatIndoDate(item.start) : ""}
+                                  {item.end ? ` – ${formatIndoDate(item.end)}` : ""}
+                                </p>
+                              </div>
                           </div>
                         );
                       })}
