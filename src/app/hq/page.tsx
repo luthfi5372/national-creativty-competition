@@ -84,14 +84,24 @@ export default function ModernHQDashboard() {
 
   const saveTimeline = async () => {
     setIsSavingTimeline(true);
-    const { error } = await supabase.from('announcements').upsert({ 
-      type: 'SYSTEM_TIMELINE', 
-      content: JSON.stringify(timelineData),
-      title: 'Master Schedule Config',
-      updated_at: new Date()
-    }, { onConflict: 'type' });
-    if (!error) showToast('Jadwal berhasil diperbarui secara global!', 'success');
-    setIsSavingTimeline(false);
+    try {
+      const { error } = await supabase.from('announcements').upsert({ 
+        type: 'SYSTEM_TIMELINE', 
+        content: JSON.stringify(timelineData),
+        title: 'Master Schedule Config',
+        updated_at: new Date()
+      }, { onConflict: 'type' });
+      
+      if (!error) {
+        showToast('Konfigurasi Jadwal Berhasil Disimpan!', 'success');
+      } else {
+        throw error;
+      }
+    } catch (err: any) {
+      showToast(`Gagal menyimpan: ${err.message}`, 'error');
+    } finally {
+      setIsSavingTimeline(false);
+    }
   };
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -107,7 +117,6 @@ export default function ModernHQDashboard() {
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [isSending, setIsSending] = useState(false);
 
-  const [isPortalOpen, setIsPortalOpen] = useState(true);
 
   // --- MEMORI KENDALI PORTAL & GELOMBANG ---
   const updateTimelineItem = (catName: string, waveLabel: string, itemLabel: string, newDate: string) => {
@@ -291,14 +300,14 @@ export default function ModernHQDashboard() {
     }
 
     const syncToDatabase = async () => {
-      const payload = { waves, submissionStatus, phaseStatus, dashboardAssets };
+      const payload = { waves, submissionStatus, phaseStatus, dashboardAssets, isRegistrationOpen };
       await supabase
         .from('announcements')
         .update({ content: JSON.stringify(payload) })
         .eq('title', 'SYS_PORTAL_SETTINGS');
     };
     syncToDatabase();
-  }, [waves, submissionStatus, phaseStatus, dashboardAssets]);
+  }, [waves, submissionStatus, phaseStatus, dashboardAssets, isRegistrationOpen]);
 
   // --- 🚪 FUNGSI PINTU EVAKUASI ---
   const handleLogout = async () => {
@@ -369,8 +378,16 @@ export default function ModernHQDashboard() {
 
   // Fungsi pemanggil Toast
   const showToast = (message: string, type: "success" | "error" = "success") => {
-    setToast({ show: true, message, type });
-    setTimeout(() => setToast({ show: false, message: "", type: "success" }), 3000); 
+    // Jika ada toast lama, hapus dulu agar yang baru langsung muncul (interupsi)
+    setToast({ show: false, message: "", type: "success" });
+    
+    setTimeout(() => {
+      setToast({ show: true, message, type });
+    }, 10);
+
+    // Durasi lebih lama untuk sukses agar terbaca
+    const duration = type === 'success' ? 4000 : 5000;
+    setTimeout(() => setToast({ show: false, message: "", type: "success" }), duration); 
   };
 
   // --- MESIN EKSEKUTOR STATUS ---
@@ -540,6 +557,7 @@ export default function ModernHQDashboard() {
           if (parsed.waves) setWaves(parsed.waves);
           if (parsed.phaseStatus) setPhaseStatus(parsed.phaseStatus);
           if (parsed.dashboardAssets) setDashboardAssets(parsed.dashboardAssets);
+          if (parsed.isRegistrationOpen !== undefined) setIsRegistrationOpen(parsed.isRegistrationOpen);
         }
       } catch (err) {
         console.error("Gagal menarik status portal:", err);
@@ -1353,7 +1371,7 @@ export default function ModernHQDashboard() {
               <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                 <div className="flex items-center gap-5">
                   <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 ${
-                    isPortalOpen 
+                    isRegistrationOpen 
                       ? 'bg-emerald-100 text-emerald-600 shadow-lg shadow-emerald-100' 
                       : 'bg-rose-100 text-rose-600 shadow-lg shadow-rose-100'
                   }`}>
@@ -1363,9 +1381,9 @@ export default function ModernHQDashboard() {
                     <h3 className="text-xl font-black text-slate-800">Gerbang Pendaftaran</h3>
                     <p className="text-sm font-medium text-slate-500 mt-1">
                       Status saat ini:{" "}
-                      <div className={`mt-2 px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest inline-flex items-center gap-1.5 ${isPortalOpen ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-red-100 text-red-700 border border-red-200'}`}>
-                        {isPortalOpen ? <CheckCircle size={12} /> : <XCircle size={12} />}
-                        {isPortalOpen ? 'TERBUKA UNTUK PUBLIK' : 'DITUTUP SEMENTARA'}
+                      <div className={`mt-2 px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest inline-flex items-center gap-1.5 ${isRegistrationOpen ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-red-100 text-red-700 border border-red-200'}`}>
+                        {isRegistrationOpen ? <CheckCircle size={12} /> : <XCircle size={12} />}
+                        {isRegistrationOpen ? 'TERBUKA UNTUK PUBLIK' : 'DITUTUP SEMENTARA'}
                       </div>
                     </p>
                   </div>
@@ -1374,20 +1392,20 @@ export default function ModernHQDashboard() {
                 {/* Toggle Switch Modern */}
                 <button 
                   onClick={() => {
-                    setIsPortalOpen(!isPortalOpen);
+                    setIsRegistrationOpen(!isRegistrationOpen);
                     showToast(
-                      isPortalOpen ? 'Portal pendaftaran DITUTUP.' : 'Portal pendaftaran DIBUKA kembali!', 
-                      isPortalOpen ? 'error' : 'success'
+                      isRegistrationOpen ? 'Portal pendaftaran DITUTUP.' : 'Portal pendaftaran DIBUKA kembali!', 
+                      isRegistrationOpen ? 'error' : 'success'
                     );
                   }}
                   className={`relative w-20 h-10 rounded-full transition-colors duration-300 focus:outline-none shadow-inner shrink-0 ${
-                    isPortalOpen ? 'bg-emerald-500' : 'bg-slate-300'
+                    isRegistrationOpen ? 'bg-emerald-500' : 'bg-slate-300'
                   }`}
                 >
                   <div className={`absolute top-1 left-1 bg-white w-8 h-8 rounded-full shadow-md transition-transform duration-300 flex items-center justify-center ${
-                    isPortalOpen ? 'translate-x-10' : 'translate-x-0'
+                    isRegistrationOpen ? 'translate-x-10' : 'translate-x-0'
                   }`}>
-                    {isPortalOpen 
+                    {isRegistrationOpen 
                       ? <CheckCircle2 size={16} className="text-emerald-500" /> 
                       : <XCircle size={16} className="text-slate-400" />
                     }
@@ -1396,7 +1414,7 @@ export default function ModernHQDashboard() {
               </div>
 
               {/* Peringatan saat ditutup */}
-              {!isPortalOpen && (
+              {!isRegistrationOpen && (
                 <div className="mt-6 p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-3">
                   <AlertCircle size={18} className="text-rose-500 mt-0.5 shrink-0" />
                   <p className="text-sm text-rose-700">
@@ -2342,17 +2360,20 @@ export default function ModernHQDashboard() {
       {/* ========================================================= */}
       {/* 🌟 SISTEM NOTIFIKASI TOAST (MENGAMBANG DI POJOK KANAN ATAS) */}
       {/* ========================================================= */}
-      <div className={`fixed top-8 right-8 z-[100] transition-all duration-500 transform ${toast.show ? 'translate-y-0 opacity-100' : '-translate-y-10 opacity-0 pointer-events-none'}`}>
-        <div className="bg-white/80 backdrop-blur-2xl border border-white/60 shadow-2xl rounded-2xl p-4 flex items-center gap-3">
+      <div className={`fixed top-8 right-8 z-[9999] transition-all duration-500 transform ${toast.show ? 'translate-y-0 opacity-100 scale-100' : '-translate-y-12 opacity-0 scale-95 pointer-events-none'}`}>
+        <div className={`bg-white/90 backdrop-blur-2xl border ${toast.type === 'success' ? 'border-emerald-200' : 'border-rose-200'} shadow-[0_20px_50px_rgba(0,0,0,0.1)] rounded-2xl p-5 flex items-center gap-4 min-w-[320px]`}>
           {toast.type === 'success' ? (
-            <div className="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center"><CheckCircle2 size={18} /></div>
+            <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-inner"><CheckCircle2 size={22} /></div>
           ) : (
-            <div className="w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center"><AlertCircle size={18} /></div>
+            <div className="w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center shadow-inner"><AlertCircle size={22} /></div>
           )}
           <div>
-            <p className="font-bold text-slate-800 text-sm">{toast.type === 'success' ? 'Berhasil' : 'Peringatan'}</p>
-            <p className="text-xs text-slate-500 font-medium">{toast.message}</p>
+            <p className="font-black text-slate-800 text-sm tracking-tight">{toast.type === 'success' ? 'BERHASIL' : 'PERINGATAN'}</p>
+            <p className="text-xs text-slate-500 font-bold mt-0.5 leading-relaxed">{toast.message}</p>
           </div>
+          <button onClick={() => setToast({ ...toast, show: false })} className="ml-auto text-slate-300 hover:text-slate-500 transition-colors">
+            <X size={16} />
+          </button>
         </div>
       </div>
 
