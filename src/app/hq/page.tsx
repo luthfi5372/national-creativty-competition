@@ -1223,7 +1223,7 @@ export default function ModernHQDashboard() {
 
         {/* 🎛️ KONTEN TAB: PESERTA (BUKU INDUK + LIVE SEARCH) */}
         {activeTab === "Peserta" && (
-          <div className="bg-white/90 backdrop-blur-md backdrop-saturate-150 rounded-2xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="bg-white border border-slate-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.02)] rounded-2xl overflow-hidden flex flex-col">
             <div className="p-6 border-b border-slate-100">
               <div className="flex justify-between items-center mb-6">
                 <div>
@@ -1330,7 +1330,7 @@ export default function ModernHQDashboard() {
         )}
 
         {activeTab === "Verifikasi" && (
-          <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="space-y-4">
             
             {/* Header Antrean */}
             <div className="flex items-center justify-between mb-6">
@@ -1373,7 +1373,7 @@ export default function ModernHQDashboard() {
 
         {/* 🎛️ KONTEN TAB: PENGUMUMAN (BROADCAST CENTER) */}
         {activeTab === "Pengumuman" && (
-          <div className="bg-white/90 backdrop-blur-md border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-2xl p-8 md:p-12 min-h-[500px]">
+          <div className="bg-white border border-slate-200/80 shadow-[0_4px_25px_rgba(0,0,0,0.02)] rounded-2xl p-8 md:p-12 min-h-[500px]">
             <div className="max-w-3xl mx-auto">
               
               {/* Header Ruangan */}
@@ -1512,10 +1512,10 @@ export default function ModernHQDashboard() {
         {/* 🌟 TAB PENGATURAN — PUSAT KENDALI PORTAL & GELOMBANG */}
         {/* ========================================================= */}
         {activeTab === "Pengaturan" && (
-          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="space-y-6">
             
             {/* 1. SAKLAR UTAMA PORTAL */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-sm border border-white/60">
+            <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
               <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                 <div className="flex items-center gap-5">
                   <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 ${
@@ -1823,10 +1823,10 @@ export default function ModernHQDashboard() {
         {/* 🌟 TAB KEGIATAN (PUSAT KAWALAN PENDAFTARAN & FAIL) */}
         {/* ========================================================= */}
         {activeTab === "Kegiatan" && (
-          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="space-y-8">
             
             {/* 1. SUIS UTAMA PENDAFTARAN */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-sm border border-white/60 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+            <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50/50 rounded-bl-full -z-10"></div>
               
               <div className="flex items-center gap-5">
@@ -2124,9 +2124,9 @@ export default function ModernHQDashboard() {
 
         {/* 🎛️ KONTEN TAB: MEDIA (KUSTOMISASI ASET VISUAL) */}
         {activeTab === "Media" && (
-          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="space-y-6">
             {/* 1. MANAJEMEN ASET DASHBOARD */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-sm border border-white/60 mb-6">
+            <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200 mb-6">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-2.5 bg-purple-100 text-purple-600 rounded-xl">
                   <ImageIcon size={20} />
@@ -2313,11 +2313,11 @@ export default function ModernHQDashboard() {
 
         {/* ================= PANEL 1: SLIDE-OUT DETAIL PESERTA ================= */}
         {selectedParticipant && (
-          <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/40 transition-all duration-300">
+          <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/40">
             {/* Area kosong untuk klik tutup */}
             <div className="flex-1" onClick={() => setSelectedParticipant(null)}></div>
             
-            <div className="w-full max-w-md bg-white border-l border-slate-200/80 h-full shadow-[-10px_0_30px_rgba(0,0,0,0.04)] p-8 flex flex-col overflow-y-auto animate-in slide-in-from-right duration-300">
+            <div className="w-full max-w-md bg-white border-l border-slate-200/80 h-full shadow-[-10px_0_30px_rgba(0,0,0,0.04)] p-8 flex flex-col overflow-y-auto">
               <div className="flex justify-between items-center mb-8 pb-4 border-b border-slate-200/50">
                  <h2 className="text-xl font-bold text-slate-800">Detail Administrasi</h2>
                  <button onClick={() => setSelectedParticipant(null)} className="p-2 bg-white/50 hover:bg-slate-100 rounded-full border border-slate-200/50 transition-colors"><X size={20}/></button>
