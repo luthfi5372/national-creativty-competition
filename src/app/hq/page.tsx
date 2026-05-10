@@ -578,6 +578,8 @@ export default function ModernHQDashboard() {
   const [llmsSessions, setLlmsSessions] = useState<any[]>([]);
   const [llmsLeaderboard, setLlmsLeaderboard] = useState<any[]>([]);
   const [selectedLmsScoreDetail, setSelectedLmsScoreDetail] = useState<any | null>(null);
+  const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
+  const [selectedExamTitle, setSelectedExamTitle] = useState<string | null>(null);
 
   // --- ⚡ PROCTORING & LIVE WEBSOCKET ACTIVITY SIMULATOR STATES ---
   const [llmsSimulating, setLlmsSimulating] = useState<boolean>(false);
@@ -700,8 +702,17 @@ export default function ModernHQDashboard() {
             penalty_point: e.penalty_point
           }));
           setLlmsSessions(formattedExams);
-          const activeExam = formattedExams.find((e: any) => e.status === 'Aktif');
-          if (activeExam) activeExamId = activeExam.id;
+          
+          if (!selectedExamId) {
+            const activeExam = formattedExams.find((e: any) => e.status === 'Aktif');
+            if (activeExam) {
+              setSelectedExamId(activeExam.id);
+              setSelectedExamTitle(activeExam.title);
+              activeExamId = activeExam.id;
+            }
+          } else {
+            activeExamId = selectedExamId;
+          }
         }
 
         // 2. Fetch Questions & Leaderboard for the active exam
@@ -3160,10 +3171,9 @@ export default function ModernHQDashboard() {
 
                               // Kirim ke API /api/admin/llms/questions (Admin Endpoint)
                               try {
-                                const activeExam = llmsSessions.find(s => s.status === 'Aktif');
-                                if (activeExam) {
+                                if (selectedExamId) {
                                   const apiPayload = {
-                                    exam_id: activeExam.id,
+                                    exam_id: selectedExamId,
                                     question_text: newQuestion.question,
                                     options: {
                                       A: newQuestion.options[0],
@@ -3183,6 +3193,8 @@ export default function ModernHQDashboard() {
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify(apiPayload)
                                   });
+                                } else {
+                                  throw new Error("Tidak ada sesi ujian yang dipilih!");
                                 }
                               } catch (err) {
                                 console.warn('[CBT Sync] Soal disimpan lokal, sinkronisasi DB tertunda:', err);
@@ -3532,7 +3544,10 @@ export default function ModernHQDashboard() {
                       <div className="flex items-center gap-3 shrink-0">
                         <button 
                           onClick={() => {
-                            showToast(`Fitur kelola soal spesifik untuk sesi: ${session.title} akan segera hadir. Saat ini Bank Soal menampilkan soal untuk sesi yang statusnya Aktif.`, "success");
+                            setSelectedExamId(session.id);
+                            setSelectedExamTitle(session.title);
+                            setLlmsActiveSubTab('soal');
+                            showToast(`Mengelola bank soal untuk: ${session.title}`, "success");
                           }}
                           className="px-4 py-2 bg-indigo-50 text-indigo-600 font-semibold text-xs rounded-xl border border-indigo-100 hover:bg-indigo-100 hover:text-indigo-700 transition-colors flex items-center gap-2"
                         >
