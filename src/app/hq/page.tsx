@@ -642,6 +642,41 @@ export default function ModernHQDashboard() {
     }
   };
 
+  const [isUploadingQuestionImage, setIsUploadingQuestionImage] = useState(false);
+  
+  const handleUploadGambarSoal = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      setIsUploadingQuestionImage(true);
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `mipa/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('soal_images')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        if (uploadError.message.includes('Bucket not found')) {
+          showToast("Bucket 'soal_images' belum dibuat. Silakan buat di Supabase.", "error");
+        }
+        throw uploadError;
+      }
+
+      const { data } = supabase.storage.from('soal_images').getPublicUrl(filePath);
+      
+      setNewQuestion(prev => ({ ...prev, image: data.publicUrl }));
+      showToast("Gambar berhasil diunggah!", "success");
+    } catch (error: any) {
+      console.error("Error upload:", error);
+      showToast(`Gagal mengunggah gambar: ${error.message}`, "error");
+    } finally {
+      setIsUploadingQuestionImage(false);
+    }
+  };
+
   const supabase = createClient();
 
   // --- 📡 FETCH CBT DATA FROM POSTGRESQL ---
@@ -3001,16 +3036,42 @@ export default function ModernHQDashboard() {
                           />
                         </div>
 
-                        {/* INPUT GAMBAR LAMPIRAN */}
+                        {/* INPUT GAMBAR LAMPIRAN (UPLOAD) */}
                         <div className="space-y-1.5">
-                          <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">URL Lampiran Gambar (Opsional untuk Grafik/Biologi)</label>
-                          <input
-                            type="text"
-                            value={newQuestion.image || ""}
-                            onChange={(e) => setNewQuestion({ ...newQuestion, image: e.target.value })}
-                            className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 shadow-xs"
-                            placeholder="Masukkan URL Gambar (e.g. https://domain.com/grafik.png) atau biarkan kosong"
-                          />
+                          <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">
+                            Upload Lampiran Gambar (Opsional untuk Grafik/Biologi)
+                          </label>
+                          <div className="flex flex-col space-y-3">
+                            <div className="flex items-center space-x-4">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleUploadGambarSoal}
+                                disabled={isUploadingQuestionImage}
+                                className="block w-full text-sm text-slate-500
+                                  file:mr-4 file:py-2.5 file:px-4
+                                  file:rounded-xl file:border-0
+                                  file:text-xs file:font-black file:uppercase file:tracking-wider
+                                  file:bg-indigo-50 file:text-indigo-700
+                                  hover:file:bg-indigo-100 disabled:opacity-50 transition-all cursor-pointer border border-slate-200 rounded-xl bg-white"
+                              />
+                              {isUploadingQuestionImage && <span className="text-sm font-bold text-indigo-500 animate-pulse whitespace-nowrap">Mengunggah...</span>}
+                            </div>
+
+                            {/* Preview Gambar Kecil Jika Sudah Upload */}
+                            {newQuestion.image && (
+                              <div className="relative inline-block self-start">
+                                <img src={newQuestion.image} alt="Preview Lampiran" className="h-32 rounded-xl border border-slate-200 shadow-sm object-contain bg-slate-50" />
+                                <button 
+                                  onClick={() => setNewQuestion({ ...newQuestion, image: "" })}
+                                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold hover:bg-red-600 shadow-sm"
+                                  title="Hapus Gambar"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
 
                         {/* INPUT PILIHAN JAWABAN (A-E) */}
