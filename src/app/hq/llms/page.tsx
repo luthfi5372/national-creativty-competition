@@ -29,7 +29,9 @@ export default function ManajemenJadwalLLMS() {
   const [stats, setStats] = useState({
     activeSessions: 0,
     totalQuestions: 0,
-    liveParticipants: 0
+    liveParticipants: 0,
+    totalViolations: 0,
+    serverLatency: 0
   });
 
   // Form State
@@ -48,23 +50,29 @@ export default function ManajemenJadwalLLMS() {
 
   // --- 📡 DATA FETCHING ENGINE ---
   const fetchData = async () => {
-    setIsLoading(true);
+    const startTime = performance.now();
     try {
       const { data: sessionData } = await supabase
         .from('cbt_exams')
         .select('*')
         .order('created_at', { ascending: false });
       
+      const { count: qCount } = await supabase.from('cbt_questions').select('*', { count: 'exact', head: true });
+      const { data: attempts } = await supabase.from('cbt_attempts').select('warnings_count, status');
+      
+      const endTime = performance.now();
+      const latency = Math.round(endTime - startTime);
+
       if (sessionData) {
         setSessions(sessionData);
-        setStats(prev => ({
-          ...prev,
-          activeSessions: sessionData.filter(s => s.is_active).length
-        }));
+        setStats({
+          activeSessions: sessionData.filter(s => s.is_active).length,
+          totalQuestions: qCount || 0,
+          liveParticipants: attempts?.filter(a => a.status === 'ongoing').length || 0,
+          totalViolations: attempts?.reduce((acc, curr) => acc + (curr.warnings_count || 0), 0) || 0,
+          serverLatency: latency
+        });
       }
-
-      const { count: qCount } = await supabase.from('cbt_questions').select('*', { count: 'exact', head: true });
-      setStats(prev => ({ ...prev, totalQuestions: qCount || 0 }));
 
     } catch (err) {
       console.error("Fetch Error:", err);
@@ -430,10 +438,15 @@ export default function ManajemenJadwalLLMS() {
                         <div>
                           <div className="flex justify-between text-[10px] mb-2 font-black uppercase tracking-widest">
                             <span className="text-slate-400">Database (Supabase)</span>
-                            <span className="text-emerald-400">24ms</span>
+                            <span className={stats.serverLatency > 100 ? "text-rose-400" : "text-emerald-400"}>
+                              {stats.serverLatency}ms
+                            </span>
                           </div>
                           <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden border border-slate-700">
-                            <div className="bg-emerald-400 h-full rounded-full w-[15%] shadow-[0_0_10px_rgba(52,211,153,0.3)]"></div>
+                            <div 
+                              className={`h-full rounded-full transition-all duration-500 shadow-lg ${stats.serverLatency > 100 ? "bg-rose-400" : "bg-emerald-400"}`}
+                              style={{ width: `${Math.min(100, (stats.serverLatency / 200) * 100)}%` }}
+                            ></div>
                           </div>
                         </div>
                         <div>
@@ -505,7 +518,9 @@ export default function ManajemenJadwalLLMS() {
                 <div className="mt-8">
                   <p className="text-slate-400 font-black text-[10px] uppercase tracking-widest mb-1">Radar Pelanggaran</p>
                   <div className="flex items-end gap-2">
-                    <h3 className="text-5xl font-black text-emerald-500 tracking-tight">0</h3>
+                    <h3 className={`text-5xl font-black tracking-tight ${stats.totalViolations > 0 ? "text-rose-500" : "text-emerald-500"}`}>
+                      {stats.totalViolations}
+                    </h3>
                     <span className="text-xs font-black text-slate-300 uppercase mb-2">Warnings</span>
                   </div>
                 </div>
