@@ -88,6 +88,22 @@ export default function UjianPage() {
         setLoading(false);
         return;
       }
+
+      // --- STRICT TIME VALIDATION (Moodle/Canvas SOP) ---
+      const now = new Date();
+      if (exams.start_time && new Date(exams.start_time) > now) {
+        const startStr = new Date(exams.start_time).toLocaleString('id-ID');
+        setError(`Ujian belum dimulai. Sesi ini dijadwalkan pada: ${startStr}`);
+        setLoading(false);
+        return;
+      }
+
+      if (exams.end_time && new Date(exams.end_time) < now) {
+        setError("Maaf, sesi ujian ini sudah berakhir.");
+        setLoading(false);
+        return;
+      }
+
       setExamData(exams);
 
       // 2. Start or resume attempt

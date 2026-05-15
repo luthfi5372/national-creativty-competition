@@ -55,6 +55,8 @@ export async function POST(request: NextRequest) {
         title: body.title,
         token: body.token,
         duration_minutes: body.duration_minutes || 90,
+        start_time: body.start_time || null,
+        end_time: body.end_time || null,
         scoring_system: body.scoring_system || 'Custom',
         correct_point: body.correct_point || 4,
         penalty_point: body.penalty_point || 0,
@@ -96,6 +98,8 @@ export async function PATCH(request: NextRequest) {
     if (body.title) updates.title = body.title;
     if (body.token) updates.token = body.token;
     if (body.duration_minutes) updates.duration_minutes = body.duration_minutes;
+    if (body.start_time) updates.start_time = body.start_time;
+    if (body.end_time) updates.end_time = body.end_time;
 
     const { data, error } = await supabase
       .from('cbt_exams')
