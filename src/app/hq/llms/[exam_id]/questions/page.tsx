@@ -188,6 +188,60 @@ export default function EditorSoalSesi() {
              </div>
           </div>
         </div>
+
+        {/* 📚 DAFTAR SOAL TERPANTAU */}
+        <div className="space-y-6">
+           <div className="flex items-center justify-between">
+              <h3 className="font-black text-slate-800 text-xl flex items-center gap-2">
+                <FileText className="text-indigo-600" size={20} />
+                Daftar Soal Tersimpan ({questions.length})
+              </h3>
+           </div>
+           
+           <div className="grid grid-cols-1 gap-4">
+              {questions.map((q, idx) => (
+                <div key={q.id} className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all flex items-start gap-6">
+                   <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-black text-sm shrink-0">
+                      {idx + 1}
+                   </div>
+                   <div className="flex-1 space-y-4">
+                      <div className="text-slate-800 font-bold leading-relaxed" dangerouslySetInnerHTML={{ __html: renderMath(q.question_text || q.question) }} />
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                         {q.options.map((opt: string, i: number) => (
+                           <div key={i} className={`px-3 py-2 rounded-xl text-[10px] font-bold border flex items-center gap-2 ${q.correct === String.fromCharCode(65+i) ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
+                             <span className="shrink-0">{String.fromCharCode(65+i)}</span>
+                             <span className="truncate" dangerouslySetInnerHTML={{ __html: renderMath(opt) }} />
+                           </div>
+                         ))}
+                      </div>
+                      <div className="flex items-center gap-3 pt-2 border-t border-slate-50">
+                         <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase ${q.difficulty === 'Hard' ? 'bg-rose-50 text-rose-600' : q.difficulty === 'Medium' ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                           {q.difficulty}
+                         </span>
+                         <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">Weight: {q.weight} Pts</span>
+                      </div>
+                   </div>
+                   <button 
+                    onClick={async () => {
+                      if(!confirm("Hapus soal ini?")) return;
+                      const { error } = await supabase.from('cbt_questions').delete().eq('id', q.id);
+                      if(!error) setQuestions(prev => prev.filter(item => item.id !== q.id));
+                    }}
+                    className="p-3 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all shrink-0"
+                   >
+                      <Trash2 size={18} />
+                   </button>
+                </div>
+              ))}
+
+              {questions.length === 0 && (
+                <div className="bg-white rounded-[2rem] border-2 border-dashed border-slate-100 py-20 text-center flex flex-col items-center justify-center">
+                   <HelpCircle size={48} className="text-slate-100 mb-4" />
+                   <p className="text-slate-400 font-bold">Belum ada soal untuk sesi ini.</p>
+                </div>
+              )}
+           </div>
+        </div>
       </div>
     </div>
   );

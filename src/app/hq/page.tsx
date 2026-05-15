@@ -748,6 +748,87 @@ export default function ModernHQDashboard() {
     setTimeout(() => setToast({ show: false, message: "", type: "success" }), duration); 
   };
 
+  // --- 🛠️ HELPER RENDERERS (CLEANER JSX) ---
+  const renderParticipantAvatar = (p: any) => {
+    let photoUrl = "";
+    if (p.notes) {
+      try { photoUrl = JSON.parse(p.notes).profile_photo_url; } catch (e) {}
+    }
+    
+    if (photoUrl) {
+      return (
+        <img 
+          src={photoUrl} 
+          alt="Profile Avatar" 
+          className="w-24 h-24 rounded-full object-cover shadow-lg mb-6 border-4 border-white shrink-0" 
+        />
+      );
+    }
+    
+    return (
+      <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center text-4xl font-black shadow-lg mb-6 border-4 border-white shrink-0">
+        {(p.full_name || "U").charAt(0)}
+      </div>
+    );
+  };
+
+  const getParticipantStage = (p: any) => {
+    let stage = 1;
+    if (p.notes) {
+      try { stage = JSON.parse(p.notes).current_stage || 1; } catch (e) {}
+    }
+    return stage;
+  };
+
+  const renderParticipantFiles = (p: any) => {
+    let adminNotes: any = {};
+    if (p.notes) {
+      try { adminNotes = JSON.parse(p.notes); } catch (e) {}
+    }
+    
+    if (!adminNotes.profile_photo_url && !adminNotes.student_card_url) return null;
+
+    return (
+      <div className="p-4 bg-white/60 border border-slate-100 rounded-xl shadow-sm space-y-3">
+        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+          <FolderOpen size={12} className="text-indigo-500" /> Berkas Pendukung Peserta
+        </p>
+        
+        {adminNotes.profile_photo_url && (
+          <div className="flex items-center justify-between py-2 border-b border-slate-100/60 text-sm">
+            <span className="text-xs font-semibold text-slate-600 flex items-center gap-1.5">
+              <ImageIcon size={13} className="text-blue-500" /> Foto Formal
+            </span>
+            <a 
+              href={adminNotes.profile_photo_url} 
+              target="_blank" 
+              rel="noreferrer" 
+              className="text-xs font-bold text-indigo-600 hover:underline bg-indigo-50 px-2.5 py-1 rounded-lg"
+            >
+              Buka
+            </a>
+          </div>
+        )}
+
+        {adminNotes.student_card_url && (
+          <div className="flex items-center justify-between py-2 text-sm">
+            <span className="text-xs font-semibold text-slate-600 flex items-center gap-1.5">
+              <IdCard size={13} className="text-amber-500" /> Kartu Pelajar
+            </span>
+            <a 
+              href={adminNotes.student_card_url} 
+              target="_blank" 
+              rel="noreferrer" 
+              className="text-xs font-bold text-indigo-600 hover:underline bg-indigo-50 px-2.5 py-1 rounded-lg"
+            >
+              Buka
+            </a>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // --- MESIN EKSEKUTOR STATUS ---
   const handleUpdateStatus = async (id: string | number, newStatus: string, reason?: string) => {
     setConfirmModal({
@@ -2358,184 +2439,7 @@ export default function ModernHQDashboard() {
         )}
 
 
-              const correctEasy = Math.round(easyQuestions.length * (selectedLmsScoreDetail.score / 100));
-              const correctMedium = Math.round(mediumQuestions.length * (selectedLmsScoreDetail.score / 110));
-              const correctHard = Math.round(hardQuestions.length * (selectedLmsScoreDetail.score / 120));
 
-              return (
-                <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/40 backdrop-blur-xs">
-                  <div className="flex-1" onClick={() => setSelectedLmsScoreDetail(null)}></div>
-                  
-                  <div className="w-full max-w-lg bg-white border-l border-slate-200 h-full shadow-2xl p-8 flex flex-col overflow-y-auto">
-                    <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-100">
-                      <div>
-                        <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">CBT Transparansi</span>
-                        <h2 className="text-xl font-bold text-slate-800">Detail Hasil & Kalkulasi</h2>
-                      </div>
-                      <button 
-                        onClick={() => setSelectedLmsScoreDetail(null)} 
-                        className="p-2 hover:bg-slate-100 rounded-xl border border-slate-200/50 transition-all"
-                      >
-                        <X size={18} />
-                      </button>
-                    </div>
-
-                    <div className="bg-slate-50 border border-slate-100 p-5 rounded-2xl mb-6 space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs font-mono font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded-lg">{selectedLmsScoreDetail.ticket}</span>
-                        <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
-                          selectedLmsScoreDetail.status === 'Lolos' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-rose-50 text-rose-700 border border-rose-100'
-                        }`}>
-                          Status: {selectedLmsScoreDetail.status}
-                        </span>
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-slate-800 text-lg leading-snug">{selectedLmsScoreDetail.name}</h3>
-                        <p className="text-xs text-slate-500 mt-0.5">Bidang Lomba: {selectedLmsScoreDetail.category}</p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-6">
-                      
-                      {/* 📊 DETAIL POIN PER KATEGORI */}
-                      <div>
-                        <h4 className="text-xs font-black uppercase text-slate-400 tracking-wider mb-3">Detail Poin per Kategori</h4>
-                        <div className="space-y-3">
-                          <div className="bg-emerald-50/40 border border-emerald-100/50 p-4 rounded-xl flex items-center justify-between">
-                            <div>
-                              <p className="text-xs font-bold text-emerald-950">Soal Kategori Easy (Mudah)</p>
-                              <p className="text-[11px] text-emerald-700 mt-0.5">Bobot: 2 poin per soal</p>
-                            </div>
-                            <span className="text-xs font-mono font-bold text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-md">
-                              {Math.min(easyQuestions.length, correctEasy)} / {easyQuestions.length} Benar
-                            </span>
-                          </div>
-
-                          <div className="bg-amber-50/40 border border-amber-100/50 p-4 rounded-xl flex items-center justify-between">
-                            <div>
-                              <p className="text-xs font-bold text-amber-950">Soal Kategori Medium (Sedang)</p>
-                              <p className="text-[11px] text-amber-700 mt-0.5">Bobot: 4 poin per soal</p>
-                            </div>
-                            <span className="text-xs font-mono font-bold text-amber-800 bg-amber-100 px-2.5 py-1 rounded-md">
-                              {Math.min(mediumQuestions.length, correctMedium)} / {mediumQuestions.length} Benar
-                            </span>
-                          </div>
-
-                          <div className="bg-rose-50/40 border border-rose-100/50 p-4 rounded-xl flex items-center justify-between">
-                            <div>
-                              <p className="text-xs font-bold text-rose-950">Soal Kategori Hard (HOTS)</p>
-                              <p className="text-[11px] text-rose-700 mt-0.5">Bobot: 6 poin per soal</p>
-                            </div>
-                            <span className="text-xs font-mono font-bold text-rose-800 bg-rose-100 px-2.5 py-1 rounded-md">
-                              {Math.min(hardQuestions.length, correctHard)} / {hardQuestions.length} Benar
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* 🧠 TRANSMISI & NORMALISASI NILAI */}
-                      <div className="bg-slate-50 border border-slate-100 p-5 rounded-2xl space-y-3.5">
-                        <h4 className="text-xs font-black uppercase text-slate-400 tracking-wider">Mekanisme Kalkulator Nilai</h4>
-                        
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-xs text-slate-600">
-                            <span>Akumulasi Bobot Benar (Raw):</span>
-                            <span className="font-bold text-slate-800">{rawWeightGot} / {maxPossibleWeight} Poin</span>
-                          </div>
-                          <div className="flex justify-between text-xs text-slate-600">
-                            <span>Bobot Maksimal Tes:</span>
-                            <span className="font-bold text-slate-800">{maxPossibleWeight} Poin</span>
-                          </div>
-                          <div className="h-px bg-slate-200"></div>
-                          <div className="flex justify-between text-xs font-bold text-slate-700">
-                            <span>Formula Normalisasi Skor:</span>
-                            <span className="text-indigo-600 font-mono text-[11px]">(Raw / Max) * 100</span>
-                          </div>
-                        </div>
-
-                        <div className="bg-indigo-900 text-indigo-100 p-4 rounded-xl flex items-center justify-between">
-                          <div>
-                            <p className="text-[10px] uppercase font-bold text-indigo-300">Hasil Kalkulasi Normalisasi</p>
-                            <p className="text-2xl font-black">{selectedLmsScoreDetail.score}</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-[10px] uppercase font-bold text-indigo-300">Akurasi Jawaban</p>
-                            <p className="text-sm font-bold">{selectedLmsScoreDetail.accuracy}</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* 🛠️ FITUR OVERRIDE NILAI (ADMIN PRIVILEGE) */}
-                      <div className="border border-slate-200 rounded-2xl p-5 space-y-4">
-                        <h4 className="text-xs font-black uppercase text-slate-400 tracking-wider flex items-center gap-1.5 text-indigo-950">
-                          <Settings size={14} /> Override Nilai (Hak Istimewa Admin)
-                        </h4>
-                        <p className="text-[11px] text-slate-500 leading-relaxed">
-                          Anda dapat memaksa / override skor akhir peserta secara manual jika terindikasi adanya anomali teknis, pelanggaran integritas, atau kebijakan kuota lolos susulan.
-                        </p>
-
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="space-y-1">
-                            <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Override Nilai Akhir</label>
-                            <input
-                              type="number"
-                              value={selectedLmsScoreDetail.score}
-                              onChange={(e) => {
-                                const val = Math.min(100, Math.max(0, parseInt(e.target.value) || 0));
-                                setSelectedLmsScoreDetail({ ...selectedLmsScoreDetail, score: val, accuracy: `${val}%` });
-                              }}
-                              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500"
-                              min="0"
-                              max="100"
-                            />
-                          </div>
-                          
-                          <div className="space-y-1">
-                            <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Status Kelolosan</label>
-                            <select
-                              value={selectedLmsScoreDetail.status}
-                              onChange={(e) => setSelectedLmsScoreDetail({ ...selectedLmsScoreDetail, status: e.target.value })}
-                              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 outline-none"
-                            >
-                              <option value="Lolos">Lolos</option>
-                              <option value="Gugur">Gugur</option>
-                            </select>
-                          </div>
-                        </div>
-
-                        <button
-                          onClick={() => {
-                            const updated = llmsLeaderboard.map(item => {
-                              if (item.ticket === selectedLmsScoreDetail.ticket) {
-                                return { 
-                                  ...item, 
-                                  score: selectedLmsScoreDetail.score, 
-                                  accuracy: selectedLmsScoreDetail.accuracy,
-                                  status: selectedLmsScoreDetail.status
-                                };
-                              }
-                              return item;
-                            });
-                            updated.sort((a, b) => b.score - a.score);
-                            const ranked = updated.map((item, idx) => ({ ...item, rank: idx + 1 }));
-                            setLlmsLeaderboard(ranked);
-                            showToast(`Skor peserta ${selectedLmsScoreDetail.ticket} berhasil di-override menjadi ${selectedLmsScoreDetail.score}!`, "success");
-                            setSelectedLmsScoreDetail(null);
-                          }}
-                          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-bold text-xs shadow-sm transition-all active:scale-95 text-center flex items-center justify-center gap-2"
-                        >
-                          Simpan Override Nilai & Status
-                        </button>
-                      </div>
-
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
-
-          </div>
-        )}
         {selectedParticipant && (
           <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/40">
             {/* Area kosong untuk klik tutup */}
@@ -2547,31 +2451,7 @@ export default function ModernHQDashboard() {
                  <button onClick={() => setSelectedParticipant(null)} className="p-2 bg-white/50 hover:bg-slate-100 rounded-full border border-slate-200/50 transition-colors"><X size={20}/></button>
               </div>
               
-               {(() => {
-                 let photoUrl = "";
-                 if (selectedParticipant.notes) {
-                   try {
-                     const pObj = JSON.parse(selectedParticipant.notes);
-                     photoUrl = pObj.profile_photo_url;
-                   } catch (e) {}
-                 }
-                 
-                 if (photoUrl) {
-                   return (
-                     <img 
-                       src={photoUrl} 
-                       alt="Profile Avatar" 
-                       className="w-24 h-24 rounded-full object-cover shadow-lg mb-6 border-4 border-white shrink-0" 
-                     />
-                   );
-                 }
-                 
-                 return (
-                   <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center text-4xl font-black shadow-lg mb-6 border-4 border-white shrink-0">
-                     {(selectedParticipant.full_name || "U").charAt(0)}
-                   </div>
-                 );
-               })()}
+               {renderParticipantAvatar(selectedParticipant)}
               <h3 className="text-2xl font-bold text-slate-800 mb-1">{selectedParticipant.full_name || "Nama tidak tersedia"}</h3>
               <p className="text-slate-500 font-medium mb-6">{selectedParticipant.competition_type || selectedParticipant.category || "Belum ada kategori"}</p>
 
@@ -2622,52 +2502,29 @@ export default function ModernHQDashboard() {
                     <div className="flex flex-col gap-3">
                       <div className="flex items-center justify-between px-2">
                         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Status:</span>
-                        {(() => {
-                          let stage = 1;
-                          if (selectedParticipant.notes) {
-                            try {
-                              const n = JSON.parse(selectedParticipant.notes);
-                              if (n.current_stage) stage = n.current_stage;
-                            } catch (e) {}
-                          }
-
-                          if (stage === 1) return <span className="text-[10px] font-black text-slate-400 uppercase">Penyisihan (1)</span>;
-                          if (stage === 2) return <span className="text-[10px] font-black text-blue-600 uppercase">Semi Final (2)</span>;
-                          if (stage === 3) return <span className="text-[10px] font-black text-amber-600 uppercase">Final (3)</span>;
-                          return null;
-                        })()}
+                        {getParticipantStage(selectedParticipant) === 1 ? <span className="text-[10px] font-black text-slate-400 uppercase">Penyisihan (1)</span> :
+                         getParticipantStage(selectedParticipant) === 2 ? <span className="text-[10px] font-black text-blue-600 uppercase">Semi Final (2)</span> :
+                         getParticipantStage(selectedParticipant) === 3 ? <span className="text-[10px] font-black text-amber-600 uppercase">Final (3)</span> : null}
                       </div>
                       
                       <div className="grid grid-cols-3 gap-2">
                         <button 
                           onClick={(e) => { e.stopPropagation(); handleUpdateStage(selectedParticipant.id, 1); }}
-                          className={`py-2.5 rounded-xl text-[9px] font-black transition-all border flex flex-col items-center justify-center gap-1 ${ (() => {
-                            let s = 1;
-                            if (selectedParticipant.notes) { try { s = JSON.parse(selectedParticipant.notes).current_stage || 1; } catch (e) {} }
-                            return s === 1;
-                          })() ? 'bg-white border-slate-200 text-slate-300 shadow-inner' : 'bg-white border-slate-100 text-slate-500 hover:border-slate-300' }`}
+                          className={`py-2.5 rounded-xl text-[9px] font-black transition-all border flex flex-col items-center justify-center gap-1 ${ getParticipantStage(selectedParticipant) === 1 ? 'bg-white border-slate-200 text-slate-300 shadow-inner' : 'bg-white border-slate-100 text-slate-500 hover:border-slate-300' }`}
                         >
                           <Clock size={12} />
                           SET T1
                         </button>
                         <button 
                           onClick={(e) => { e.stopPropagation(); handleUpdateStage(selectedParticipant.id, 2); }}
-                          className={`py-2.5 rounded-xl text-[9px] font-black transition-all border flex flex-col items-center justify-center gap-1 ${ (() => {
-                            let s = 1;
-                            if (selectedParticipant.notes) { try { s = JSON.parse(selectedParticipant.notes).current_stage || 1; } catch (e) {} }
-                            return s === 2;
-                          })() ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-white border-slate-100 text-blue-600 hover:border-blue-200' }`}
+                          className={`py-2.5 rounded-xl text-[9px] font-black transition-all border flex flex-col items-center justify-center gap-1 ${ getParticipantStage(selectedParticipant) === 2 ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-white border-slate-100 text-blue-600 hover:border-blue-200' }`}
                         >
                           <Medal size={12} />
                           LOLOS T2
                         </button>
                         <button 
                           onClick={(e) => { e.stopPropagation(); handleUpdateStage(selectedParticipant.id, 3); }}
-                          className={`py-2.5 rounded-xl text-[9px] font-black transition-all border flex flex-col items-center justify-center gap-1 ${ (() => {
-                            let s = 1;
-                            if (selectedParticipant.notes) { try { s = JSON.parse(selectedParticipant.notes).current_stage || 1; } catch (e) {} }
-                            return s === 3;
-                          })() ? 'bg-amber-500 border-amber-500 text-white shadow-lg shadow-amber-200' : 'bg-white border-slate-100 text-amber-600 hover:border-amber-200' }`}
+                          className={`py-2.5 rounded-xl text-[9px] font-black transition-all border flex flex-col items-center justify-center gap-1 ${ getParticipantStage(selectedParticipant) === 3 ? 'bg-amber-500 border-amber-500 text-white shadow-lg shadow-amber-200' : 'bg-white border-slate-100 text-amber-600 hover:border-amber-200' }`}
                         >
                           <Trophy size={12} />
                           FINAL
@@ -2677,52 +2534,7 @@ export default function ModernHQDashboard() {
                   </div>
                 </div>
 
-                {(() => {
-                  let adminNotes: any = {};
-                  if (selectedParticipant.notes) {
-                    try { adminNotes = JSON.parse(selectedParticipant.notes); } catch (e) {}
-                  }
-                  
-                  return (adminNotes.profile_photo_url || adminNotes.student_card_url) && (
-                      <div className="p-4 bg-white/60 border border-slate-100 rounded-xl shadow-sm space-y-3">
-                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                          <FolderOpen size={12} className="text-indigo-500" /> Berkas Pendukung Peserta
-                        </p>
-                        
-                        {adminNotes.profile_photo_url && (
-                          <div className="flex items-center justify-between py-2 border-b border-slate-100/60 text-sm">
-                            <span className="text-xs font-semibold text-slate-600 flex items-center gap-1.5">
-                              <ImageIcon size={13} className="text-blue-500" /> Foto Formal
-                            </span>
-                            <a 
-                              href={adminNotes.profile_photo_url} 
-                              target="_blank" 
-                              rel="noreferrer" 
-                              className="text-xs font-bold text-indigo-600 hover:underline bg-indigo-50 px-2.5 py-1 rounded-lg"
-                            >
-                              Buka
-                            </a>
-                          </div>
-                        )}
-  
-                        {adminNotes.student_card_url && (
-                          <div className="flex items-center justify-between py-2 text-sm">
-                            <span className="text-xs font-semibold text-slate-600 flex items-center gap-1.5">
-                              <IdCard size={13} className="text-amber-500" /> Kartu Pelajar
-                            </span>
-                            <a 
-                              href={adminNotes.student_card_url} 
-                              target="_blank" 
-                              rel="noreferrer" 
-                              className="text-xs font-bold text-indigo-600 hover:underline bg-indigo-50 px-2.5 py-1 rounded-lg"
-                            >
-                              Buka
-                            </a>
-                          </div>
-                        )}
-                      </div>
-                  )
-                })()}
+                {renderParticipantFiles(selectedParticipant)}
               </div>
             </div>
           </div>
