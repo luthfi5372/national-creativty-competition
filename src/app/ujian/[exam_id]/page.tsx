@@ -8,7 +8,7 @@ import {
   Timer, ShieldAlert, Flag, CheckCircle2, 
   ChevronLeft, ChevronRight, Send, AlertTriangle,
   LayoutDashboard, Info, Loader2, X,
-  Expand, ShieldAlert as ShieldExclamationIcon,
+  Expand, ShieldExclamation as ShieldExclamationIcon,
   Maximize as ArrowsInLineHorizontalIcon
 } from "lucide-react";
 import katex from "katex";
@@ -298,7 +298,7 @@ export default function PengerjaanUjianSesi() {
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4 z-[100]">
           <div className="bg-white p-10 rounded-[3rem] border border-amber-100 shadow-2xl max-w-sm w-full text-center animate-in zoom-in-95 duration-300">
             <div className="w-16 h-16 bg-amber-50 text-amber-500 rounded-3xl flex items-center justify-center mx-auto mb-6">
-              <ShieldAlertIcon className="w-8 h-8" />
+              <ShieldExclamationIcon size={32} />
             </div>
             <h3 className="text-xl font-black text-gray-800 uppercase tracking-tight">Sinyal Peringatan</h3>
             <p className="text-sm text-gray-500 mt-3 leading-relaxed">

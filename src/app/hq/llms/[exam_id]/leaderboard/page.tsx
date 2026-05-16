@@ -8,7 +8,7 @@ import {
   ArrowLeftIcon, 
   TrophyIcon, 
   UserGroupIcon, 
-  ShieldAlertIcon,
+  ShieldExclamationIcon,
   MagnifyingGlassIcon,
   ArrowDownTrayIcon,
   ClockIcon,
@@ -190,7 +190,7 @@ export default function LiveLeaderboard() {
             <h3 className={`text-3xl font-bold mt-1 ${totalCheatAlert > 0 ? 'text-red-500' : 'text-emerald-500'}`}>{totalCheatAlert}</h3>
           </div>
           <div className="p-3 bg-red-50 rounded-xl">
-            <ShieldAlertIcon className="w-6 h-6 text-red-500" />
+            <ShieldExclamationIcon className="w-6 h-6 text-red-500" />
           </div>
         </div>
       </div>
