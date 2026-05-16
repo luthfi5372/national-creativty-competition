@@ -15,6 +15,7 @@ import {
 import katex from "katex";
 import "katex/dist/katex.min.css";
 import { useAdvancedProctoring } from "@/hooks/useAdvancedProctoring";
+import BroadcastBanner from "@/components/BroadcastBanner";
 
 const renderMath = (text: string) => {
   if (!text) return "";
@@ -51,10 +52,6 @@ export default function PengerjaanUjianSesi() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
 
-  // 📢 BROADCAST ENGINE STATE
-  const [activeAnnouncement, setActiveAnnouncement] = useState<any>(null);
-  const [showAnnouncement, setShowAnnouncement] = useState(false);
-
   // 🛡️ ADVANCED PROCTORING HOOK
   const { 
     violationsCount, 
@@ -64,7 +61,7 @@ export default function PengerjaanUjianSesi() {
     warningMessage 
   } = useAdvancedProctoring({
     examId: exam_id,
-    userId: attemptId, // Will be set in useEffect
+    userId: attemptId, 
     attemptId: attemptId,
     maxViolations: 3,
     onBlock: () => setIsLocked(true)
@@ -73,7 +70,6 @@ export default function PengerjaanUjianSesi() {
   // --- 📡 DATA INITIALIZATION ---
   useEffect(() => {
     const initExam = async () => {
-      // 1. Get User/Attempt from Session Storage (saved by Gateway)
       const ticketId = sessionStorage.getItem('ncc_ticket_id');
       const savedAttemptId = sessionStorage.getItem('ncc_attempt_id');
       
@@ -85,12 +81,10 @@ export default function PengerjaanUjianSesi() {
       setAttemptId(savedAttemptId);
 
       try {
-        // 2. Load Exam Metadata
         const { data: exam } = await supabase.from('cbt_exams').select('*').eq('id', exam_id).single();
         if (!exam) throw new Error("Sesi tidak ditemukan.");
         setExamData(exam);
 
-        // 3. Load Questions
         const { data: qs } = await supabase
           .from('cbt_questions')
           .select('id, question_text, options, difficulty, weight, image_url')
@@ -98,11 +92,9 @@ export default function PengerjaanUjianSesi() {
           .eq('status', 'Published')
           .order('created_at', { ascending: true });
         
-        // Shuffle client-side for this session
         const shuffled = (qs || []).sort(() => Math.random() - 0.5);
         setQuestions(shuffled);
 
-        // 4. Load Saved Answers
         const { data: savedAns } = await supabase.from('cbt_answers').select('question_id, selected_option').eq('attempt_id', savedAttemptId);
         if (savedAns) {
           const ansMap: Record<string, string> = {};
@@ -110,7 +102,6 @@ export default function PengerjaanUjianSesi() {
           setAnswers(ansMap);
         }
 
-        // 5. Timer Logic
         const { data: attempt } = await supabase.from('cbt_attempts').select('started_at, violations_count, status').eq('id', savedAttemptId).single();
         if (attempt.status === 'submitted') {
            setIsFinished(true);
@@ -134,34 +125,6 @@ export default function PengerjaanUjianSesi() {
     };
     initExam();
   }, [exam_id, supabase, router]);
-
-  // --- 📢 REAL-TIME ANNOUNCEMENT ENGINE ---
-  useEffect(() => {
-    const channel = supabase
-      .channel('live_broadcasts')
-      .on('postgres_changes', { 
-        event: 'INSERT', 
-        schema: 'public', 
-        table: 'announcements' 
-      }, (payload) => {
-        const newMsg = payload.new;
-        // Filter: Global (null) or matches current exam_id
-        if (!newMsg.exam_id || newMsg.exam_id === exam_id) {
-          setActiveAnnouncement(newMsg);
-          setShowAnnouncement(true);
-          
-          // Auto-hide after 15 seconds
-          setTimeout(() => {
-            setShowAnnouncement(false);
-          }, 15000);
-        }
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [exam_id, supabase]);
 
   // --- ⏱️ TIMER ENGINE ---
   useEffect(() => {
@@ -246,10 +209,10 @@ export default function PengerjaanUjianSesi() {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6 text-white font-inter">
          <div className="max-w-md w-full text-center space-y-8">
-            <div className="w-24 h-24 bg-rose-500 rounded-[2.5rem] mx-auto flex items-center justify-center shadow-2xl shadow-rose-500/20">
+            <div className="w-24 h-24 bg-rose-500 rounded-[2.5rem] mx-auto flex items-center justify-center shadow-2xl shadow-rose-500/20 text-left">
                <ShieldExclamationIcon size={48} />
             </div>
-            <div>
+            <div className="text-left">
                <h1 className="text-4xl font-black tracking-tight">Akses Dibekukan</h1>
                <p className="text-slate-400 mt-3 font-medium leading-relaxed">
                   Anda telah mencapai batas maksimal toleransi keluar dari sistem (3 kali). 
@@ -293,10 +256,10 @@ export default function PengerjaanUjianSesi() {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6 text-white font-inter">
          <div className="max-w-md w-full text-center space-y-8">
-            <div className="w-24 h-24 bg-emerald-500 rounded-[2.5rem] mx-auto flex items-center justify-center shadow-2xl shadow-emerald-500/20">
+            <div className="w-24 h-24 bg-emerald-500 rounded-[2.5rem] mx-auto flex items-center justify-center shadow-2xl shadow-emerald-500/20 text-left">
                <CheckCircle2 size={48} />
             </div>
-            <div>
+            <div className="text-left">
                <h1 className="text-4xl font-black tracking-tight">Ujian Selesai!</h1>
                <p className="text-slate-400 mt-3 font-medium">
                   Terima kasih telah berpartisipasi dalam NCC 13th MIPA Olympiad.
@@ -304,7 +267,7 @@ export default function PengerjaanUjianSesi() {
             </div>
             
             {score !== null && (
-               <div className="bg-white/5 border border-white/10 rounded-[2rem] p-8 backdrop-blur-xl">
+               <div className="bg-white/5 border border-white/10 rounded-[2rem] p-8 backdrop-blur-xl text-left">
                   <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Skor Akhir Kamu</span>
                   <div className="text-7xl font-black text-indigo-400 my-2">{score}</div>
                   <p className="text-xs text-slate-500 font-bold">Hasil ini telah tersinkronisasi ke pusat data panitia.</p>
@@ -326,32 +289,7 @@ export default function PengerjaanUjianSesi() {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] font-inter flex flex-col overflow-hidden select-none">
-      {/* 📢 FLOATING ANNOUNCEMENT BANNER */}
-      {showAnnouncement && activeAnnouncement && (
-        <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[100] w-full max-w-2xl px-6 animate-in slide-in-from-top-10 duration-700">
-           <div className={`p-6 rounded-[2rem] border shadow-2xl backdrop-blur-xl flex items-center gap-6 ${
-              activeAnnouncement.type === 'danger' ? 'bg-rose-500/95 border-rose-400 text-white shadow-rose-500/20' :
-              activeAnnouncement.type === 'warning' ? 'bg-amber-400/95 border-amber-300 text-amber-950 shadow-amber-500/20' :
-              'bg-indigo-600/95 border-indigo-500 text-white shadow-indigo-500/20'
-           }`}>
-              <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center shrink-0">
-                 <Megaphone size={24} className="animate-bounce" />
-              </div>
-              <div className="flex-grow text-left">
-                 <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-70 mb-1">Pengumuman Panitia</p>
-                 <p className="text-lg font-bold leading-tight">{activeAnnouncement.message}</p>
-              </div>
-              <button 
-                onClick={() => setShowAnnouncement(false)}
-                className="p-2 hover:bg-white/10 rounded-full transition-all"
-              >
-                 <X size={20} />
-              </button>
-           </div>
-        </div>
-      )}
-
-      {/* --- WARNING MODAL NOTIFICATION --- */}
+      {/* 🛡️ MODAL PERINGATAN PROCTORING */}
       {showModal && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4 z-[100]">
           <div className="bg-white p-10 rounded-[3rem] border border-amber-100 shadow-2xl max-w-sm w-full text-center animate-in zoom-in-95 duration-300">
@@ -375,7 +313,7 @@ export default function PengerjaanUjianSesi() {
         </div>
       )}
 
-      {/* 🚩 PROCTORING ALERT BAR */}
+      {/* 🚩 BAR DETEKSI PELANGGARAN */}
       {violationsCount > 0 && (
         <div className={`py-3 text-center text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 ${violationsCount >= 2 ? 'bg-rose-600 text-white animate-pulse' : 'bg-amber-400 text-amber-950'}`}>
            <ShieldExclamationIcon size={14} />
@@ -392,7 +330,7 @@ export default function PengerjaanUjianSesi() {
             <div>
                <h2 className="font-black text-slate-800 leading-none">{examData?.title}</h2>
                <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-widest">
-                  Progress: {Math.round((Object.keys(answers).length / questions.length) * 100)}% Terselesaikan
+                  Progress: {Math.round((Object.keys(answers).length / (questions.length || 1)) * 100)}% Terselesaikan
                </p>
             </div>
          </div>
@@ -442,8 +380,8 @@ export default function PengerjaanUjianSesi() {
 
                      <div className="bg-white rounded-[3rem] p-12 border border-slate-200 shadow-sm mb-8 text-left">
                         <div 
-                          className="text-slate-800 font-bold text-xl leading-relaxed mb-6"
-                          dangerouslySetInnerHTML={{ __html: renderMath(q.question_text) }}
+                           className="text-slate-800 font-bold text-xl leading-relaxed mb-6"
+                           dangerouslySetInnerHTML={{ __html: renderMath(q.question_text) }}
                         />
                         {q.image_url && (
                           <div className="rounded-[2rem] overflow-hidden border border-slate-100 bg-slate-50 p-2 shadow-inner">
@@ -542,13 +480,13 @@ export default function PengerjaanUjianSesi() {
 
       {/* 🏁 FINAL CONFIRM MODAL */}
       {showConfirm && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 text-left">
            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setShowConfirm(false)}></div>
            <div className="bg-white w-full max-md:max-w-md max-w-lg rounded-[3rem] p-10 shadow-2xl relative z-10 text-center animate-in zoom-in-95 duration-300">
               <div className="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-3xl flex items-center justify-center mx-auto mb-6">
                  <CheckCircle2 size={40} />
               </div>
-              <h3 className="text-2xl font-black text-slate-800">Kumpulkan Ujian?</h3>
+              <h3 className="text-2xl font-black text-slate-800 tracking-tight">Kumpulkan Ujian?</h3>
               <p className="text-slate-500 font-medium mt-3 leading-relaxed">
                  Kamu telah menjawab <strong>{Object.keys(answers).length}</strong> dari <strong>{questions.length}</strong> soal. <br/>
                  Jawaban tidak dapat diubah setelah dikumpulkan.
@@ -572,6 +510,9 @@ export default function PengerjaanUjianSesi() {
            </div>
         </div>
       )}
+
+      {/* 📡 MODUL 4: LIVE BROADCAST RECEIVER */}
+      <BroadcastBanner examId={exam_id} />
     </div>
   );
 }
