@@ -5,17 +5,18 @@ import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { 
-  ArrowLeftIcon, 
-  CheckCircleIcon, 
-  DocumentTextIcon, 
-  TrashIcon, 
-  PhotoIcon,
-  ArrowPathIcon,
-  PencilSquareIcon,
-  ArrowUpTrayIcon,
-  XCircleIcon
-} from '@heroicons/react/24/outline';
-import { BookOpen } from 'lucide-react';
+  ArrowLeft, 
+  CheckCircle, 
+  FileText, 
+  Trash2, 
+  Image as PhotoIcon,
+  RotateCcw,
+  Pencil,
+  Upload,
+  XCircle,
+  Loader2,
+  BookOpen
+} from 'lucide-react';
 import katex from "katex";
 import "katex/dist/katex.min.css";
 
@@ -117,7 +118,7 @@ export default function EditorBankSoal() {
         },
         correct_answer: kunciJawaban,
         difficulty: difficulty,
-        weight: 4, // Default weight
+        weight: 1, // Default weight (1x multiplier)
         status: 'Published'
       };
 
@@ -203,7 +204,7 @@ export default function EditorBankSoal() {
             },
             correct_answer: kolom[6]?.trim().toUpperCase() || 'A',
             difficulty: kolom[7]?.trim() || 'Medium',
-            weight: 4,
+            weight: 1, // Standard weight
             status: 'Published'
           });
         }
@@ -248,7 +249,7 @@ export default function EditorBankSoal() {
       <div className="max-w-6xl mx-auto mb-8 flex flex-col sm:flex-row sm:items-center justify-between bg-white p-5 rounded-2xl shadow-sm border border-gray-100 gap-4 text-left">
         <div className="flex items-center space-x-4">
           <Link href="/hq/llms" className="p-2 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-            <ArrowLeftIcon className="w-5 h-5 text-gray-600" />
+            <ArrowLeft className="w-5 h-5 text-gray-600" />
           </Link>
           <div>
             <h1 className="text-xl font-bold text-gray-800 tracking-tight">Manajemen Bank Soal</h1>
@@ -268,9 +269,9 @@ export default function EditorBankSoal() {
 
           <label className="flex items-center px-4 py-2 bg-white border border-gray-200 text-gray-700 text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-gray-50 cursor-pointer shadow-sm transition-colors">
             {isImporting ? (
-              <><ArrowPathIcon className="w-4 h-4 mr-2 animate-spin" /> Mengimpor...</>
+              <><RotateCcw className="w-4 h-4 mr-2 animate-spin" /> Mengimpor...</>
             ) : (
-              <><ArrowUpTrayIcon className="w-4 h-4 mr-2 text-indigo-500" /> Bulk Import CSV</>
+              <><Upload className="w-4 h-4 mr-2 text-indigo-500" /> Bulk Import CSV</>
             )}
             <input type="file" accept=".csv" onChange={handleBulkImportCSV} disabled={isImporting} className="hidden" />
           </label>
@@ -288,7 +289,7 @@ export default function EditorBankSoal() {
           
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center text-left">
-              <DocumentTextIcon className="w-6 h-6 text-indigo-600 mr-2" />
+              <FileText className="w-6 h-6 text-indigo-600 mr-2" />
               <h2 className="font-bold text-gray-800 text-lg">
                 {editingId ? 'Edit Komponen Soal' : 'Input Data Soal'}
               </h2>
@@ -312,7 +313,7 @@ export default function EditorBankSoal() {
               <input type="file" accept="image/*" onChange={handleImageChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
               {imagePreviewUrl ? (
                 <div className="text-sm text-emerald-600 font-medium flex items-center justify-center">
-                  <CheckCircleIcon className="w-5 h-5 mr-2" /> Media gambar siap diunggah
+                  <CheckCircle className="w-5 h-5 mr-2" /> Media gambar siap diunggah
                 </div>
               ) : (
                 <div className="text-sm text-gray-400 font-medium flex flex-col items-center justify-center">
@@ -352,7 +353,7 @@ export default function EditorBankSoal() {
           <div className="flex space-x-3 mt-8">
             {editingId && (
               <button onClick={resetForm} className="w-1/3 py-4 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold rounded-xl transition-all flex justify-center items-center">
-                <XCircleIcon className="w-5 h-5 mr-2" /> Batal
+                <XCircle className="w-5 h-5 mr-2" /> Batal
               </button>
             )}
             <button 
@@ -361,7 +362,7 @@ export default function EditorBankSoal() {
                 ${editingId ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-100' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-100'}`}
             >
               {isSubmitting ? (
-                <><ArrowPathIcon className="w-5 h-5 mr-2 animate-spin" /> Menyelaraskan...</>
+                <><RotateCcw className="w-5 h-5 mr-2 animate-spin" /> Menyelaraskan...</>
               ) : editingId ? (
                 '💾 Perbarui Data Soal'
               ) : (
@@ -408,7 +409,7 @@ export default function EditorBankSoal() {
                     className={`text-sm ${kunciJawaban === huruf ? 'text-emerald-900 font-semibold' : 'text-gray-600'}`}
                     dangerouslySetInnerHTML={{ __html: renderMath(opsi[huruf as keyof typeof opsi] || "...") }}
                   />
-                  {kunciJawaban === huruf && <CheckCircleIcon className="w-5 h-5 text-emerald-500 ml-auto" />}
+                  {kunciJawaban === huruf && <CheckCircle className="w-5 h-5 text-emerald-500 ml-auto" />}
                 </div>
               ))}
             </div>
@@ -466,10 +467,10 @@ export default function EditorBankSoal() {
                 {/* SISI TOMBOL KENDALI DATA */}
                 <div className="flex md:flex-col space-x-2 md:space-x-0 md:space-y-2 mt-4 md:mt-0 w-full md:w-auto justify-end">
                   <button onClick={() => pemicuEditSoal(item)} className="p-2.5 text-gray-400 hover:text-amber-500 hover:bg-amber-50 rounded-xl transition-colors flex items-center text-xs font-semibold">
-                    <PencilSquareIcon className="w-5 h-5 md:mr-0 mr-1.5" /> <span className="md:hidden">Edit</span>
+                    <Pencil className="w-5 h-5 md:mr-0 mr-1.5" /> <span className="md:hidden">Edit</span>
                   </button>
                   <button onClick={() => handleHapusSoal(item.id)} className="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors flex items-center text-xs font-semibold">
-                    <TrashIcon className="w-5 h-5 md:mr-0 mr-1.5" /> <span className="md:hidden">Hapus</span>
+                    <Trash2 className="w-5 h-5 md:mr-0 mr-1.5" /> <span className="md:hidden">Hapus</span>
                   </button>
                 </div>
 

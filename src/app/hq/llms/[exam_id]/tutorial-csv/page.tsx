@@ -20,8 +20,8 @@ export default function TutorialCSV() {
   const examId = params.exam_id as string;
 
   const downloadTemplate = () => {
-    const headers = ['Soal', 'Opsi A', 'Opsi B', 'Opsi C', 'Opsi D', 'Opsi E', 'Kunci Jawaban', 'Tingkat Kesulitan', 'Bobot Nilai'];
-    const sampleRow = ['Siapakah penemu mesin uap?', 'James Watt', 'Isaac Newton', 'Albert Einstein', 'Nikola Tesla', 'Thomas Edison', 'A', 'MUDAH', '1'];
+    const headers = ['Soal', 'Opsi A', 'Opsi B', 'Opsi C', 'Opsi D', 'Opsi E', 'Kunci Jawaban', 'Tingkat Kesulitan'];
+    const sampleRow = ['Siapakah penemu mesin uap?', 'James Watt', 'Isaac Newton', 'Albert Einstein', 'Nikola Tesla', 'Thomas Edison', 'A', 'MUDAH'];
     
     const csvContent = "data:text/csv;charset=utf-8," 
       + headers.join(',') + "\n" 
@@ -192,15 +192,6 @@ export default function TutorialCSV() {
                   <td className="py-6 px-6 font-bold text-gray-800">Kesulitan</td>
                   <td className="py-6 px-6 leading-relaxed">
                     Gunakan kapital: <span className="font-bold text-gray-400">MUDAH</span>, <span className="font-bold text-amber-500">SEDANG</span>, atau <span className="font-bold text-rose-500">SULIT</span>.
-                  </td>
-                </tr>
-                <tr className="hover:bg-indigo-50/30 transition-colors group">
-                  <td className="py-6 px-6 text-center">
-                    <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 font-black font-mono shadow-sm group-hover:scale-110 transition-transform">I</span>
-                  </td>
-                  <td className="py-6 px-6 font-bold text-gray-800">Bobot Nilai</td>
-                  <td className="py-6 px-6 leading-relaxed text-gray-500">
-                    Angka numerik (Contoh: <code className="bg-slate-100 px-1.5 py-0.5 rounded font-mono">1</code> atau <code className="bg-slate-100 px-1.5 py-0.5 rounded font-mono">2.5</code>).
                   </td>
                 </tr>
               </tbody>
