@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { 
@@ -16,7 +16,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function LiveLeaderboard() {
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
   const params = useParams();
   const examId = params.exam_id as string;
 
