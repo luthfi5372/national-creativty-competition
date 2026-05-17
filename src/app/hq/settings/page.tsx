@@ -15,6 +15,7 @@ export default function SettingsDashboard() {
   const [autoSave, setAutoSave] = useState(true);
   const [maintenance, setMaintenance] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -38,7 +39,10 @@ export default function SettingsDashboard() {
       updated_at: new Date().toISOString()
     });
     setIsSaving(false);
-    if (!error) alert("Pengaturan infrastruktur berhasil disinkronisasi ke server!");
+    if (!error) {
+      setToastMessage("Pengaturan infrastruktur berhasil disinkronisasi ke server!");
+      setTimeout(() => setToastMessage(""), 3000);
+    }
   };
 
   return (
@@ -233,6 +237,14 @@ export default function SettingsDashboard() {
 
         </div>
       </main>
+
+      {/* TOAST NOTIFICATION */}
+      {toastMessage && (
+        <div className="fixed bottom-8 right-8 z-[100] bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl shadow-slate-900/20 flex items-center space-x-3 animate-in slide-in-from-bottom-5 fade-in duration-300 border border-slate-700">
+          <BadgeCheck className="w-5 h-5 text-emerald-400" />
+          <span className="text-sm font-bold">{toastMessage}</span>
+        </div>
+      )}
     </div>
   );
 }
