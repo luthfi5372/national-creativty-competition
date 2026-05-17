@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { 
   LayoutGrid, Users, BadgeCheck, Megaphone, 
@@ -10,6 +11,7 @@ import {
 } from 'lucide-react';
 
 export default function SettingsDashboard() {
+  const router = useRouter();
   const supabase = createClient();
   const [strictMode, setStrictMode] = useState(true);
   const [autoSave, setAutoSave] = useState(true);
@@ -43,6 +45,11 @@ export default function SettingsDashboard() {
       setToastMessage("Pengaturan infrastruktur berhasil disinkronisasi ke server!");
       setTimeout(() => setToastMessage(""), 3000);
     }
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/login');
   };
 
   return (
@@ -117,7 +124,7 @@ export default function SettingsDashboard() {
         </nav>
 
         <div className="p-4 border-t border-gray-100 mt-auto">
-          <button className="w-full flex items-center justify-center space-x-3 px-4 py-3 text-rose-500 hover:bg-rose-50 rounded-xl transition-all font-bold text-sm">
+          <button onClick={handleLogout} className="w-full flex items-center justify-center space-x-3 px-4 py-3 text-rose-500 hover:bg-rose-50 rounded-xl transition-all font-bold text-sm">
             <LogOut className="w-5 h-5" />
             <span>Keluar Sesi</span>
           </button>

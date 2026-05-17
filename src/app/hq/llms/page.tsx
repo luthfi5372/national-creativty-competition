@@ -33,6 +33,11 @@ export default function IntegratedLLMSDashboard() {
     correct_point: 4, penalty_point: 0, empty_point: 0
   });
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/login');
+  };
+
   const fetchTelemetryData = async () => {
     setRefreshing(true);
     try {
@@ -207,7 +212,7 @@ export default function IntegratedLLMSDashboard() {
         </nav>
 
         <div className="p-4 border-t border-gray-100">
-          <button className="w-full flex items-center justify-center space-x-3 px-4 py-3 text-rose-500 hover:bg-rose-50 rounded-xl transition-all font-bold text-sm">
+          <button onClick={handleLogout} className="w-full flex items-center justify-center space-x-3 px-4 py-3 text-rose-500 hover:bg-rose-50 rounded-xl transition-all font-bold text-sm">
             <LogOut className="w-5 h-5" />
             <span>Keluar Sesi</span>
           </button>
