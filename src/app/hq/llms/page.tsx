@@ -10,7 +10,7 @@ import {
   Megaphone, Trophy, Play, Plus, 
   ChevronRight, Download, Loader2, X, Save,
   Activity, Clock, Search, Bell, History, RotateCcw,
-  ArrowLeft, Key, Monitor
+  ArrowLeft, Key, Monitor, ShieldCheck, AlertTriangle, FileDown
 } from "lucide-react";
 
 export default function DashboardOverview() {
@@ -35,9 +35,10 @@ export default function DashboardOverview() {
     correct_point: 4, penalty_point: 0, empty_point: 0
   });
 
-  // 🕒 State untuk Rolling Token 10 Menit
+  // 🕒 State untuk Rolling Token & Security Log
   const [countdown, setCountdown] = useState(0);
   const [liveTokens, setLiveTokens] = useState<Record<string, string>>({});
+  const [securityLogs, setSecurityLogs] = useState<any[]>([]);
 
   // --- 📡 DATA ENGINE ---
   const fetchData = async () => {
@@ -45,15 +46,39 @@ export default function DashboardOverview() {
     try {
       const { data: sessionData } = await supabase.from('cbt_exams').select('*').order('created_at', { ascending: false });
       const { count: qCount } = await supabase.from('cbt_questions').select('*', { count: 'exact', head: true });
-      const { data: attempts } = await supabase.from('cbt_attempts').select('warnings_count, status');
+      const { data: attempts } = await supabase.from('cbt_attempts').select('warnings_count, status, user_id, updated_at, submitted_at').order('updated_at', { ascending: false });
+
+      let onlineCount = 0;
+      let violationSum = 0;
+      let logs: any[] = [];
+
+      if (attempts) {
+        attempts.forEach((attempt) => {
+          if (!attempt.submitted_at) onlineCount++;
+          violationSum += attempt.warnings_count || 0;
+          
+          // Memasukkan data peserta yang curang ke dalam log
+          if (attempt.warnings_count > 0) {
+            logs.push({
+              id: attempt.user_id + attempt.updated_at,
+              userId: attempt.user_id,
+              count: attempt.warnings_count,
+              time: new Date(attempt.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            });
+          }
+        });
+      }
+
+      // Ambil 3 kejadian terbaru saja untuk ditampilkan di log samping
+      setSecurityLogs(logs.slice(0, 3));
 
       if (sessionData) {
         setSessions(sessionData);
         setStats({
           activeSessions: sessionData.filter(s => s.is_active).length,
           totalQuestions: qCount || 0,
-          liveParticipants: attempts?.filter(a => a.status === 'ongoing').length || 0,
-          totalViolations: attempts?.reduce((acc, curr) => acc + (curr.warnings_count || 0), 0) || 0
+          liveParticipants: onlineCount,
+          totalViolations: violationSum
         });
       }
     } catch (err) { console.error(err); } finally { 
@@ -117,6 +142,20 @@ export default function DashboardOverview() {
       fetchData();
     }
     setIsSaving(false);
+  };
+
+  // FUNGSI UNDUH LOG KECURANGAN (CSV)
+  const downloadSecurityReport = () => {
+    const headers = ['Waktu', 'ID Peserta', 'Jumlah Pelanggaran Keluar Layar'];
+    const csvRows = securityLogs.map(log => `${log.time},${log.userId},${log.count}`);
+    const csvContent = "data:text/csv;charset=utf-8," + headers.join(',') + "\n" + csvRows.join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `Laporan_Kecurangan_NCC13_${new Date().getTime()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   if (isLoading) return (
@@ -307,9 +346,10 @@ export default function DashboardOverview() {
             </div>
           </div>
 
-          {/* KANAN: PANEL COMMANDS DENGAN KONTRAS */}
+          {/* KANAN: PANEL COMMANDS & SECURITY LOG */}
           <div className="space-y-6">
             
+            {/* QUICK COMMANDS */}
             <div className="animate-stagger-4 bg-white p-5 rounded-2xl border-2 border-gray-200 shadow-sm">
               <h2 className="text-sm font-black text-gray-800 uppercase tracking-widest mb-4 border-b-2 border-gray-100 pb-2">Quick Commands</h2>
               <div className="space-y-3">
@@ -325,20 +365,48 @@ export default function DashboardOverview() {
               </div>
             </div>
 
-            <div className="animate-stagger-4 bg-white p-5 rounded-2xl border-2 border-rose-200 shadow-sm bg-rose-50/20">
-              <div className="flex items-center justify-between mb-4 border-b-2 border-rose-100 pb-2">
-                <h2 className="text-sm font-black text-rose-800 uppercase tracking-widest">Security Log</h2>
-                <span className="px-2 py-1 bg-rose-600 text-white text-[9px] font-black uppercase rounded shadow-sm animate-pulse">Live Feed</span>
+            {/* 🔥 SECURITY LOG (NEW & FUNCTIONAL) 🔥 */}
+            <div className={`animate-stagger-4 p-5 rounded-2xl border-2 shadow-sm transition-colors ${securityLogs.length > 0 ? 'bg-rose-50/20 border-rose-200' : 'bg-emerald-50/20 border-emerald-100'}`}>
+              <div className={`flex items-center justify-between mb-4 border-b-2 pb-2 ${securityLogs.length > 0 ? 'border-rose-100' : 'border-emerald-100/50'}`}>
+                <h2 className={`text-sm font-black uppercase tracking-widest ${securityLogs.length > 0 ? 'text-rose-800' : 'text-emerald-800'}`}>Security Log</h2>
+                <span className={`px-2 py-1 text-white text-[9px] font-black uppercase rounded shadow-sm ${securityLogs.length > 0 ? 'bg-rose-600 animate-pulse' : 'bg-emerald-500'}`}>
+                  Live Feed
+                </span>
               </div>
-              <div className="space-y-4">
-                <div className="flex items-start space-x-3 bg-white p-3 rounded-lg border border-rose-100 shadow-sm">
-                  <ShieldAlert className="w-6 h-6 text-rose-500 flex-shrink-0" />
-                  <div>
-                    <p className="text-xs font-black text-gray-900">Radar Kecurangan</p>
-                    <p className="text-[10px] font-bold text-gray-500 mt-0.5">{stats.totalViolations} insiden keluar layar.</p>
-                  </div>
+              
+              {refreshing && securityLogs.length === 0 ? (
+                 <div className="py-6 text-center text-xs text-gray-400 font-bold animate-pulse">Menyelaraskan Radar...</div>
+              ) : securityLogs.length === 0 ? (
+                // STATE 1: JIKA AMAN (KOSONG)
+                <div className="flex flex-col items-center justify-center py-5 text-center">
+                  <ShieldCheck className="w-12 h-12 text-emerald-400 mb-2 drop-shadow-sm" />
+                  <p className="text-xs font-black text-emerald-700 uppercase tracking-widest">Aman Terkendali</p>
+                  <p className="text-[10px] text-emerald-600/70 mt-1 font-bold">Integritas ujian 100% terjaga.</p>
                 </div>
-              </div>
+              ) : (
+                // STATE 2: JIKA ADA PELANGGARAN
+                <div className="space-y-3">
+                  {securityLogs.map(log => (
+                    <div key={log.id} className="flex items-start space-x-3 bg-white p-3 rounded-xl border border-rose-100 shadow-sm relative overflow-hidden">
+                      <div className="absolute left-0 top-0 w-1 h-full bg-rose-500"></div>
+                      <AlertTriangle className="w-5 h-5 text-rose-500 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[11px] font-black text-gray-800 truncate">{log.userId}</p>
+                        <p className="text-[9px] font-bold text-rose-600 mt-0.5">{log.count}x Keluar Layar</p>
+                      </div>
+                      <span className="text-[9px] font-mono text-gray-400 font-bold">{log.time}</span>
+                    </div>
+                  ))}
+                  
+                  {/* TOMBOL UNDUH LAPORAN */}
+                  <button 
+                    onClick={downloadSecurityReport}
+                    className="w-full mt-3 py-2.5 bg-white border border-rose-200 hover:bg-rose-50 text-rose-700 text-[10px] font-black uppercase tracking-widest rounded-xl transition-colors flex items-center justify-center shadow-sm group"
+                  >
+                    <FileDown className="w-4 h-4 mr-1.5 group-hover:-translate-y-0.5 transition-transform" /> Unduh Laporan (.CSV)
+                  </button>
+                </div>
+              )}
             </div>
 
           </div>
