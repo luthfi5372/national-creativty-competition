@@ -67,6 +67,7 @@ export default function ExamRoom({ params }: { params: { exam_id: string } }) {
         // Catat kehadiran
         await supabase.from('cbt_attempts').upsert({
           user_id: parsedUser.nisn || parsedUser.username,
+          exam_id: examId,
           updated_at: new Date().toISOString()
         }, { onConflict: 'user_id' });
 
