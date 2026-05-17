@@ -1,18 +1,45 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
 import { 
   LayoutGrid, Users, BadgeCheck, Megaphone, 
   Calendar, Image as ImageIcon, Server, Settings,
-  LogOut, UserCircle, ShieldCheck, BellRing, Database, Clock
+  LogOut, UserCircle, ShieldCheck, BellRing, Database, Clock, Loader2
 } from 'lucide-react';
 
 export default function SettingsDashboard() {
-  // State untuk toggle switch fiktif
+  const supabase = createClient();
   const [strictMode, setStrictMode] = useState(true);
   const [autoSave, setAutoSave] = useState(true);
   const [maintenance, setMaintenance] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      const { data } = await supabase.from('cbt_settings').select('*').eq('id', 1).single();
+      if (data) {
+        setStrictMode(data.strict_mode);
+        setAutoSave(data.auto_save);
+        setMaintenance(data.maintenance_mode);
+      }
+    };
+    fetchSettings();
+  }, []);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    const { error } = await supabase.from('cbt_settings').upsert({
+      id: 1,
+      strict_mode: strictMode,
+      auto_save: autoSave,
+      maintenance_mode: maintenance,
+      updated_at: new Date().toISOString()
+    });
+    setIsSaving(false);
+    if (!error) alert("Pengaturan infrastruktur berhasil disinkronisasi ke server!");
+  };
 
   return (
     <div className="flex min-h-screen bg-[#f8fafc] font-sans text-gray-800">
@@ -103,7 +130,8 @@ export default function SettingsDashboard() {
             <p className="text-[10px] md:text-xs text-gray-400 font-bold mt-0.5">Konfigurasi pusat infrastruktur NCC 13th.</p>
           </div>
           <div className="flex items-center space-x-4">
-             <button className="px-5 py-2 bg-slate-900 text-white text-[11px] font-bold uppercase tracking-widest rounded-lg hover:bg-slate-800 transition-all shadow-sm">
+             <button onClick={handleSave} disabled={isSaving} className="px-5 py-2 bg-slate-900 text-white text-[11px] font-bold uppercase tracking-widest rounded-lg hover:bg-slate-800 transition-all shadow-sm flex items-center">
+               {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                Simpan Perubahan
              </button>
           </div>
