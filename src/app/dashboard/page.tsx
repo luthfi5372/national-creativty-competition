@@ -3,6 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from "react";
+import Link from 'next/link';
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase"; 
 import { CheckCircle2, AlertCircle } from "lucide-react";
