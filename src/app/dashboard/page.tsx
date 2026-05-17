@@ -331,6 +331,42 @@ export default function UserDashboard() {
               notes={userEntry?.notes}
               globalTimeline={globalTimeline}
             />
+            
+            {/* KARTU AKSES PORTAL UJIAN LLMS (KHUSUS MIPA) */}
+            {userEntry?.competition_type === 'Olimpiade MIPA' && userEntry?.payment_status === 'Verified' && (
+              <div className="mt-6 bg-gradient-to-br from-[#5145cd] to-[#372b9c] rounded-[24px] p-6 text-white shadow-xl shadow-indigo-200/50 relative overflow-hidden group">
+                {/* Aksen Latar Belakang */}
+                <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-2xl transform translate-x-10 -translate-y-10 group-hover:scale-110 transition-transform duration-700"></div>
+                <div className="absolute bottom-0 left-0 w-32 h-32 bg-indigo-400/20 rounded-full blur-xl transform -translate-x-8 translate-y-8"></div>
+
+                <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-14 h-14 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20 shadow-inner">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 text-white">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0V12a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 12V5.25" />
+                      </svg>
+                    </div>
+                    <div>
+                      <div className="flex items-center space-x-2 mb-1">
+                        <h3 className="text-xl font-black tracking-tight">Portal Ujian CBT (LLMS)</h3>
+                        <span className="px-2 py-0.5 bg-rose-500 text-[9px] font-black uppercase tracking-widest rounded animate-pulse shadow-sm">Live</span>
+                      </div>
+                      <p className="text-xs text-indigo-100 font-medium">Sistem ujian terkunci. Masuk menggunakan Username dan PIN Anda.</p>
+                    </div>
+                  </div>
+
+                  <Link 
+                    href="/ujian/login" 
+                    className="w-full md:w-auto px-6 py-3.5 bg-white text-[#5145cd] text-xs font-black uppercase tracking-widest rounded-xl hover:bg-gray-50 hover:scale-105 active:scale-95 transition-all shadow-lg flex items-center justify-center space-x-2"
+                  >
+                    <span>Masuk Ruang Ujian</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                    </svg>
+                  </Link>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
