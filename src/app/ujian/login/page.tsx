@@ -16,7 +16,8 @@ export default function ParticipantLogin() {
   const router = useRouter();
   const supabase = createClient();
 
-  const [username, setUsername] = useState('');
+  // State disesuaikan untuk NISN
+  const [nisnInput, setNisnInput] = useState('');
   const [tokenInput, setTokenInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<{ title: string; desc: string } | null>(null);
@@ -27,25 +28,36 @@ export default function ParticipantLogin() {
     setErrorMsg(null);
 
     try {
-      // 1. Cek Kredensial Username/NISN ke Database
+      // 1. INTEGRASI DATABASE ASLI: Mencari peserta berdasarkan NISN
+      // Disesuaikan secara otomatis ke tabel 'competition_entries' milik NCC 13th
+      const namaTabelPendaftaran = 'competition_entries'; 
+      const namaKolomNisn = 'nisn'; 
+
       const { data: user, error: userError } = await supabase
-        .from('cbt_participants')
+        .from(namaTabelPendaftaran)
         .select('*')
-        .eq('username', username)
+        .eq(namaKolomNisn, nisnInput)
         .single();
 
       if (userError || !user) {
-        setErrorMsg({ title: 'Peserta Tidak Ditemukan', desc: 'Username atau NISN tidak terdaftar dalam sistem kami.' });
+        setErrorMsg({ title: 'Peserta Tidak Ditemukan', desc: 'NISN tidak terdaftar dalam sistem pendaftaran NCC 13th kami.' });
         setLoading(false); return;
       }
 
-      // GATEWAY SECURITY: Wajib Cabang MIPA
-      if (user.branch !== 'MIPA') {
-        setErrorMsg({ title: 'Akses Ditolak', desc: `Akun ini terdaftar di cabang ${user.branch}. Portal LLMS eksklusif untuk Olimpiade MIPA.` });
+      // 2. CEK CABANG LOMBA
+      const kolomCabang = user.competition_type || user.branch; 
+      if (kolomCabang && !kolomCabang.toLowerCase().includes('mipa')) {
+        setErrorMsg({ title: 'Akses Ditolak', desc: `Akun ini terdaftar di cabang ${kolomCabang}. Portal LLMS eksklusif untuk Olimpiade MIPA.` });
         setLoading(false); return;
       }
 
-      // 2. Ambil Sesi Ujian Aktif dari Database
+      // 3. TAMBAHAN KEAMANAN: Cek Status Verifikasi
+      if (user.payment_status !== 'Verified') {
+        setErrorMsg({ title: 'Peserta Belum Diverifikasi', desc: `Status pendaftaran masih ${user.payment_status}. Silakan selesaikan pembayaran dan verifikasi panitia.` });
+        setLoading(false); return;
+      }
+
+      // 4. Ambil Sesi Ujian Aktif dari Database
       const { data: exams, error: examsError } = await supabase.from('cbt_exams').select('id, title');
       
       if (examsError || !exams || exams.length === 0) {
@@ -53,7 +65,7 @@ export default function ParticipantLogin() {
         setLoading(false); return;
       }
 
-      // 3. MESIN VALIDASI ROLLING TOKEN (10 Menit)
+      // 5. MESIN VALIDASI ROLLING TOKEN (10 Menit)
       const now = Math.floor(Date.now() / 1000);
       const interval10Min = 600;
       const currentInterval = Math.floor(now / interval10Min);
@@ -62,7 +74,6 @@ export default function ParticipantLogin() {
       let matchedExam = null;
       const userToken = tokenInput.toUpperCase().trim();
 
-      // Cek apakah token yang dimasukkan cocok dengan token dari sesi manapun di interval waktu SEKARANG
       for (const exam of exams) {
         let expectedToken = "";
         let seed = (exam.id.charCodeAt(0) + currentInterval) % 10000;
@@ -78,12 +89,11 @@ export default function ParticipantLogin() {
       }
 
       if (!matchedExam) {
-        setErrorMsg({ title: 'Token Ujian Tidak Valid', desc: 'Token salah atau sudah kedaluwarsa. Silakan lihat token terbaru (berubah tiap 10 menit) di layar pengawas.' });
+        setErrorMsg({ title: 'Token Ujian Tidak Valid', desc: 'Token salah atau sudah kedaluwarsa. Silakan lihat token terbaru di layar pengawas.' });
         setLoading(false); return;
       }
 
-      // 4. Jika Sukses Lewati Semua Gerbang Keamanan!
-      // Simpan data user & ID ujian yang diikutinya ke LocalStorage
+      // 6. Sukses! Masuk ke Dashboard Ujian
       localStorage.setItem('ncc_user', JSON.stringify({ ...user, active_exam_id: matchedExam.id, active_exam_title: matchedExam.title }));
       router.push('/ujian/dashboard');
 
@@ -95,10 +105,8 @@ export default function ParticipantLogin() {
 
   return (
     <div className="min-h-screen bg-[#f4f7fe] flex items-center justify-center p-6 font-sans">
-      
       <div className="w-full max-w-[420px] bg-white p-10 rounded-[40px] shadow-[0_10px_40px_rgb(0,0,0,0.04)] relative">
         
-        {/* Logo & Header */}
         <div className="text-center mb-10 flex flex-col items-center">
           <div className="w-20 h-20 bg-[#5145cd] rounded-full mx-auto flex items-center justify-center shadow-lg shadow-indigo-200 mb-5 relative">
              <span className="text-white font-black text-4xl tracking-tighter">N</span>
@@ -110,7 +118,6 @@ export default function ParticipantLogin() {
           <p className="text-[9px] text-gray-400 mt-2 font-black uppercase tracking-widest">National Creativity Competition 13th</p>
         </div>
 
-        {/* Notifikasi Error */}
         {errorMsg && (
           <div className="mb-6 p-4 bg-rose-50 border border-rose-100 rounded-2xl flex items-start space-x-3">
             <ShieldAlert className="w-6 h-6 text-rose-500 flex-shrink-0 mt-0.5" />
@@ -121,7 +128,6 @@ export default function ParticipantLogin() {
           </div>
         )}
 
-        {/* Form Login */}
         <form onSubmit={handleLogin} className="space-y-6">
           <div>
             <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2 ml-2">Username / NISN</label>
@@ -132,8 +138,8 @@ export default function ParticipantLogin() {
               <input
                 type="text"
                 required
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                value={nisnInput}
+                onChange={(e) => setNisnInput(e.target.value)}
                 placeholder="Masukkan NISN Anda..."
                 className="w-full pl-12 pr-5 py-4 bg-gray-50 border border-transparent rounded-[20px] text-sm font-bold focus:bg-white focus:ring-2 focus:ring-[#5145cd]/20 focus:border-[#5145cd] transition-all outline-none text-gray-800 placeholder-gray-400 shadow-inner shadow-gray-100/50"
               />
@@ -168,7 +174,7 @@ export default function ParticipantLogin() {
           >
             {loading ? (
               <span className="flex items-center">
-                <Loader2 className="w-5 h-5 animate-spin mr-2" /> Memvalidasi Token...
+                <Loader2 className="w-5 h-5 animate-spin mr-2" /> Memvalidasi...
               </span>
             ) : (
               <>
@@ -183,7 +189,6 @@ export default function ParticipantLogin() {
            <BadgeCheck className="w-4 h-4 mr-1.5" />
            Sistem Keamanan Berlapis Aktif
         </div>
-
       </div>
     </div>
   );
