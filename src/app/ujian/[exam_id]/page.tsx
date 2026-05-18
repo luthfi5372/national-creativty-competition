@@ -32,6 +32,8 @@ export default function ExamRoom({ params }: { params: { exam_id: string } }) {
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
   const [showSubmitSuccess, setShowSubmitSuccess] = useState(false);
   const [finalScore, setFinalScore] = useState(0);
+  const [isAlreadySubmitted, setIsAlreadySubmitted] = useState(false);
+  const [savedScore, setSavedScore] = useState(0);
 
   useEffect(() => {
     const savedUser = localStorage.getItem('ncc_user');
@@ -63,7 +65,15 @@ export default function ExamRoom({ params }: { params: { exam_id: string } }) {
           .single();
 
         if (existingUser) {
-          // Sudah ada → update exam_id dan timestamp
+          // ✅ CEK: Sudah submit sebelumnya → BLOKIR masuk lagi
+          if (existingUser.submitted_at) {
+            setSavedScore(existingUser.current_score ?? 0);
+            setIsAlreadySubmitted(true);
+            setLoading(false);
+            return;
+          }
+
+          // Belum submit → update exam_id dan timestamp
           setViolationCount(existingUser.violations_count || 0);
           if ((existingUser.violations_count || 0) >= 3) setIsBlocked(true);
 
@@ -217,6 +227,33 @@ export default function ExamRoom({ params }: { params: { exam_id: string } }) {
             <p className="text-xs font-semibold text-gray-700">2. Sebutkan NISN Anda untuk proses verifikasi pembukaan blokir.</p>
           </div>
           <button onClick={() => router.push('/ujian/dashboard')} className="w-full py-4 bg-gray-900 hover:bg-black text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all">
+            Kembali ke Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // 🔒 Layar penjaga: sudah submit sebelumnya
+  if (isAlreadySubmitted) {
+    return (
+      <div className="min-h-screen bg-emerald-50 flex items-center justify-center p-6 font-sans">
+        <div className="bg-white max-w-sm w-full rounded-[40px] p-10 text-center shadow-2xl border border-emerald-100">
+          <div className="w-24 h-24 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 relative">
+            <CheckCircle2 className="w-12 h-12" />
+            <div className="absolute inset-0 rounded-full border-4 border-emerald-200 animate-ping opacity-30" />
+          </div>
+          <h1 className="text-2xl font-black text-gray-900 tracking-tight mb-2">UJIAN SUDAH SELESAI</h1>
+          <p className="text-sm font-bold text-gray-500 leading-relaxed">
+            Kamu sudah mengumpulkan jawaban sebelumnya. Jawaban tidak bisa dikumpulkan dua kali.
+          </p>
+          <div className="mt-6 p-5 bg-gradient-to-br from-[#5145cd] to-indigo-400 rounded-2xl text-white">
+            <p className="text-[10px] font-black uppercase tracking-widest opacity-70">Skor Kamu</p>
+            <p className="text-5xl font-black mt-1">{savedScore}</p>
+            <p className="text-xs font-bold opacity-70 mt-1">poin</p>
+          </div>
+          <p className="text-[10px] text-gray-400 font-bold mt-4">Hubungi panitia jika ada kesalahan.</p>
+          <button onClick={() => router.push('/ujian/dashboard')} className="w-full mt-5 py-4 bg-gray-900 hover:bg-black text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all">
             Kembali ke Dashboard
           </button>
         </div>
