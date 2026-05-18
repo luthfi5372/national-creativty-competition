@@ -10,8 +10,11 @@ import {
   Info,
   AlertTriangle,
   ShieldAlert,
-  Loader2
+  Loader2,
+  Trash2,
+  Clock
 } from 'lucide-react';
+import { useEffect } from 'react';
 
 export default function AdminBroadcast() {
   const supabase = createClient();
@@ -21,6 +24,29 @@ export default function AdminBroadcast() {
   const [type, setType] = useState('info'); // info, warning, danger
   const [sending, setSending] = useState(false);
   const [status, setStatus] = useState<{ success: boolean; msg: string } | null>(null);
+
+  // History States
+  const [history, setHistory] = useState<any[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(true);
+
+  const fetchHistory = async () => {
+    setLoadingHistory(true);
+    const { data } = await supabase
+      .from('announcements')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (data) setHistory(data);
+    setLoadingHistory(false);
+  };
+
+  useEffect(() => {
+    fetchHistory();
+  }, []);
+
+  const handleDelete = async (id: string) => {
+    const { error } = await supabase.from('announcements').delete().eq('id', id);
+    if (!error) fetchHistory();
+  };
 
   const handleSendBroadcast = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,7 +69,8 @@ export default function AdminBroadcast() {
       if (error) throw error;
 
       setStatus({ success: true, msg: 'Pengumuman berhasil dipancarkan ke seluruh peserta!' });
-      setMessage(''); // Kosongkan input setelah berhasil
+      setMessage(''); 
+      fetchHistory(); // Refresh history
     } catch (err: any) {
       console.error(err);
       setStatus({ success: false, msg: 'Gagal memancarkan pesan: ' + err.message });
@@ -143,6 +170,51 @@ export default function AdminBroadcast() {
             </button>
 
           </form>
+        </div>
+
+        {/* RIWAYAT BROADCAST */}
+        <div className="bg-white p-6 md:p-8 rounded-3xl border border-gray-100 shadow-sm text-left">
+          <h2 className="text-sm font-black text-gray-800 uppercase tracking-widest mb-6 flex items-center">
+            <Clock className="w-4 h-4 mr-2 text-indigo-500" />
+            Riwayat Siaran
+          </h2>
+          
+          {loadingHistory ? (
+            <div className="flex justify-center p-4"><Loader2 className="w-6 h-6 animate-spin text-indigo-300" /></div>
+          ) : history.length === 0 ? (
+            <p className="text-xs text-gray-400 font-bold text-center p-4">Belum ada riwayat siaran.</p>
+          ) : (
+            <div className="space-y-3">
+              {history.map((ann) => {
+                const isWarning = ann.type === 'warning';
+                const isDanger = ann.type === 'danger';
+                return (
+                  <div key={ann.id} className={`p-4 rounded-2xl border flex items-start gap-4 transition-all ${
+                    isDanger ? 'bg-rose-50 border-rose-100' :
+                    isWarning ? 'bg-amber-50 border-amber-100' :
+                    'bg-indigo-50 border-indigo-100'
+                  }`}>
+                    <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center flex-shrink-0 shadow-sm">
+                      {isDanger ? <ShieldAlert className="w-4 h-4 text-rose-500" /> : isWarning ? <AlertTriangle className="w-4 h-4 text-amber-500" /> : <Info className="w-4 h-4 text-indigo-500" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-gray-800 break-words">{ann.message}</p>
+                      <p className="text-[9px] font-black text-gray-400 mt-1.5 uppercase tracking-wider">
+                        {new Date(ann.created_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}
+                      </p>
+                    </div>
+                    <button 
+                      onClick={() => handleDelete(ann.id)}
+                      className="p-2 text-gray-400 hover:text-rose-500 hover:bg-rose-100 rounded-lg transition-all flex-shrink-0"
+                      title="Hapus riwayat"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
       </div>

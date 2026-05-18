@@ -10,7 +10,9 @@ import {
   Menu,
   Send,
   ShieldAlert,
-  Lock
+  Lock,
+  X,
+  Bell
 } from 'lucide-react';
 
 export default function ExamRoom({ params }: { params: { exam_id: string } }) {
@@ -35,6 +37,8 @@ export default function ExamRoom({ params }: { params: { exam_id: string } }) {
   const [isAlreadySubmitted, setIsAlreadySubmitted] = useState(false);
   const [savedScore, setSavedScore] = useState(0);
   const [isSessionClosed, setIsSessionClosed] = useState(false);
+  // Broadcast toasts dari panitia
+  const [activeToasts, setActiveToasts] = useState<Array<{id: string; message: string; type: string}>>([]);
 
   useEffect(() => {
     const savedUser = localStorage.getItem('ncc_user');
@@ -216,6 +220,21 @@ export default function ExamRoom({ params }: { params: { exam_id: string } }) {
     return `${m}:${s}`;
   };
 
+  // 📡 LISTENER BROADCAST dari panitia — hanya aktif saat peserta mengerjakan soal
+  useEffect(() => {
+    if (loading) return;
+    const channel = supabase
+      .channel('exam-live-announcements')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'announcements' }, (payload) => {
+        const ann = payload.new as any;
+        const toastId = String(ann.id || Date.now());
+        setActiveToasts(prev => [...prev, { id: toastId, message: ann.message, type: ann.type || 'info' }]);
+        // Auto-dismiss 15 detik
+        setTimeout(() => setActiveToasts(prev => prev.filter(t => t.id !== toastId)), 15000);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [loading]);
   if (loading) {
     return (
       <div className="min-h-screen bg-[#f4f7fe] flex flex-col items-center justify-center">
@@ -303,7 +322,38 @@ export default function ExamRoom({ params }: { params: { exam_id: string } }) {
 
   return (
     <div className="min-h-screen bg-[#f4f7fe] font-sans text-gray-800 select-none pb-10 relative">
-      
+
+      {/* ===== FLOATING TOAST BROADCAST PANITIA ===== */}
+      <div className="fixed top-4 right-4 z-[500] space-y-3 max-w-sm w-full pointer-events-none">
+        {activeToasts.map(toast => {
+          const isWarning = toast.type === 'warning';
+          const isDanger = toast.type === 'danger';
+          return (
+            <div key={toast.id} className={`pointer-events-auto w-full rounded-2xl shadow-2xl border p-4 flex items-start gap-3 animate-in slide-in-from-right duration-300 ${
+              isDanger ? 'bg-rose-600 border-rose-700 text-white shadow-rose-200' :
+              isWarning ? 'bg-amber-500 border-amber-600 text-white shadow-amber-200' :
+              'bg-[#5145cd] border-indigo-700 text-white shadow-indigo-200'
+            }`}>
+              <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                {isDanger ? <ShieldAlert className="w-4 h-4" /> : isWarning ? <AlertTriangle className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[9px] font-black uppercase tracking-widest opacity-80 mb-1">
+                  📢 {isDanger ? 'DARURAT' : isWarning ? 'PERINGATAN' : 'INFO PANITIA'}
+                </p>
+                <p className="text-sm font-bold leading-snug">{toast.message}</p>
+              </div>
+              <button
+                onClick={() => setActiveToasts(prev => prev.filter(t => t.id !== toast.id))}
+                className="w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center flex-shrink-0 transition-all"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          );
+        })}
+      </div>
+
       {/* ===== MODAL KONFIRMASI SUBMIT ===== */}
       {showSubmitConfirm && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/70 backdrop-blur-md p-4">
