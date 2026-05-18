@@ -68,7 +68,8 @@ export default function ExamRoom({ params }: { params: { exam_id: string } }) {
           setTimeLeft((examData.duration || examData.duration_minutes) * 60);
         }
 
-        const { data: qData } = await supabase.from('cbt_questions').select('*').eq('exam_id', examId); 
+        // Tambahkan filter dinamis (neq timestamp) untuk memaksa browser bypass cache
+        const { data: qData } = await supabase.from('cbt_questions').select('*').eq('exam_id', examId).neq('created_at', new Date().toISOString());
         if (qData) {
           const shuffled = qData.sort(() => 0.5 - Math.random());
           setQuestions(shuffled);
