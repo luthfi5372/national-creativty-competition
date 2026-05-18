@@ -29,6 +29,9 @@ export default function ExamRoom({ params }: { params: { exam_id: string } }) {
   const [showCheatWarning, setShowCheatWarning] = useState(false);
   const [violationCount, setViolationCount] = useState(0);
   const [isBlocked, setIsBlocked] = useState(false);
+  const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
+  const [showSubmitSuccess, setShowSubmitSuccess] = useState(false);
+  const [finalScore, setFinalScore] = useState(0);
 
   useEffect(() => {
     const savedUser = localStorage.getItem('ncc_user');
@@ -134,18 +137,26 @@ export default function ExamRoom({ params }: { params: { exam_id: string } }) {
   };
 
   const handleSubmitExam = async () => {
-    const confirmSubmit = window.confirm("Apakah Anda yakin ingin menyelesaikan ujian? Anda tidak bisa kembali setelah ini.");
-    if (!confirmSubmit) return;
+    // Hitung skor: tiap jawaban benar = 1 poin (bisa dikustomisasi)
+    let score = 0;
+    questions.forEach(q => {
+      const jawaban = answers[q.id];
+      const kunci = q.correct_answer || q.answer;
+      if (jawaban && kunci && jawaban.toUpperCase() === kunci.toUpperCase()) {
+        score++;
+      }
+    });
+    setFinalScore(score);
 
-    setLoading(true);
     const userId = student?.nisn || student?.username;
     await supabase.from('cbt_attempts').update({
       submitted_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      current_score: score
     }).eq('user_id', userId);
 
-    alert("Ujian Selesai! Jawaban berhasil diamankan di cloud.");
-    router.push('/ujian/dashboard');
+    setShowSubmitConfirm(false);
+    setShowSubmitSuccess(true);
   };
 
   const formatTime = (seconds: number) => {
@@ -192,6 +203,54 @@ export default function ExamRoom({ params }: { params: { exam_id: string } }) {
   return (
     <div className="min-h-screen bg-[#f4f7fe] font-sans text-gray-800 select-none pb-10 relative">
       
+      {/* ===== MODAL KONFIRMASI SUBMIT ===== */}
+      {showSubmitConfirm && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/70 backdrop-blur-md p-4">
+          <div className="bg-white rounded-[32px] p-8 max-w-sm w-full shadow-2xl text-center">
+            <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-5">
+              <Send className="w-10 h-10 text-emerald-500" />
+            </div>
+            <h2 className="text-xl font-black text-gray-900 tracking-tight">Kirim Jawaban?</h2>
+            <p className="text-sm text-gray-500 font-medium mt-2 leading-relaxed">
+              Setelah ujian diselesaikan, <span className="font-black text-gray-800">kamu tidak bisa kembali</span> ke soal-soal.
+            </p>
+            <div className="mt-5 p-3 bg-indigo-50 rounded-2xl text-xs font-bold text-indigo-600">
+              📋 {Object.keys(answers).length} dari {questions.length} soal telah dijawab
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button onClick={() => setShowSubmitConfirm(false)} className="flex-1 py-3.5 bg-gray-100 text-gray-700 font-black text-xs uppercase tracking-widest rounded-xl hover:bg-gray-200 transition-all">
+                Batal
+              </button>
+              <button onClick={handleSubmitExam} className="flex-1 py-3.5 bg-emerald-500 text-white font-black text-xs uppercase tracking-widest rounded-xl hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-100">
+                Ya, Kirim!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== LAYAR SUKSES SUBMIT ===== */}
+      {showSubmitSuccess && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-emerald-900/80 backdrop-blur-md p-4">
+          <div className="bg-white rounded-[40px] p-10 max-w-sm w-full shadow-2xl text-center">
+            <div className="w-28 h-28 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner relative">
+              <CheckCircle2 className="w-16 h-16 text-emerald-500" />
+              <div className="absolute inset-0 rounded-full border-4 border-emerald-200 animate-ping opacity-40" />
+            </div>
+            <h2 className="text-3xl font-black text-gray-900 tracking-tight">Selesai! 🎉</h2>
+            <p className="text-sm text-gray-400 font-bold mt-2">Jawaban berhasil dikumpulkan</p>
+            <div className="mt-6 p-5 bg-gradient-to-br from-[#5145cd] to-indigo-400 rounded-2xl text-white">
+              <p className="text-[10px] font-black uppercase tracking-widest opacity-70">Skor Kamu</p>
+              <p className="text-5xl font-black mt-1">{finalScore}</p>
+              <p className="text-xs font-bold opacity-70 mt-1">dari {questions.length} soal</p>
+            </div>
+            <button onClick={() => router.push('/ujian/dashboard')} className="w-full mt-6 py-4 bg-gray-900 hover:bg-black text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all">
+              Kembali ke Dashboard
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* MODAL PERINGATAN KECURANGAN */}
       {showCheatWarning && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
@@ -234,7 +293,7 @@ export default function ExamRoom({ params }: { params: { exam_id: string } }) {
               {formatTime(timeLeft)}
             </span>
           </div>
-          <button onClick={handleSubmitExam} className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-all shadow-md flex items-center">
+          <button onClick={() => setShowSubmitConfirm(true)} className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-all shadow-md flex items-center">
             <CheckCircle2 className="w-4 h-4 mr-2" /> Selesai
           </button>
         </div>
@@ -309,7 +368,7 @@ export default function ExamRoom({ params }: { params: { exam_id: string } }) {
                   <span className="text-xs font-black text-amber-600 uppercase tracking-widest">Ragu - Ragu</span>
                 </label>
                 {currentIndex === questions.length - 1 ? (
-                  <button onClick={handleSubmitExam} className="w-full md:w-auto px-6 py-3 bg-emerald-500 text-white font-black text-xs uppercase tracking-widest rounded-xl hover:bg-emerald-600 transition-all shadow-md shadow-emerald-200 flex items-center justify-center">
+                  <button onClick={() => setShowSubmitConfirm(true)} className="w-full md:w-auto px-6 py-3 bg-emerald-500 text-white font-black text-xs uppercase tracking-widest rounded-xl hover:bg-emerald-600 transition-all shadow-md shadow-emerald-200 flex items-center justify-center">
                     Kirim & Selesai <Send className="w-4 h-4 ml-2" />
                   </button>
                 ) : (

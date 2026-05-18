@@ -25,6 +25,9 @@ export default function LiveMonitor({ params }: { params: { exam_id: string } })
   const [stats, setStats] = useState({ total: 0, working: 0, submitted: 0, cheating: 0, blocked: 0 });
   const [search, setSearch] = useState('');
   const [lastSync, setLastSync] = useState<Date>(new Date());
+  const [showUnblockModal, setShowUnblockModal] = useState(false);
+  const [unblockTarget, setUnblockTarget] = useState<string | null>(null);
+  const [unblockSuccess, setUnblockSuccess] = useState(false);
 
   const fetchCCTVData = async () => {
     try {
@@ -74,28 +77,53 @@ export default function LiveMonitor({ params }: { params: { exam_id: string } })
     return { label: 'AKTIF', color: 'indigo', icon: Monitor };
   };
 
-  // 🔥 TOMBOL AMPUNAN: Reset violations peserta yang diblokir
-  const handleUnlockAccess = async (userId: string) => {
-    const confirmUnlock = window.confirm(
-      `Buka blokir peserta ID: ${userId}?\n\nPeringatan akan direset ke 0. Peserta perlu Refresh (F5) untuk melanjutkan.`
-    );
-    if (!confirmUnlock) return;
-
+  // 🔥 TOMBOL AMPUNAN — pakai custom modal
+  const handleUnlockAccess = async () => {
+    if (!unblockTarget) return;
     const { error } = await supabase
       .from('cbt_attempts')
       .update({ violations_count: 0, updated_at: new Date().toISOString() })
-      .eq('user_id', userId);
+      .eq('user_id', unblockTarget);
 
-    if (error) {
-      alert('Gagal membuka blokir: ' + error.message);
-    } else {
-      alert(`✅ Akses ${userId} berhasil dibuka!\n\nMinta peserta tekan F5 untuk melanjutkan ujian.`);
+    if (!error) {
+      setUnblockSuccess(true);
       fetchCCTVData();
     }
   };
 
   return (
     <div className="min-h-screen bg-[#f4f7fe] font-sans text-gray-800">
+
+      {/* ===== MODAL KONFIRMASI UNBLOCK ===== */}
+      {showUnblockModal && !unblockSuccess && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/70 backdrop-blur-md p-4">
+          <div className="bg-white rounded-[32px] p-8 max-w-sm w-full shadow-2xl text-center">
+            <div className="w-20 h-20 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-5">
+              <LockOpen className="w-10 h-10 text-rose-500" />
+            </div>
+            <h2 className="text-xl font-black text-gray-900">Buka Blokir Peserta?</h2>
+            <p className="text-sm text-gray-500 font-medium mt-2">ID: <span className="font-black text-gray-800">{unblockTarget}</span></p>
+            <p className="text-xs text-gray-400 mt-2 leading-relaxed">Pelanggaran akan direset ke 0. Peserta perlu <span className="font-black">F5</span> untuk melanjutkan.</p>
+            <div className="flex gap-3 mt-6">
+              <button onClick={() => { setShowUnblockModal(false); setUnblockTarget(null); }} className="flex-1 py-3.5 bg-gray-100 text-gray-700 font-black text-xs uppercase tracking-widest rounded-xl hover:bg-gray-200 transition-all">Batal</button>
+              <button onClick={handleUnlockAccess} className="flex-1 py-3.5 bg-emerald-500 text-white font-black text-xs uppercase tracking-widest rounded-xl hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-100">Buka Akses</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showUnblockModal && unblockSuccess && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/70 backdrop-blur-md p-4">
+          <div className="bg-white rounded-[32px] p-8 max-w-sm w-full shadow-2xl text-center">
+            <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-5">
+              <BadgeCheck className="w-10 h-10 text-emerald-500" />
+            </div>
+            <h2 className="text-xl font-black text-gray-900">Akses Dibuka! ✅</h2>
+            <p className="text-sm text-gray-500 font-medium mt-2">Peserta <span className="font-black text-gray-800">{unblockTarget}</span> sudah bisa lanjut.</p>
+            <p className="text-xs text-gray-400 mt-2">Arahkan peserta untuk menekan <span className="font-black">F5</span> di komputernya.</p>
+            <button onClick={() => { setShowUnblockModal(false); setUnblockTarget(null); setUnblockSuccess(false); }} className="w-full mt-6 py-3.5 bg-gray-900 text-white font-black text-xs uppercase tracking-widest rounded-xl hover:bg-black transition-all">Tutup</button>
+          </div>
+        </div>
+      )}
 
       {/* STICKY TOP BAR */}
       <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-gray-100 px-6 py-4 shadow-sm">
@@ -217,7 +245,7 @@ export default function LiveMonitor({ params }: { params: { exam_id: string } })
                         {isBlocked ? (
                           // 🔥 TOMBOL UNBLOCK — hover gembok merah → gembok hijau terbuka
                           <button
-                            onClick={() => handleUnlockAccess(p.user_id)}
+                            onClick={() => { setUnblockTarget(p.user_id); setUnblockSuccess(false); setShowUnblockModal(true); }}
                             title="Klik untuk buka blokir peserta ini"
                             className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-rose-500 text-white hover:bg-emerald-500 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-emerald-200 transition-all group"
                           >
