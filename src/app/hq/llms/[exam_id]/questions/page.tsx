@@ -62,11 +62,18 @@ export default function EditorBankSoal() {
       .eq('exam_id', examId)
       .order('created_at', { ascending: false });
       
-    if (data) setDaftarSoal(data);
+    if (data) {
+      // Double lock: Filter di sisi klien untuk memastikan tidak ada data sesi lain yang bocor
+      const strictlyFiltered = data.filter(q => q.exam_id === examId);
+      setDaftarSoal(strictlyFiltered);
+    }
   };
 
   useEffect(() => {
-    if (examId) fetchSoalTersimpan();
+    if (examId) {
+      setDaftarSoal([]); // Kosongkan state sebelum narik baru
+      fetchSoalTersimpan();
+    }
   }, [examId]);
 
   // 🖼️ 2. HANDLE SELEKSI GAMBAR
