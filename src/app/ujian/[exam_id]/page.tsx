@@ -43,21 +43,33 @@ export default function ExamRoom({ params }: { params: { exam_id: string } }) {
 
     const loadExamData = async () => {
       try {
-        // 1. Ambil durasi
-        const { data: examData } = await supabase.from('cbt_exams').select('duration').eq('id', examId).maybeSingle();
-        if (examData?.duration) setTimeLeft(examData.duration * 60);
-
-        // 2. Ambil soal
-        const { data: qData, error: qErr } = await supabase.from('cbt_questions').select('*').eq('exam_id', examId);
-        if (qErr) console.error("Error ambil soal:", qErr);
-        if (qData && qData.length > 0) {
-          const shuffled = qData.sort(() => 0.5 - Math.random());
-          setQuestions(shuffled);
+        // 1. Ambil durasi (dengan fallback nama kolom duration/duration_minutes)
+        const { data: examData } = await supabase.from('cbt_exams').select('duration, duration_minutes').eq('id', examId).maybeSingle();
+        if (examData) {
+          const duration = examData.duration_minutes || examData.duration;
+          if (duration) setTimeLeft(duration * 60);
         }
 
-        const userId = parsedUser.nisn || parsedUser.username;
+        // 2. Ambil soal (DENGAN BYPASS CACHE)
+        const { data: qData, error: qErr } = await supabase
+          .from('cbt_questions')
+          .select('*')
+          .eq('exam_id', examId)
+          .order('created_at', { ascending: true }); // Pastikan diurutkan
 
-        // 3. 🔥 KUNCI SOLUSI: Gunakan maybeSingle() agar tidak crash saat peserta baru pertama masuk
+        if (qErr) {
+          alert("DATABASE ERROR: " + qErr.message); 
+        } else if (qData && qData.length > 0) {
+          // Acak soal
+          const shuffled = [...qData].sort(() => Math.random() - 0.5);
+          setQuestions(shuffled);
+        } else {
+          // Jika kosong, beritahu layar!
+          console.warn("Peringatan: qData kosong untuk examId:", examId);
+        }
+
+        // 3. Lapor kehadiran CCTV
+        const userId = parsedUser.nisn || parsedUser.username;
         const { data: existingUser, error: checkErr } = await supabase
           .from('cbt_attempts')
           .select('*')
@@ -65,27 +77,18 @@ export default function ExamRoom({ params }: { params: { exam_id: string } }) {
           .eq('exam_id', examId)
           .maybeSingle();
 
-        if (checkErr) console.error("Error cek user:", checkErr);
-
         if (existingUser) {
           setViolationCount(existingUser.violations_count || 0);
           if ((existingUser.violations_count || 0) >= 3) setIsBlocked(true);
-
-          await supabase.from('cbt_attempts').update({ 
-            updated_at: new Date().toISOString() 
-          }).eq('user_id', userId).eq('exam_id', examId);
+          await supabase.from('cbt_attempts').update({ updated_at: new Date().toISOString() }).eq('user_id', userId).eq('exam_id', examId);
         } else {
-          const { error: insertErr } = await supabase.from('cbt_attempts').insert({ 
-            user_id: userId, 
-            exam_id: examId, 
-            violations_count: 0,
-            updated_at: new Date().toISOString() 
+          await supabase.from('cbt_attempts').insert({ 
+            user_id: userId, exam_id: examId, violations_count: 0, updated_at: new Date().toISOString() 
           });
-          if (insertErr) console.error("Gagal buat CCTV:", insertErr);
         }
 
       } catch (err: any) {
-        console.error("CRASH SISTEM:", err);
+        alert("CRASH SISTEM FATAL: " + err.message);
       } finally {
         setLoading(false);
       }

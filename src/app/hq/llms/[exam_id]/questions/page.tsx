@@ -54,6 +54,12 @@ export default function EditorBankSoal() {
   const [isImporting, setIsImporting] = useState(false);
   const [daftarSoal, setDaftarSoal] = useState<any[]>([]);
 
+  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' as 'success' | 'error' });
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ visible: true, message, type });
+    setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 3000);
+  };
+
   // 📡 1. TARIK DATA DARI DATABASE
   const fetchSoalTersimpan = async () => {
     const { data } = await supabase
@@ -151,9 +157,10 @@ export default function EditorBankSoal() {
       // Bersihkan form kembali seperti semula
       resetForm();
       fetchSoalTersimpan();
+      showToast("Soal berhasil disimpan ke database!", "success");
 
     } catch (error: any) {
-      alert(`Operasi database gagal: ${error.message}`);
+      showToast(`Operasi database gagal: ${error.message}`, "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -219,11 +226,11 @@ export default function EditorBankSoal() {
         if (dataInsert.length > 0) {
           const { error } = await supabase.from('cbt_questions').insert(dataInsert);
           if (error) throw error;
-          alert(`Sukses mengimpor ${dataInsert.length} soal secara massal!`);
+          showToast(`Sukses mengimpor ${dataInsert.length} soal secara massal!`, "success");
           fetchSoalTersimpan();
         }
       } catch (err: any) {
-        alert(`Gagal memproses file CSV: ${err.message}`);
+        showToast(`Gagal memproses file CSV: ${err.message}`, "error");
       } finally {
         setIsImporting(false);
         e.target.value = ''; // Reset file input
@@ -236,6 +243,7 @@ export default function EditorBankSoal() {
     if (!confirm("Hapus permanen soal ini dari sistem?")) return;
     await supabase.from('cbt_questions').delete().eq('id', id);
     fetchSoalTersimpan();
+    showToast("Soal berhasil dihapus!", "success");
     if(editingId === id) resetForm();
   };
 
@@ -485,6 +493,19 @@ export default function EditorBankSoal() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* ================= MODAL TOAST POP-UP ================= */}
+      <div className={`fixed bottom-8 right-8 z-[100] transition-all duration-500 transform ${toast.visible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0 pointer-events-none'}`}>
+        <div className={`flex items-center space-x-4 px-6 py-4 rounded-2xl shadow-2xl border backdrop-blur-md ${toast.type === 'success' ? 'bg-emerald-50/95 border-emerald-200 text-emerald-900' : 'bg-rose-50/95 border-rose-200 text-rose-900'}`}>
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white shadow-inner font-black ${toast.type === 'success' ? 'bg-emerald-500' : 'bg-rose-500'}`}>
+            {toast.type === 'success' ? '✓' : '✕'}
+          </div>
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-0.5">Notifikasi Sistem</p>
+            <p className="text-sm font-bold">{toast.message}</p>
+          </div>
+        </div>
       </div>
 
     </div>
