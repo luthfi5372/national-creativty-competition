@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { 
   ClockIcon, 
   ExclamationTriangleIcon, 
@@ -13,9 +13,12 @@ import {
   LockClosedIcon
 } from '@heroicons/react/24/outline';
 
-export default function ExamRoom({ params }: { params: { exam_id: string } }) {
-  const examId = params.exam_id;
+export default function ExamRoom() {
+  // 🔥 SOLUSI UTAMA: Mengambil parameter URL dengan aman menggunakan useParams
+  const params = useParams();
   const router = useRouter();
+  const examId = params?.exam_id as string;
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
   const supabase = createClient(supabaseUrl, supabaseKey);
@@ -33,6 +36,9 @@ export default function ExamRoom({ params }: { params: { exam_id: string } }) {
   const [isBlocked, setIsBlocked] = useState(false);
 
   useEffect(() => {
+    // 🔥 PENCEGAHAN ERROR: Jangan jalankan query jika ID ujian masih "undefined"
+    if (!examId || examId === 'undefined') return;
+
     const savedUser = localStorage.getItem('ncc_user');
     if (!savedUser) {
       router.push('/ujian/login');
@@ -43,29 +49,25 @@ export default function ExamRoom({ params }: { params: { exam_id: string } }) {
 
     const loadExamData = async () => {
       try {
-        // 1. Ambil durasi (dengan fallback nama kolom duration/duration_minutes)
+        // 1. Ambil durasi
         const { data: examData } = await supabase.from('cbt_exams').select('duration, duration_minutes').eq('id', examId).maybeSingle();
         if (examData) {
           const duration = examData.duration_minutes || examData.duration;
           if (duration) setTimeLeft(duration * 60);
         }
 
-        // 2. Ambil soal (DENGAN BYPASS CACHE)
+        // 2. Ambil soal
         const { data: qData, error: qErr } = await supabase
           .from('cbt_questions')
           .select('*')
           .eq('exam_id', examId)
-          .order('created_at', { ascending: true }); // Pastikan diurutkan
+          .order('created_at', { ascending: true });
 
         if (qErr) {
-          alert("DATABASE ERROR: " + qErr.message); 
+          console.error("DATABASE ERROR SOAL:", qErr.message); 
         } else if (qData && qData.length > 0) {
-          // Acak soal
           const shuffled = [...qData].sort(() => Math.random() - 0.5);
           setQuestions(shuffled);
-        } else {
-          // Jika kosong, beritahu layar!
-          console.warn("Peringatan: qData kosong untuk examId:", examId);
         }
 
         // 3. Lapor kehadiran CCTV
@@ -88,7 +90,7 @@ export default function ExamRoom({ params }: { params: { exam_id: string } }) {
         }
 
       } catch (err: any) {
-        alert("CRASH SISTEM FATAL: " + err.message);
+        console.error("CRASH SISTEM FATAL:", err.message);
       } finally {
         setLoading(false);
       }
@@ -105,7 +107,8 @@ export default function ExamRoom({ params }: { params: { exam_id: string } }) {
   // PROTOKOL ANTI-CHEAT
   useEffect(() => {
     const handleVisibilityChange = async () => {
-      if (document.hidden && student && !isBlocked) {
+      // Pastikan examId juga valid sebelum mencatat pelanggaran
+      if (document.hidden && student && !isBlocked && examId && examId !== 'undefined') {
         const newViolationCount = violationCount + 1;
         setViolationCount(newViolationCount);
 
@@ -132,7 +135,9 @@ export default function ExamRoom({ params }: { params: { exam_id: string } }) {
     setAnswers(newAnswers);
     if (doubtfulAnswers[questionId]) setDoubtfulAnswers(prev => ({ ...prev, [questionId]: false }));
     const userId = student?.nisn || student?.username;
-    if (userId) {
+    
+    // Keamanan ekstra saat mengirim jawaban
+    if (userId && examId && examId !== 'undefined') {
       await supabase.from('cbt_attempts').update({ 
         answers: newAnswers,
         updated_at: new Date().toISOString() 
@@ -152,10 +157,12 @@ export default function ExamRoom({ params }: { params: { exam_id: string } }) {
 
     setLoading(true);
     const userId = student?.nisn || student?.username;
-    await supabase.from('cbt_attempts').update({
-      submitted_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }).eq('user_id', userId).eq('exam_id', examId);
+    if (userId && examId && examId !== 'undefined') {
+      await supabase.from('cbt_attempts').update({
+        submitted_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }).eq('user_id', userId).eq('exam_id', examId);
+    }
 
     alert("Ujian Selesai! Jawaban berhasil diamankan di cloud.");
     router.push('/ujian/dashboard');
