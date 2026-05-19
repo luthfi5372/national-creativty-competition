@@ -92,14 +92,17 @@ export default function IntegratedLLMSDashboard() {
       // Hapus cascade: attempts → questions → exam
       await supabase.from('cbt_attempts').delete().eq('exam_id', deletingSession.id);
       await supabase.from('cbt_questions').delete().eq('exam_id', deletingSession.id);
-      await supabase.from('cbt_exams').delete().eq('id', deletingSession.id);
+      const { error } = await supabase.from('cbt_exams').delete().eq('id', deletingSession.id);
+      
+      if (error) throw error;
+
       setShowDeleteModal(false);
       setDeletingSession(null);
       fetchTelemetryData();
       showToast('Sesi berhasil dihapus permanen.', 'success');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Gagal hapus sesi:', err);
-      showToast('Gagal menghapus sesi.', 'error');
+      showToast('Gagal menghapus sesi: ' + (err.message || ''), 'error');
     } finally {
       setIsDeleting(false);
     }
