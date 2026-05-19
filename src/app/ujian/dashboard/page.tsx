@@ -51,24 +51,35 @@ export default function StudentDashboard() {
             .eq('exam_id', parsedUser.active_exam_id);
           setQuestionCount(count || 0);
 
-          // 3. Lapor kehadiran ke Admin (CCTV)
+          // 🔥 KODINGAN BARU: CEK & PISAHKAN DATA BERDASARKAN SESI (exam_id)
           const userId = parsedUser.nisn || parsedUser.username;
-          await supabase.from('cbt_attempts').upsert({
-            user_id: userId,
-            exam_id: parsedUser.active_exam_id,
-            updated_at: new Date().toISOString()
-          }, { onConflict: 'user_id' });
-
-          // 🔥 CEK APAKAH PESERTA SUDAH SELESAI UJIAN
-          const { data: attemptData } = await supabase
+          
+          const { data: existingAttempt } = await supabase
             .from('cbt_attempts')
-            .select('submitted_at')
+            .select('id, submitted_at')
             .eq('user_id', userId)
             .eq('exam_id', parsedUser.active_exam_id)
             .maybeSingle();
+
+          if (existingAttempt) {
+            // Jika PESERTA INI sudah punya data di SESI INI, update jam aktifnya
+            await supabase.from('cbt_attempts').update({ updated_at: new Date().toISOString() })
+              .eq('id', existingAttempt.id);
             
-          if (attemptData && attemptData.submitted_at) {
-            setIsDone(true);
+            // Cek apakah di SESI INI dia sudah selesai?
+            if (existingAttempt.submitted_at) {
+              setIsDone(true);
+            }
+          } else {
+            // Jika ini PERTAMA KALINYA masuk ke SESI INI, buatkan KERTAS KOSONG BARU!
+            await supabase.from('cbt_attempts').insert({
+              user_id: userId,
+              exam_id: parsedUser.active_exam_id,
+              violations_count: 0,
+              score: 0,
+              updated_at: new Date().toISOString()
+            });
+            setIsDone(false);
           }
         }
         setLoading(false);
