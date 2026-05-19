@@ -11,7 +11,7 @@ import {
   LogOut, Play, FileText, ShieldAlert, Plus,
   RotateCcw, Key, Clock, Monitor, Trophy,
   ShieldCheck, AlertTriangle, FileDown, ChevronRight,
-  Loader2, X, Save, Pencil, ToggleLeft, ToggleRight
+  Loader2, X, Save, Pencil, ToggleLeft, ToggleRight, Trash2
 } from "lucide-react";
 
 export default function IntegratedLLMSDashboard() {
@@ -38,6 +38,12 @@ export default function IntegratedLLMSDashboard() {
   const [editingSession, setEditingSession] = useState<any>(null);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
+  // State for Delete Session Modal
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingSession, setDeletingSession] = useState<any>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+
   const openEditModal = (session: any) => {
     setEditingSession({ ...session });
     setShowEditModal(true);
@@ -59,6 +65,30 @@ export default function IntegratedLLMSDashboard() {
       fetchTelemetryData();
     }
     setIsSavingEdit(false);
+  };
+
+  const openDeleteModal = (session: any) => {
+    setDeletingSession(session);
+    setDeleteConfirmText('');
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteSession = async () => {
+    if (!deletingSession || deleteConfirmText !== 'HAPUS') return;
+    setIsDeleting(true);
+    try {
+      // Hapus cascade: attempts → questions → exam
+      await supabase.from('cbt_attempts').delete().eq('exam_id', deletingSession.id);
+      await supabase.from('cbt_questions').delete().eq('exam_id', deletingSession.id);
+      await supabase.from('cbt_exams').delete().eq('id', deletingSession.id);
+      setShowDeleteModal(false);
+      setDeletingSession(null);
+      fetchTelemetryData();
+    } catch (err) {
+      console.error('Gagal hapus sesi:', err);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleToggleActive = async (sessionId: string, currentStatus: boolean) => {
@@ -405,6 +435,12 @@ export default function IntegratedLLMSDashboard() {
                                 </div>
                                 <span className="text-[9px] font-bold text-amber-500 mt-1">SKOR</span>
                              </Link>
+                             <button onClick={() => openDeleteModal(session)} title="Hapus Sesi Permanen" className="flex flex-col items-center group">
+                                <div className="p-2.5 bg-rose-50 text-rose-500 rounded-lg group-hover:bg-rose-500 group-hover:text-white transition-all shadow-sm">
+                                   <Trash2 className="w-5 h-5" />
+                                </div>
+                                <span className="text-[9px] font-bold text-rose-500 mt-1">HAPUS</span>
+                             </button>
                           </div>
                         </td>
                       </tr>
@@ -525,6 +561,65 @@ export default function IntegratedLLMSDashboard() {
               <button onClick={handleUpdateSession} disabled={isSavingEdit} className="w-full bg-[#5145cd] text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-indigo-700 active:scale-95 transition-all flex items-center justify-center gap-3">
                 {isSavingEdit ? <Loader2 className="animate-spin" /> : <><Save size={18} /> Simpan Perubahan</>}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- MODAL HAPUS SESI PERMANEN --- */}
+      {showDeleteModal && deletingSession && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md">
+          <div className="bg-white w-full max-w-md rounded-[3rem] p-10 shadow-2xl relative border-4 border-rose-100">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-20 h-20 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mb-5">
+                <Trash2 className="w-10 h-10" />
+              </div>
+              <h2 className="text-2xl font-black text-gray-900 tracking-tight">Hapus Sesi Permanen</h2>
+              <p className="text-sm text-gray-500 font-semibold mt-2 leading-relaxed">
+                Sesi <span className="font-black text-gray-900">&ldquo;{deletingSession.title}&rdquo;</span> beserta
+                <span className="text-rose-600 font-black"> semua soal & data peserta</span> akan dihapus selamanya.
+              </p>
+
+              <div className="w-full mt-6 p-4 bg-rose-50 rounded-2xl border border-rose-200 text-left space-y-1">
+                <p className="text-[10px] font-black text-rose-700 uppercase tracking-widest">⚠️ Aksi ini tidak bisa dibatalkan!</p>
+                <p className="text-xs text-rose-600 font-medium">Yang akan terhapus permanen:</p>
+                <ul className="text-xs text-rose-500 font-semibold space-y-0.5 list-disc list-inside">
+                  <li>Semua soal (cbt_questions)</li>
+                  <li>Semua data & skor peserta (cbt_attempts)</li>
+                  <li>Sesi ujian itu sendiri (cbt_exams)</li>
+                </ul>
+              </div>
+
+              <div className="w-full mt-5 space-y-1.5">
+                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                  Ketik <span className="text-rose-600">HAPUS</span> untuk konfirmasi
+                </label>
+                <input
+                  type="text"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value.toUpperCase())}
+                  placeholder="HAPUS"
+                  className="w-full bg-gray-50 border-2 border-gray-200 focus:border-rose-400 rounded-2xl px-5 py-3.5 text-sm font-black text-gray-700 outline-none text-center tracking-widest transition-all"
+                />
+              </div>
+
+              <div className="flex gap-3 w-full mt-6">
+                <button
+                  onClick={() => { setShowDeleteModal(false); setDeletingSession(null); }}
+                  disabled={isDeleting}
+                  className="flex-1 py-4 bg-gray-100 text-gray-700 font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-gray-200 transition-all"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={handleDeleteSession}
+                  disabled={isDeleting || deleteConfirmText !== 'HAPUS'}
+                  className="flex-1 py-4 bg-rose-500 text-white font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-rose-600 transition-all shadow-lg shadow-rose-200 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                  {isDeleting ? 'Menghapus...' : 'Hapus Permanen'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
