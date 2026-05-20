@@ -146,10 +146,23 @@ export default function UserDashboard() {
         const { data: announcementsData } = await supabase
           .from('announcements')
           .select('*')
-          .or(`target_audience.eq.All,target_audience.eq.${userStatus},target_user_ids.cs.{${user.id}}`)
+          .or(`target_audience.eq.All,target_audience.eq.${userStatus},target_audience.eq.specific`)
           .order('created_at', { ascending: false });
 
-        setAnnouncements((announcementsData || []).filter((item: any) => item.title !== 'SYS_PORTAL_SETTINGS' && item.title !== 'SYSTEM_TIMELINE_CONFIG'));
+        // Filter: hapus pengumuman sistem, dan untuk pengumuman 'specific', cek apakah user.id ada di content JSON
+        const filteredAnnouncements = (announcementsData || []).filter((item: any) => {
+          if (item.title === 'SYS_PORTAL_SETTINGS' || item.title === 'SYSTEM_TIMELINE_CONFIG') return false;
+          if (item.target_audience === 'specific') {
+            try {
+              const parsed = JSON.parse(item.content);
+              return Array.isArray(parsed.target_user_ids) && parsed.target_user_ids.includes(user.id);
+            } catch (e) {
+              return false;
+            }
+          }
+          return true;
+        });
+        setAnnouncements(filteredAnnouncements);
         
         // 3. Tarik Konfigurasi Jadwal Global (Bypass Cache)
         // 3. Tarik Konfigurasi Jadwal Global (Bypass Cache Total)

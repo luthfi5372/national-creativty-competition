@@ -901,14 +901,19 @@ export default function ModernHQDashboard() {
     setConfirmModal(prev => ({ ...prev, show: false }));
     setIsSending(true);
     try {
+      // Simpan target_user_ids di dalam content sebagai JSON agar tidak butuh kolom baru
+      const contentPayload = JSON.stringify({
+        message: broadcastMessage,
+        target_user_ids: broadcastTarget === 'specific' ? selectedUserIds : []
+      });
+
       const { error } = await supabase
         .from('announcements')
         .insert([
           {
             title: broadcastTitle,
-            content: broadcastMessage,
-            target_audience: broadcastTarget,
-            target_user_ids: broadcastTarget === 'specific' ? selectedUserIds : []
+            content: contentPayload,
+            target_audience: broadcastTarget
           }
         ]);
 

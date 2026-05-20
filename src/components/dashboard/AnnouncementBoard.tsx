@@ -37,6 +37,15 @@ export default function AnnouncementBoard({ announcements, isLoading }: Announce
             const formattedDate = isValidDate ? dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : "-";
             const formattedTime = isValidDate ? dateObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : "-";
 
+            const displayContent = (() => {
+              try {
+                const parsed = JSON.parse(announcement?.content);
+                return parsed.message || announcement?.content || "-";
+              } catch (e) {
+                return announcement?.content || "-";
+              }
+            })();
+
             return (
               <div key={announcement?.id || idx} className="bg-white border border-slate-100 p-5 rounded-2xl hover:shadow-md transition-shadow">
                 <div className="flex justify-between items-start mb-2">
@@ -46,7 +55,7 @@ export default function AnnouncementBoard({ announcements, isLoading }: Announce
                   </span>
                 </div>
                 <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-wrap">
-                  {announcement?.content || "-"}
+                  {displayContent}
                 </p>
                 {announcement?.image_url && (
                   <div className="mt-4 rounded-xl overflow-hidden border border-slate-100 shadow-sm max-w-lg">
