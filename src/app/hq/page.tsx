@@ -912,6 +912,7 @@ export default function ModernHQDashboard() {
         .insert([
           {
             title: broadcastTitle,
+            message: broadcastMessage,
             content: contentPayload,
             target_audience: broadcastTarget
           }

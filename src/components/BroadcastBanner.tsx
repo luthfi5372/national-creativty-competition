@@ -69,7 +69,7 @@ export default function BroadcastBanner({ examId }: BroadcastBannerProps) {
       <div className="flex-shrink-0 p-3 bg-white/50 rounded-2xl shadow-inner">{iconElement}</div>
       <div className="flex-1 min-w-0 text-left">
         <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-50 mb-1">{labelText}</p>
-        <p className="text-sm font-bold leading-tight">{activeAnnouncement.message}</p>
+        <p className="text-sm font-bold leading-tight">{activeAnnouncement.message || activeAnnouncement.content || "-"}</p>
       </div>
       <button 
         onClick={() => setVisible(false)}

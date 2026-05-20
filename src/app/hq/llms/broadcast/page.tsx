@@ -61,7 +61,9 @@ export default function AdminBroadcast() {
         .insert([
           { 
             title: type === 'danger' ? '🚨 Peringatan Darurat' : type === 'warning' ? '⚠️ Peringatan' : '📢 Pengumuman',
-            content: JSON.stringify({ message: message.trim(), type: type }),
+            message: message.trim(),
+            content: message.trim(),
+            type: type,
             target_audience: 'All',
             exam_id: null // Set NULL agar terpancar ke seluruh sesi ujian nasional
           }
@@ -204,14 +206,7 @@ export default function AdminBroadcast() {
                       {isDanger ? <ShieldAlert className="w-4 h-4 text-rose-500" /> : isWarning ? <AlertTriangle className="w-4 h-4 text-amber-500" /> : <Info className="w-4 h-4 text-indigo-500" />}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold text-gray-800 break-words">{(() => {
-                        try {
-                          const parsed = JSON.parse(ann.content);
-                          return parsed.message || ann.message || ann.title || "-";
-                        } catch (e) {
-                          return ann.message || ann.content || ann.title || "-";
-                        }
-                      })()}</p>
+                      <p className="text-xs font-bold text-gray-800 break-words">{ann.message || ann.content || ann.title || "-"}</p>
                       <p className="text-[9px] font-black text-gray-400 mt-1.5 uppercase tracking-wider">
                         {new Date(ann.created_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}
                       </p>

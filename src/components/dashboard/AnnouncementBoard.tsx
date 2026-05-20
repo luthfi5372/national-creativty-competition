@@ -38,6 +38,8 @@ export default function AnnouncementBoard({ announcements, isLoading }: Announce
             const formattedTime = isValidDate ? dateObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : "-";
 
             const displayContent = (() => {
+              // Prioritas: message > parsed content.message > raw content
+              if (announcement?.message) return announcement.message;
               try {
                 const parsed = JSON.parse(announcement?.content);
                 return parsed.message || announcement?.content || "-";
