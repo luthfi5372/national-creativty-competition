@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import * as htmlToImage from 'html-to-image';
 import { ImageIcon, Printer, X } from "lucide-react";
+import { generateTicketCode } from "@/lib/utils";
 
 interface IdCardModalProps {
   userEntry: any;
@@ -66,7 +67,7 @@ export default function IdCardModal({ userEntry, setShowIdCard, showToast }: IdC
               <div className="w-full bg-slate-50 p-3 rounded-xl mb-3 border border-slate-100 text-left space-y-2">
                 <div>
                   <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider whitespace-nowrap">ID Tiket Resmi</p>
-                  <p className="text-sm font-black text-slate-700 font-mono whitespace-nowrap">NCC-{userEntry?.id ? String(userEntry.id).substring(0,6).toUpperCase() : "XXXXXX"}</p>
+                  <p className="text-sm font-black text-slate-700 font-mono whitespace-nowrap">NCC-{userEntry?.id ? generateTicketCode(userEntry.id) : "XXXXXX"}</p>
                 </div>
                 <div>
                   <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider whitespace-nowrap">Asal Instansi</p>

@@ -1,5 +1,6 @@
 import { Resend } from 'resend';
 import { NextResponse } from 'next/server';
+import { generateTicketCode } from '@/lib/utils';
 
 export async function POST(request: Request) {
   try {
@@ -23,7 +24,7 @@ export async function POST(request: Request) {
             
             <div style="background-color: #ffffff; padding: 16px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #4f46e5;">
               <p style="margin: 0; font-size: 14px; color: #64748b;">ID Pendaftaran / Nomor Peserta:</p>
-              <p style="margin: 4px 0 0 0; font-size: 18px; font-weight: bold; letter-spacing: 1px;">NCC-${String(id_pendaftaran).substring(0, 6).toUpperCase()}</p>
+              <p style="margin: 4px 0 0 0; font-size: 18px; font-weight: bold; letter-spacing: 1px;">NCC-${generateTicketCode(id_pendaftaran)}</p>
             </div>
 
             <p>Silakan masuk ke Dashboard Anda untuk mengunduh Twibbon resmi dan bergabung ke dalam Grup WhatsApp peserta.</p>

@@ -2,6 +2,7 @@
 import QRCode from "react-qr-code";
 import { Printer, Download, X, Trophy } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { generateTicketCode } from "@/lib/utils";
 
 interface TicketCardProps {
   data: {
@@ -70,7 +71,7 @@ export default function TicketCard({ data, onClose }: TicketCardProps) {
         <div className="relative px-8 pt-4 pb-8 flex flex-col items-center">
           <div className="bg-white p-6 rounded-[2rem] shadow-2xl mb-8 group transition-transform hover:scale-[1.02]">
             <QRCode 
-              value={data.id} 
+              value={`NCC-${generateTicketCode(data.id)}`} 
               size={180} 
               viewBox={`0 0 256 256`}
               style={{ height: "auto", maxWidth: "100%", width: "100%" }}
@@ -85,7 +86,7 @@ export default function TicketCard({ data, onClose }: TicketCardProps) {
             </div>
             <div className="space-y-1 text-right">
               <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">ID Registrasi</span>
-              <p className="font-mono text-sm font-bold tracking-tight text-indigo-300">NCC-{data.id.slice(0, 8).toUpperCase()}</p>
+              <p className="font-mono text-sm font-bold tracking-tight text-indigo-300">NCC-{generateTicketCode(data.id)}</p>
             </div>
             <div className="space-y-1">
               <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Delegasi Lomba</span>
@@ -141,12 +142,12 @@ export default function TicketCard({ data, onClose }: TicketCardProps) {
             </div>
             <div>
                <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Nomor Peserta</span>
-               <p className="text-xl font-mono font-black">NCC-{data.id.toUpperCase()}</p>
+               <p className="text-xl font-mono font-black">NCC-{generateTicketCode(data.id)}</p>
             </div>
           </div>
           
           <div className="flex flex-col items-center justify-center border-4 border-black p-4 bg-white shrink-0">
-            <QRCode value={data.id} size={160} level="H" />
+            <QRCode value={`NCC-${generateTicketCode(data.id)}`} size={160} level="H" />
             <p className="mt-4 font-black text-xs tracking-[0.3em]">AUTO-GATE QR</p>
           </div>
         </div>

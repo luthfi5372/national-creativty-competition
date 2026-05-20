@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
+import { generateTicketCode } from '@/lib/utils';
 
 const resend = new Resend(process.env.RESEND_API_KEY || 're_dummy_fallback');
 
@@ -80,7 +81,7 @@ export async function POST(req: Request) {
               <table style="width: 100%; border-collapse: collapse;">
                 <tr>
                   <td style="padding: 10px 0; color: #64748b; font-size: 13px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Identity Check</td>
-                  <td style="padding: 10px 0; font-weight: bold; text-align: right; font-family: monospace; font-size: 15px; color: #0f172a;">NCC-${String(id).slice(0, 10).toUpperCase()}</td>
+                  <td style="padding: 10px 0; font-weight: bold; text-align: right; font-family: monospace; font-size: 15px; color: #0f172a;">NCC-${generateTicketCode(id)}</td>
                 </tr>
                 <tr>
                   <td style="padding: 10px 0; color: #64748b; font-size: 13px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; border-top: 1px solid #e2e8f0;">Delegasi Lomba</td>

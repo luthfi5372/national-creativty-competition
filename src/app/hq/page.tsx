@@ -6,6 +6,7 @@ import * as htmlToImage from 'html-to-image';
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client"; 
+import { generateTicketCode } from "@/lib/utils"; 
 import { 
   LayoutDashboard, Users, FileCheck, Settings, 
   ArrowUpRight, ArrowDownRight, Download, Calendar, 
@@ -76,7 +77,7 @@ const ParticipantRow = memo(({ entry, onRowClick, onIdCardClick, onDeleteClick }
       onClick={() => onRowClick(entry)}
       className="hover:bg-blue-50/50 transition-colors cursor-pointer"
     >
-      <td className="py-4 px-6 font-black text-blue-600">NCC-{entry.id}</td>
+      <td className="py-4 px-6 font-black text-blue-600">NCC-{generateTicketCode(entry.id)}</td>
       <td className="py-4 px-6 flex items-center gap-3">
          {photoUrl ? (
            <img 
@@ -188,7 +189,7 @@ const VerificationCard = memo(({ entry, onUpdateStatus, onDeleteClick }: Verific
         <div className="min-w-0">
           <h4 className="font-bold text-slate-800 text-base leading-tight truncate">{entry.full_name || "Peserta Anonim"}</h4>
           <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-            <span className="text-[10px] font-mono font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">NCC-{String(entry.id).substring(0,6).toUpperCase()}</span>
+            <span className="text-[10px] font-mono font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">NCC-{generateTicketCode(entry.id)}</span>
             <span className="text-xs text-slate-500 truncate max-w-[180px]">{entry.email}</span>
           </div>
           {entry.school_name && (
@@ -554,21 +555,9 @@ export default function ModernHQDashboard() {
   };
 
   const [dashboardAssets, setDashboardAssets] = useState<any>({
-    hero_banner: "",
-    card_buku_panduan: "",
-    card_twibbon: "",
-    card_kontak: "",
     gallery_title: "Moments of Excellence",
     gallery_subtitle: "A glimpse into the spirit, competition, and victory at NCC. Capturing the journey of future leaders across diverse categories.",
-    gallery_images: [
-      { url: "/gallery/IMG_8067.JPG", category: "GALLERY", label: "NCC Grand Championship" },
-      { url: "/gallery/IMG_8109.JPG", category: "ACADEMIC", label: "LKTI Research Winners" },
-      { url: "/gallery/IMG_7993.JPG", category: "SPEECH", label: "Language Excellence" },
-      { url: "/gallery/IMG_8103.JPG", category: "ARTS", label: "MTQ Quran Recital" },
-      { url: "/gallery/IMG_8143.JPG", category: "ARTS", label: "Choral Symphony" },
-      { url: "/gallery/ECL09816.JPG", category: "GALLERY", label: "Ceremonial Parade" },
-      { url: "/gallery/ECL09791.JPG", category: "ARTS", label: "Stage Performance" }
-    ]
+    gallery_images: []
   });
 
   const [isUploadingAsset, setIsUploadingAsset] = useState<string | null>(null);
@@ -1103,7 +1092,7 @@ export default function ModernHQDashboard() {
     
     // 3. Susun Baris Data
     const rows = dataToExport.map(e => [
-      `NCC-${e.id}`,
+      `NCC-${generateTicketCode(e.id)}`,
       e.full_name || "-",
       e.email || "-",
       e.nisn || "-",
@@ -1378,7 +1367,7 @@ export default function ModernHQDashboard() {
                   </div>
                   <input
                     type="text"
-                    placeholder="Cari nama, email, atau ID tiket (misal: NCC-15)..."
+                    placeholder="Cari nama, email, atau ID tiket (misal: NCC-9232)..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-slate-700"
@@ -1427,7 +1416,7 @@ export default function ModernHQDashboard() {
                       const query = searchQuery.toLowerCase();
                       return (e.full_name || "").toLowerCase().includes(query) || 
                              (e.email || "").toLowerCase().includes(query) || 
-                             `ncc-${e.id}`.toLowerCase().includes(query);
+                             `ncc-${generateTicketCode(e.id)}`.toLowerCase().includes(query);
                     })
                     .filter(e => filterCategory === "All" || (e.competition_type || e.category) === filterCategory)
                     .length === 0 ? (
@@ -1444,7 +1433,7 @@ export default function ModernHQDashboard() {
                         const query = searchQuery.toLowerCase();
                         return (e.full_name || "").toLowerCase().includes(query) || 
                                (e.email || "").toLowerCase().includes(query) || 
-                               `ncc-${e.id}`.toLowerCase().includes(query);
+                               `ncc-${generateTicketCode(e.id)}`.toLowerCase().includes(query);
                       })
                       .filter(e => filterCategory === "All" || (e.competition_type || e.category) === filterCategory)
                       .map((entry: any) => (
@@ -1590,7 +1579,7 @@ export default function ModernHQDashboard() {
                                 />
                                 <div className="flex flex-col">
                                   <span className="text-sm font-bold text-slate-800">{entry.full_name || entry.email || "Peserta Anonim"}</span>
-                                  <span className="text-[10px] text-slate-500 font-medium">NCC-{entry.id || "-"} • {entry.competition_type || entry.category || "Belum Pilih"}</span>
+                                  <span className="text-[10px] text-slate-500 font-medium">NCC-{entry.id ? generateTicketCode(entry.id) : "-"} • {entry.competition_type || entry.category || "Belum Pilih"}</span>
                                 </div>
                               </label>
                             );
@@ -2259,75 +2248,7 @@ export default function ModernHQDashboard() {
         {/* 🎛️ KONTEN TAB: MEDIA (KUSTOMISASI ASET VISUAL) */}
         {activeTab === "Media" && (
           <div className="space-y-6">
-            {/* 1. MANAJEMEN ASET DASHBOARD */}
-            <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200 mb-6">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2.5 bg-purple-100 text-purple-600 rounded-xl">
-                  <ImageIcon size={20} />
-                </div>
-                <div>
-                  <h3 className="text-xl font-black text-slate-800">Manajemen Aset Dashboard</h3>
-                  <p className="text-sm text-slate-500 mt-1">Kustomisasi gambar dan ikon pada dashboard peserta.</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {[
-                  { id: 'hero_banner', label: 'Banner Dashboard' },
-                  { id: 'card_buku_panduan', label: 'Ikon Buku Panduan' },
-                  { id: 'card_twibbon', label: 'Ikon Twibbon' },
-                  { id: 'card_kontak', label: 'Ikon Kontak' },
-                ].map((asset) => (
-                  <div key={asset.id} className="bg-white border border-slate-100 rounded-2xl p-4 flex flex-col items-center gap-4 group transition-all hover:border-purple-200">
-                    <div className="relative w-full aspect-video bg-slate-50 rounded-xl overflow-hidden border border-dashed border-slate-200 flex items-center justify-center">
-                      {dashboardAssets[asset.id] ? (
-                        <>
-                          <img src={dashboardAssets[asset.id]} alt={asset.label} className="w-full h-full object-cover" />
-                          <button 
-                            onClick={() => {
-                              setDashboardAssets((prev: any) => ({ ...prev, [asset.id]: "" }));
-                              showToast(`${asset.label} telah dihapus.`, "error");
-                            }}
-                            className="absolute top-2 right-2 p-1.5 bg-rose-500/80 hover:bg-rose-600 text-white rounded-lg backdrop-blur-sm transition-all"
-                            title="Hapus Gambar"
-                          >
-                            <Trash2 size={12} />
-                          </button>
-                        </>
-                      ) : (
-                        <div className="text-slate-300 flex flex-col items-center gap-1">
-                          <ImageIcon size={32} />
-                          <span className="text-[10px] font-bold uppercase">Belum Ada</span>
-                        </div>
-                      )}
-                      {isUploadingAsset === asset.id && (
-                        <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center">
-                          <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="w-full">
-                      <p className="text-xs font-bold text-slate-700 mb-2">{asset.label}</p>
-                      <label className="block w-full cursor-pointer">
-                        <input 
-                          type="file" 
-                          accept="image/*" 
-                          className="hidden" 
-                          onChange={(e) => handleAssetUpload(e, asset.id)}
-                          disabled={!!isUploadingAsset}
-                        />
-                        <div className="w-full py-2 bg-purple-50 text-purple-600 hover:bg-purple-600 hover:text-white rounded-xl text-[10px] font-black text-center transition-all uppercase tracking-wider">
-                          {dashboardAssets[asset.id] ? "Ganti Gambar" : "Upload Gambar"}
-                        </div>
-                      </label>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* 2. MANAJEMEN GALERI BERANDA */}
+            {/* 1. MANAJEMEN GALERI BERANDA */}
             <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-sm border border-white/60">
               <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4 border-b border-slate-100 pb-6">
                 <div className="flex items-center gap-3">
@@ -2339,21 +2260,37 @@ export default function ModernHQDashboard() {
                     <p className="text-sm text-slate-500 mt-1">Konfigurasi teks dan foto pada section Galeri.</p>
                   </div>
                 </div>
-                <label className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer">
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    className="hidden" 
-                    onChange={(e) => handleAssetUpload(e, 'gallery_add')}
-                    disabled={!!isUploadingAsset}
-                  />
-                  {isUploadingAsset === 'gallery_add' ? (
-                    <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></div>
-                  ) : (
-                    <>+</>
+                <div className="flex items-center gap-3">
+                  {dashboardAssets.gallery_images && dashboardAssets.gallery_images.length > 0 && (
+                    <button
+                      onClick={() => {
+                        if (confirm("Apakah Anda yakin ingin menghapus semua foto di galeri ini? Tindakan ini tidak dapat dibatalkan.")) {
+                          setDashboardAssets((prev: any) => ({ ...prev, gallery_images: [] }));
+                          showToast("Seluruh foto galeri berhasil dibersihkan.", "success");
+                        }
+                      }}
+                      className="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 px-5 py-2.5 rounded-xl font-bold text-sm shadow-sm transition-all active:scale-95 flex items-center gap-2"
+                    >
+                      <Trash2 size={16} />
+                      Bersihkan Galeri
+                    </button>
                   )}
-                  Tambah Foto Galeri
-                </label>
+                  <label className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer">
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      className="hidden" 
+                      onChange={(e) => handleAssetUpload(e, 'gallery_add')}
+                      disabled={!!isUploadingAsset}
+                    />
+                    {isUploadingAsset === 'gallery_add' ? (
+                      <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></div>
+                    ) : (
+                      <>+</>
+                    )}
+                    Tambah Foto Galeri
+                  </label>
+                </div>
               </div>
 
               {/* Edit Title & Subtitle */}
@@ -2574,7 +2511,7 @@ export default function ModernHQDashboard() {
                      </div>
                    
                      <div className="inline-block px-4 py-1.5 bg-black/20 rounded-full border border-white/10 text-xs text-white font-mono mt-2 mb-2">
-                       ID: NCC-{selectedIdCard.id}
+                       ID: NCC-{generateTicketCode(selectedIdCard.id)}
                      </div>
                    </div>
                  </div>

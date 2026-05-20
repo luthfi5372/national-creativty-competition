@@ -17,6 +17,7 @@ import {
   Bar
 } from "recharts";
 import { Activity, PieChart as PieIcon, TrendingUp, Zap, Loader2, Check, X } from "lucide-react";
+import { generateTicketCode } from "@/lib/utils";
 
 interface RingkasanTabProps {
   participants: any[];
@@ -163,7 +164,7 @@ export default function RingkasanTab({
             <tbody className="divide-y divide-slate-50">
               {participants.slice(0, 5).map((entry: any, idx: number) => (
                 <tr key={idx} className="hover:bg-slate-50/50 transition-colors group">
-                  <td className="py-5 px-8 font-bold text-slate-800 text-xs text-nowrap">NCC-{String(entry.id).slice(0, 8).toUpperCase()}</td>
+                  <td className="py-5 px-8 font-bold text-slate-800 text-xs text-nowrap">NCC-{generateTicketCode(entry.id)}</td>
                   <td className="py-5 px-8 flex items-center gap-3 min-w-[200px]">
                      <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-black text-xs uppercase shadow-sm group-hover:scale-110 transition-transform flex-shrink-0">
                        {(entry.full_name || entry.email || "P").charAt(0)}
