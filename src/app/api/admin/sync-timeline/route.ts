@@ -32,6 +32,7 @@ export async function POST(request: Request) {
         .from('announcements')
         .insert([{ 
           title: 'SYSTEM_TIMELINE_CONFIG', 
+          message: 'SYSTEM_TIMELINE_CONFIG',
           content: JSON.stringify(cleanData),
           target_audience: 'All'
         }])
