@@ -2771,8 +2771,8 @@ export default function ModernHQDashboard() {
 
         {/* ================= PANEL 2: MODAL GENERATOR ID CARD ================= */}
         {selectedIdCard && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-md transition-all">
-            <div className="w-full max-w-sm bg-white/90 backdrop-blur-xl rounded-3xl border border-white/60 p-6 shadow-2xl relative animate-in zoom-in-95 duration-200">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 transition-all">
+            <div className="w-full max-w-sm bg-white rounded-3xl border border-slate-100 p-6 shadow-2xl relative animate-in zoom-in-95 duration-200">
                <button onClick={() => setSelectedIdCard(null)} className="absolute top-4 right-4 p-2 bg-black/5 hover:bg-black/10 rounded-full transition-colors z-10"><X size={16} className="text-slate-600"/></button>
                
                {/* Area foto — wrapper dengan padding agar border-radius tidak terpotong */}
@@ -2852,12 +2852,12 @@ export default function ModernHQDashboard() {
       {/* ========================================================= */}
       {/* 🌟 MODAL KONFIRMASI LIQUID GLASS (MENGGANTIKAN window.confirm) */}
       {/* ========================================================= */}
-      <div className={`fixed inset-0 z-[90] flex items-center justify-center p-4 transition-all duration-300 ${confirmModal.show ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+      <div className={`fixed inset-0 z-[90] flex items-center justify-center p-4 transition-all duration-200 ${confirmModal.show ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
         {/* Latar Belakang Gelap */}
-        <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setConfirmModal(prev => ({ ...prev, show: false }))}></div>
+        <div className="absolute inset-0 bg-slate-900/45" onClick={() => setConfirmModal(prev => ({ ...prev, show: false }))}></div>
         
         {/* Kotak Modal */}
-        <div className={`bg-white/90 backdrop-blur-3xl border border-white/60 shadow-2xl rounded-[2rem] p-8 max-w-md w-full relative transition-all duration-500 transform ${confirmModal.show ? 'scale-100 translate-y-0' : 'scale-95 translate-y-8'}`}>
+        <div className={`bg-white border border-slate-100 shadow-2xl rounded-[2rem] p-8 max-w-md w-full relative transition-all duration-200 transform ${confirmModal.show ? 'scale-100 translate-y-0' : 'scale-[0.98] translate-y-2'}`}>
           <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-[1.5rem] flex items-center justify-center mb-6 shadow-inner mx-auto border border-blue-100/50">
             <Megaphone size={36} />
           </div>
@@ -2884,10 +2884,10 @@ export default function ModernHQDashboard() {
       {/* ========================================================= */}
       {/* 🚨 MODAL KONFIRMASI DELETE (PEMUSNAH) */}
       {/* ========================================================= */}
-      <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 transition-all duration-300 ${deleteModal.show ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-        <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setDeleteModal({ ...deleteModal, show: false })}></div>
+      <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 transition-all duration-200 ${deleteModal.show ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+        <div className="absolute inset-0 bg-slate-900/50" onClick={() => setDeleteModal({ ...deleteModal, show: false })}></div>
         
-        <div className={`bg-white backdrop-blur-3xl border border-red-100 shadow-2xl rounded-[2rem] p-8 max-w-md w-full relative transition-all duration-500 transform ${deleteModal.show ? 'scale-100 translate-y-0' : 'scale-95 translate-y-8'}`}>
+        <div className={`bg-white border border-red-100 shadow-2xl rounded-[2rem] p-8 max-w-md w-full relative transition-all duration-200 transform ${deleteModal.show ? 'scale-100 translate-y-0' : 'scale-[0.98] translate-y-2'}`}>
           <div className="w-20 h-20 bg-red-50 text-red-600 rounded-[1.5rem] flex items-center justify-center mb-6 shadow-inner mx-auto border border-red-100/50">
             <Trash2 size={36} />
           </div>
@@ -2914,9 +2914,9 @@ export default function ModernHQDashboard() {
       </div>
 
       {/* MODAL TAMBAH MANUAL */}
-      <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 transition-all duration-300 ${showAddModal ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-        <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => !isAdding && setShowAddModal(false)}></div>
-        <div className={`bg-white rounded-3xl p-6 md:p-8 w-full max-w-2xl relative transition-all duration-500 transform overflow-y-auto max-h-[90vh] ${showAddModal ? 'scale-100 translate-y-0' : 'scale-95 translate-y-8'}`}>
+      <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 transition-all duration-200 ${showAddModal ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+        <div className="absolute inset-0 bg-slate-900/50" onClick={() => !isAdding && setShowAddModal(false)}></div>
+        <div className={`bg-white rounded-3xl p-6 md:p-8 w-full max-w-2xl relative transition-all duration-200 transform overflow-y-auto max-h-[90vh] ${showAddModal ? 'scale-100 translate-y-0' : 'scale-[0.98] translate-y-2'}`}>
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
               <Users className="text-blue-600" size={20} /> Tambah Peserta Manual
@@ -2976,9 +2976,9 @@ export default function ModernHQDashboard() {
       </div>
 
       {/* MODAL IMPORT CSV */}
-      <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 transition-all duration-300 ${showImportModal ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-        <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => !isImporting && setShowImportModal(false)}></div>
-        <div className={`bg-white rounded-3xl p-6 md:p-8 w-full max-w-2xl relative transition-all duration-500 transform overflow-y-auto max-h-[90vh] ${showImportModal ? 'scale-100 translate-y-0' : 'scale-95 translate-y-8'}`}>
+      <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 transition-all duration-200 ${showImportModal ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+        <div className="absolute inset-0 bg-slate-900/50" onClick={() => !isImporting && setShowImportModal(false)}></div>
+        <div className={`bg-white rounded-3xl p-6 md:p-8 w-full max-w-2xl relative transition-all duration-200 transform overflow-y-auto max-h-[90vh] ${showImportModal ? 'scale-100 translate-y-0' : 'scale-[0.98] translate-y-2'}`}>
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
               <FolderOpen className="text-blue-600" size={20} /> Import Data CSV
@@ -3057,7 +3057,7 @@ export default function ModernHQDashboard() {
                 <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-2xl p-5 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div>
                     <h4 className="font-bold text-base flex items-center gap-2">
-                      <Sparkles size={18} className="text-yellow-300 animate-pulse shrink-0" />
+                      <Sparkles size={18} className="text-yellow-300 shrink-0" />
                       Format Database NCC 13th
                     </h4>
                     <p className="text-xs text-blue-100 mt-1 leading-relaxed">
