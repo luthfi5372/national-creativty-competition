@@ -140,6 +140,33 @@ export default function RegistrationModal({
             </div>
           </div>
 
+          {/* BLOK DATA PEMBINA */}
+          <div className="md:col-span-2 mt-2">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-5 bg-slate-50 rounded-2xl border border-slate-200">
+              <div className="md:col-span-1">
+                <label className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider block mb-1 px-1">Nama Pembina</label>
+                <input required type="text" className="w-full p-3.5 bg-white border border-slate-200 rounded-xl text-sm focus:border-indigo-500 outline-none" 
+                  placeholder="Nama Lengkap Pembina" 
+                  value={formData.mentor_name || ""}
+                  onChange={(e) => setFormData({...formData, mentor_name: e.target.value})} />
+              </div>
+              <div className="md:col-span-1">
+                <label className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider block mb-1 px-1">Email Pembina</label>
+                <input required type="email" className="w-full p-3.5 bg-white border border-slate-200 rounded-xl text-sm focus:border-indigo-500 outline-none" 
+                  placeholder="pembina@sekolah.sch.id" 
+                  value={formData.mentor_email || ""}
+                  onChange={(e) => setFormData({...formData, mentor_email: e.target.value})} />
+              </div>
+              <div className="md:col-span-1">
+                <label className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider block mb-1 px-1">No. HP Pembina</label>
+                <input required type="text" className="w-full p-3.5 bg-white border border-slate-200 rounded-xl text-sm focus:border-indigo-500 outline-none" 
+                  placeholder="Contoh: 08123456789" 
+                  value={formData.mentor_phone || ""}
+                  onChange={(e) => setFormData({...formData, mentor_phone: e.target.value.replace(/\D/g, "")})} />
+              </div>
+            </div>
+          </div>
+
           {/* BLOK DINAMIS TIM */}
           <div className={`md:col-span-2 ${isTeamEvent ? "block mt-2" : "hidden"}`}>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-5 bg-slate-50 rounded-2xl border border-slate-200">

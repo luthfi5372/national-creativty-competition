@@ -119,8 +119,21 @@ const ParticipantRow = memo(({ entry, onRowClick, onIdCardClick, onDeleteClick }
         <span className="bg-slate-100/80 text-slate-700 px-2.5 py-1 rounded-md text-[11px] font-bold border border-slate-200/60">
           {entry.competition_type || entry.category || "Belum Pilih"}
         </span>
-        <div className="text-[11px] text-slate-500 mt-1.5">
-          Pembina: <span className="font-medium text-slate-700">{entry.mentor_name || "-"}</span>
+        <div className="text-[11px] text-slate-500 mt-1.5 flex flex-col gap-0.5">
+          {(() => {
+            const rawMentor = entry.mentor_name || "";
+            if (rawMentor.includes(" | ")) {
+              const [name, email, phone] = rawMentor.split(" | ");
+              return (
+                <>
+                  <div>Pembina: <span className="font-bold text-slate-700">{name || "-"}</span></div>
+                  {email && <div className="text-[10px] text-slate-400 font-mono select-all">Email: {email}</div>}
+                  {phone && <div className="text-[10px] text-slate-400 font-mono select-all">Telp: {phone}</div>}
+                </>
+              );
+            }
+            return <div>Pembina: <span className="font-medium text-slate-700">{rawMentor || "-"}</span></div>;
+          })()}
         </div>
       </td>
       <td className="py-4 px-6">
@@ -295,7 +308,7 @@ export default function ModernHQDashboard() {
   const [showImportModal, setShowImportModal] = useState(false);
   const [newParticipant, setNewParticipant] = useState({
     full_name: "", email: "", nisn: "", school_name: "", province: "", city: "",
-    category: "", mentor_name: "", phone_number: ""
+    category: "", mentor_name: "", mentor_email: "", mentor_phone: "", phone_number: ""
   });
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [isImporting, setIsImporting] = useState(false);
@@ -1047,6 +1060,12 @@ export default function ModernHQDashboard() {
     setIsAdding(true);
     try {
       const entryId = crypto.randomUUID();
+      const combinedMentor = [
+        newParticipant.mentor_name?.trim(),
+        newParticipant.mentor_email?.trim(),
+        newParticipant.mentor_phone?.trim()
+      ].filter(Boolean).join(" | ");
+
       const insertData = {
         id: entryId,
         user_id: crypto.randomUUID(), // fake user_id for manual entry
@@ -1057,7 +1076,7 @@ export default function ModernHQDashboard() {
         province: newParticipant.province,
         city: newParticipant.city,
         competition_type: newParticipant.category,
-        mentor_name: newParticipant.mentor_name,
+        mentor_name: combinedMentor,
         phone_number: newParticipant.phone_number,
         payment_status: 'Verified'
       };
@@ -1067,7 +1086,7 @@ export default function ModernHQDashboard() {
       
       showToast("Peserta berhasil ditambahkan ke Buku Induk!", "success");
       setShowAddModal(false);
-      setNewParticipant({full_name: "", email: "", nisn: "", school_name: "", province: "", city: "", category: "", mentor_name: "", phone_number: ""});
+      setNewParticipant({full_name: "", email: "", nisn: "", school_name: "", province: "", city: "", category: "", mentor_name: "", mentor_email: "", mentor_phone: "", phone_number: ""});
       
       // Refresh Data
       const { data } = await supabase.from('competition_entries').select('*').neq('email', 'admin1@ncc.id').order('created_at', { ascending: false });
@@ -1285,22 +1304,40 @@ export default function ModernHQDashboard() {
     if (dataToExport.length === 0) return alert("Tidak ada data peserta terverifikasi untuk di-ekspor.");
 
     // 2. Tentukan Header Kolom
-    const headers = ["ID Tiket", "Nama Lengkap", "Email", "NISN", "Sekolah", "Provinsi", "Kategori", "Pembina", "Waktu Daftar", "Username Login", "Password Login"];
+    const headers = [
+      "ID Tiket", "Nama Lengkap", "Email", "NISN", "Sekolah", "Provinsi", "Kategori", 
+      "Nama Pembina", "Email Pembina", "No. HP Pembina", 
+      "Waktu Daftar", "Username Login", "Password Login"
+    ];
     
     // 3. Susun Baris Data
-    const rows = dataToExport.map(e => [
-      `NCC-${generateTicketCode(e.id)}`,
-      e.full_name || "-",
-      e.email || "-",
-      e.nisn || "-",
-      e.school_name || e.school || "-",
-      e.province || e.city || "-",
-      e.competition_type || e.category || "-",
-      e.mentor_name || "-",
-      new Date(e.created_at).toLocaleString('id-ID'),
-      e.email || "-",
-      e.nisn || "-"
-    ]);
+    const rows = dataToExport.map(e => {
+      let mName = e.mentor_name || "-";
+      let mEmail = "-";
+      let mPhone = "-";
+      if (mName.includes(" | ")) {
+        const parts = mName.split(" | ");
+        mName = parts[0] || "-";
+        mEmail = parts[1] || "-";
+        mPhone = parts[2] || "-";
+      }
+
+      return [
+        `NCC-${generateTicketCode(e.id)}`,
+        e.full_name || "-",
+        e.email || "-",
+        e.nisn || "-",
+        e.school_name || e.school || "-",
+        e.province || e.city || "-",
+        e.competition_type || e.category || "-",
+        mName,
+        mEmail,
+        mPhone,
+        new Date(e.created_at).toLocaleString('id-ID'),
+        e.email || "-",
+        e.nisn || "-"
+      ];
+    });
 
     // 4. Gabungkan menjadi format CSV
     const csvContent = [headers, ...rows].map(row => row.join(",")).join("\n");
@@ -2971,6 +3008,14 @@ export default function ModernHQDashboard() {
               <div>
                 <label className="text-xs font-bold text-slate-500 mb-1 block">Nama Pembina (Opsional)</label>
                 <input type="text" value={newParticipant.mentor_name} onChange={e => setNewParticipant({...newParticipant, mentor_name: e.target.value})} className="w-full p-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm bg-slate-50" placeholder="Nama Pembina" />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-500 mb-1 block">Email Pembina (Opsional)</label>
+                <input type="email" value={newParticipant.mentor_email} onChange={e => setNewParticipant({...newParticipant, mentor_email: e.target.value})} className="w-full p-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm bg-slate-50" placeholder="pembina@sekolah.sch.id" />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-500 mb-1 block">No. HP Pembina (Opsional)</label>
+                <input type="text" value={newParticipant.mentor_phone} onChange={e => setNewParticipant({...newParticipant, mentor_phone: e.target.value.replace(/\D/g, "")})} className="w-full p-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm bg-slate-50" placeholder="Contoh: 08123456789" />
               </div>
             </div>
             

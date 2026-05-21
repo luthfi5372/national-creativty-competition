@@ -46,6 +46,8 @@ export default function UserDashboard() {
     province: "",
     competition_type: "Olimpiade MIPA",
     mentor_name: "",
+    mentor_email: "",
+    mentor_phone: "",
     team_name: "",
     participant2_name: "",
     participant2_nisn: ""
@@ -95,6 +97,16 @@ export default function UserDashboard() {
         if (entry) {
           setUserEntry(entry); // Ambil yang paling baru jika ada banyak
           
+          let mName = entry.mentor_name || "";
+          let mEmail = "";
+          let mPhone = "";
+          if (mName.includes(" | ")) {
+            const parts = mName.split(" | ");
+            mName = parts[0] || "";
+            mEmail = parts[1] || "";
+            mPhone = parts[2] || "";
+          }
+
           // Sinkronkan form data dengan data yang sudah ada di database
           setFormData({
             full_name: entry.full_name || user.user_metadata?.full_name || "",
@@ -102,7 +114,9 @@ export default function UserDashboard() {
             nisn: entry.nisn || "",
             province: entry.province || "",
             competition_type: entry.competition_type || "Olimpiade MIPA",
-            mentor_name: entry.mentor_name || "",
+            mentor_name: mName,
+            mentor_email: mEmail,
+            mentor_phone: mPhone,
             team_name: entry.team_name || "",
             participant2_name: entry.participant2_name || "",
             participant2_nisn: entry.participant2_nisn || ""
@@ -270,6 +284,12 @@ export default function UserDashboard() {
 
       const isTeam = localFormData?.competition_type === "Olimpiade MIPA" || localFormData?.competition_type === "LKTI Nasional";
 
+      const combinedMentor = [
+        localFormData.mentor_name?.trim(),
+        localFormData.mentor_email?.trim(),
+        localFormData.mentor_phone?.trim()
+      ].filter(Boolean).join(" | ");
+
       const { error: dbError } = await supabase
         .from('competition_entries')
         .insert([{
@@ -280,7 +300,7 @@ export default function UserDashboard() {
           nisn: localFormData.nisn,
           province: localFormData.province,
           competition_type: localFormData.competition_type,
-          mentor_name: localFormData.mentor_name,
+          mentor_name: combinedMentor,
           team_name: isTeam ? localFormData.team_name : null,
           participant2_name: isTeam ? localFormData.participant2_name : null,
           participant2_nisn: isTeam ? localFormData.participant2_nisn : null,
