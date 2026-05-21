@@ -1881,7 +1881,7 @@ export default function ModernHQDashboard() {
                           key={broadcast.id} 
                           className="bg-white/80 backdrop-blur-md border border-slate-200/60 p-4 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.01)] hover:shadow-md hover:border-slate-300/80 transition-all duration-300 relative group"
                         >
-                          <div className="flex justify-between items-start gap-4 mb-2">
+                          <div className="flex justify-between items-center gap-4 mb-2 pr-12">
                             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${style}`}>
                               {label}
                             </span>
@@ -1890,7 +1890,7 @@ export default function ModernHQDashboard() {
                             </span>
                           </div>
                           
-                          <h4 className="text-sm font-bold text-slate-800 leading-snug pr-8 group-hover:text-blue-600 transition-colors">
+                          <h4 className="text-sm font-bold text-slate-800 leading-snug pr-12 group-hover:text-blue-600 transition-colors">
                             {broadcast.title}
                           </h4>
                           
