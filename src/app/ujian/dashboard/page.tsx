@@ -4,8 +4,6 @@ import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import dynamic from 'next/dynamic';
-import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
 import { generateTicketCode } from '@/lib/utils';
 import { 
   UserIcon, 
@@ -146,6 +144,13 @@ export default function StudentDashboard() {
     if (!element) return;
     setIsGeneratingPDF(true);
     try {
+      // Dynamic import — hanya dijalankan di browser, tidak saat SSR/build
+      const [{ jsPDF }, html2canvasModule] = await Promise.all([
+        import('jspdf'),
+        import('html2canvas')
+      ]);
+      const html2canvas = html2canvasModule.default;
+
       // Tampilkan elemen sementara untuk di-render
       element.style.opacity = '1';
       element.style.position = 'fixed';
