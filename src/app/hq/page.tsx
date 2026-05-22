@@ -97,10 +97,10 @@ const ParticipantRow = memo(({ entry, onRowClick, onIdCardClick, onDeleteClick }
              {entry.email || "Email tidak ada"} <span className="mx-1 text-slate-300">|</span> NISN: <span className="font-medium text-slate-600">{entry.nisn || "-"}</span>
            </div>
            <div className="text-[10px] bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded border border-indigo-100 w-max mt-1.5 flex items-center gap-1">
-             <span>Login &rarr;</span>
-             <span>U: <span className="font-mono select-all">{entry.email || "-"}</span></span>
+             <span>Login CBT &rarr;</span>
+             <span>ID Tiket: <span className="font-mono select-all tracking-widest">NCC-{generateTicketCode(entry.id)}</span></span>
              <span className="text-indigo-300">|</span>
-             <span>P: <span className="font-mono select-all">{entry.nisn || "-"}</span></span>
+             <span>Token: <span className="text-indigo-400 font-medium">Live (10 mnt)</span></span>
            </div>
          </div>
       </td>
