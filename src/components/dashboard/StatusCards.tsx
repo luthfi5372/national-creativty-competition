@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { AlertCircle, CheckCircle2, Clock, User, IdCard, ImageIcon, FolderOpen, BookOpen, MessageCircle, Target, Sparkles, ChevronRight } from "lucide-react";
+import { AlertCircle, CheckCircle2, Clock, User, IdCard, ImageIcon, FolderOpen, BookOpen, MessageCircle, Target, Sparkles, ChevronRight, Ticket } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
+import { generateTicketCode } from "@/lib/utils";
 
 interface StatusCardsProps {
   userEntry: any;
@@ -255,6 +256,27 @@ export default function StatusCards({
 
           {!isEditingProfile ? (
             <div className="space-y-3 text-xs">
+
+              {/* ── ID TIKET CBT ─────────────────────────────── */}
+              {userEntry.id && (
+                <div className="mb-3 p-3 bg-gradient-to-r from-indigo-600 to-[#5145cd] rounded-2xl text-white relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full blur-xl -translate-y-4 translate-x-4 pointer-events-none" />
+                  <div className="flex items-center gap-2 mb-1 relative z-10">
+                    <Ticket size={13} className="text-indigo-200" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-indigo-200">ID Tiket Login CBT</span>
+                  </div>
+                  <div className="relative z-10 flex items-center justify-between">
+                    <span className="font-mono font-black text-xl tracking-[0.18em] text-white select-all">
+                      NCC-{generateTicketCode(userEntry.id)}
+                    </span>
+                    <span className="text-[9px] text-indigo-200 font-bold">Salin & ingat kode ini</span>
+                  </div>
+                  <p className="text-[9px] text-indigo-200/80 font-medium mt-1 relative z-10">
+                    Gunakan kode ini saat masuk Portal Ujian CBT.
+                  </p>
+                </div>
+              )}
+
               {[
                 { label: "Nama Lengkap", value: userEntry.full_name },
                 { label: "Asal Sekolah", value: userEntry.school_name || userEntry.school },
