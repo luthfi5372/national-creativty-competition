@@ -61,15 +61,15 @@ export default function ParticipantsBook() {
           </Link>
           
           {/* ACTIVE MENU: Buku Peserta */}
-          <Link href="/hq/participants" className="flex items-center justify-between px-4 py-3 bg-slate-900 text-white rounded-xl shadow-md shadow-slate-200 transition-all font-semibold text-sm">
+          <Link href="/hq?tab=Peserta" className="flex items-center justify-between px-4 py-3 bg-slate-900 text-white rounded-xl shadow-md shadow-slate-200 transition-all font-semibold text-sm">
             <div className="flex items-center space-x-3">
                <Users className="w-5 h-5 text-indigo-400" />
                <span>Buku Peserta</span>
             </div>
-            <span className="bg-indigo-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">{participants.length}</span>
+            <span className="bg-indigo-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">11</span>
           </Link>
           
-          <Link href="/hq/verification" className="flex items-center justify-between px-4 py-3 text-gray-500 hover:bg-gray-50 rounded-xl transition-all font-semibold text-sm">
+          <Link href="/hq?tab=Verifikasi" className="flex items-center justify-between px-4 py-3 text-gray-500 hover:bg-gray-50 rounded-xl transition-all font-semibold text-sm">
             <div className="flex items-center space-x-3">
                <BadgeCheck className="w-5 h-5" />
                <span>Verifikasi Berkas</span>
@@ -82,17 +82,17 @@ export default function ParticipantsBook() {
             <span>Siaran Info</span>
           </Link>
           
-          <Link href="#" className="flex items-center space-x-3 px-4 py-3 text-gray-500 hover:bg-gray-50 rounded-xl transition-all font-semibold text-sm">
+          <Link href="/hq?tab=Kegiatan" className="flex items-center space-x-3 px-4 py-3 text-gray-500 hover:bg-gray-50 rounded-xl transition-all font-semibold text-sm">
             <Calendar className="w-5 h-5" />
             <span>Kegiatan</span>
           </Link>
 
-          <Link href="#" className="flex items-center space-x-3 px-4 py-3 text-gray-500 hover:bg-gray-50 rounded-xl transition-all font-semibold text-sm">
+          <Link href="/hq?tab=Schedule" className="flex items-center space-x-3 px-4 py-3 text-gray-500 hover:bg-gray-50 rounded-xl transition-all font-semibold text-sm">
             <Clock className="w-5 h-5" />
             <span>Schedule Lomba</span>
           </Link>
           
-          <Link href="#" className="flex items-center space-x-3 px-4 py-3 text-gray-500 hover:bg-gray-50 rounded-xl transition-all font-semibold text-sm">
+          <Link href="/hq?tab=Media" className="flex items-center space-x-3 px-4 py-3 text-gray-500 hover:bg-gray-50 rounded-xl transition-all font-semibold text-sm">
             <ImageIcon className="w-5 h-5" />
             <span>Kelola Media</span>
           </Link>

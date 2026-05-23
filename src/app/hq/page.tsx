@@ -1,9 +1,9 @@
 "use client";
 export const dynamic = 'force-dynamic';
 
-import React, { useState, useEffect, useRef, memo } from "react";
+import React, { useState, useEffect, useRef, memo, Suspense } from "react";
 import * as htmlToImage from 'html-to-image';
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client"; 
 import { generateTicketCode } from "@/lib/utils"; 
@@ -294,14 +294,22 @@ const VerificationCard = memo(({ entry, onUpdateStatus, onDeleteClick }: Verific
          prevProps.entry.team_name === nextProps.entry.team_name;
 });
 
-export default function ModernHQDashboard() {
+function ModernHQDashboardContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
   const [isLoading, setIsLoading] = useState(true);
   const [realEntries, setRealEntries] = useState<any[]>([]);
   const [dynamicChartData, setDynamicChartData] = useState<any[]>([]);
   const [dynamicBarData, setDynamicBarData] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('Dashboard');
+
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
   
   // Fitur Tambah Peserta & Import CSV
   const [showAddModal, setShowAddModal] = useState(false);
@@ -3235,6 +3243,21 @@ export default function ModernHQDashboard() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ModernHQDashboard() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen w-screen items-center justify-center bg-[#f8fafc]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-2">Memuat Command Center...</p>
+        </div>
+      </div>
+    }>
+      <ModernHQDashboardContent />
+    </Suspense>
   );
 }
 
