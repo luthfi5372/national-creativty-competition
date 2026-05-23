@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -75,25 +77,60 @@ export default function SettingsDashboard() {
 
     // Simpan status portal (Gerbang Pendaftaran & Waves) ke announcements
     let portalError = null;
-    if (portalSettingsData) {
+    
+    // Inisialisasi ID dan konten teraktual
+    let activeContent = portalSettingsData?.content;
+    let activeId = portalSettingsData?.id;
+    
+    if (!activeId) {
+      const { data: existing } = await supabase
+        .from('announcements')
+        .select('id, content')
+        .eq('title', 'SYS_PORTAL_SETTINGS')
+        .maybeSingle();
+      if (existing) {
+        activeId = existing.id;
+        activeContent = existing.content;
+      }
+    }
+
+    let parsed = { isRegistrationOpen: isRegistrationOpen, waves: waves, paymentRequirementStage: paymentRequirementStage };
+    if (activeContent) {
       try {
-        const parsed = JSON.parse(portalSettingsData.content);
+        parsed = { ...parsed, ...JSON.parse(activeContent) };
         parsed.waves = waves;
         parsed.isRegistrationOpen = isRegistrationOpen;
         parsed.paymentRequirementStage = paymentRequirementStage;
-        const newContent = JSON.stringify(parsed);
-        const { error: pErr } = await supabase
-          .from('announcements')
-          .update({ content: newContent })
-          .eq('title', 'SYS_PORTAL_SETTINGS');
-        if (pErr) {
-          portalError = pErr;
-        } else {
-          setPortalSettingsData({ ...portalSettingsData, content: newContent });
-        }
-      } catch (e: any) {
-        console.error(e);
-        portalError = e;
+      } catch (e) {}
+    }
+    const newContent = JSON.stringify(parsed);
+
+    if (activeId) {
+      const { data: uData, error: pErr } = await supabase
+        .from('announcements')
+        .update({ content: newContent })
+        .eq('id', activeId)
+        .select()
+        .single();
+      if (pErr) {
+        portalError = pErr;
+      } else if (uData) {
+        setPortalSettingsData(uData);
+      }
+    } else {
+      const { data: iData, error: pErr } = await supabase
+        .from('announcements')
+        .insert([{
+          title: 'SYS_PORTAL_SETTINGS',
+          content: newContent,
+          target_audience: 'All'
+        }])
+        .select()
+        .single();
+      if (pErr) {
+        portalError = pErr;
+      } else if (iData) {
+        setPortalSettingsData(iData);
       }
     }
 
