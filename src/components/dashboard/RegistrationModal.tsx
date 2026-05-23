@@ -5,7 +5,7 @@ interface RegistrationModalProps {
   initialData: any;
   isSubmitting: boolean;
   setShowForm: (show: boolean) => void;
-  onSubmit: (data: any, file: File | null) => void;
+  onSubmit: (data: any) => void;
 }
 
 export default function RegistrationModal({
@@ -16,13 +16,12 @@ export default function RegistrationModal({
 }: RegistrationModalProps) {
   // 🚀 LITE VERSION: No heavy blurs or complex transitions to ensure zero lag
   const [formData, setFormData] = useState(initialData);
-  const [file, setFile] = useState<File | null>(null);
 
   const isTeamEvent = formData?.competition_type === "Olimpiade MIPA" || formData?.competition_type === "LKTI Nasional";
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData, file);
+    onSubmit(formData);
   };
 
   return (
@@ -123,21 +122,7 @@ export default function RegistrationModal({
                 <option value="Papua Selatan">Papua Selatan</option>
               </select>
             </div>
-            <div>
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5 px-1">Bukti Transfer</label>
-              <div className={`border-2 border-dashed rounded-xl p-5 text-center transition-all cursor-pointer relative ${file ? 'border-emerald-200 bg-emerald-50/50' : 'border-slate-200 hover:border-blue-300 bg-slate-50'}`}>
-                <input required type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" 
-                  onChange={(e) => setFile(e.target.files?.[0] || null)} />
-                <div className="flex flex-col items-center gap-1.5">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${file ? 'bg-emerald-100 text-emerald-600' : 'bg-white text-slate-400 shadow-sm'}`}>
-                    {file ? <CheckCircle2 size={20} /> : <Upload size={20} />}
-                  </div>
-                  <p className={`text-[11px] font-bold ${file ? 'text-emerald-700' : 'text-slate-500'}`}>
-                    {file ? file.name : "Klik pilih berkas"}
-                  </p>
-                </div>
-              </div>
-            </div>
+            {/* Bukti transfer dipindahkan ke halaman dashboard utama sebagai note/kartu premium */}
           </div>
 
           {/* BLOK DATA PEMBINA */}

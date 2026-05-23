@@ -25,6 +25,7 @@ export default function SettingsDashboard() {
   const [isRegistrationOpen, setIsRegistrationOpen] = useState(true);
   const [waves, setWaves] = useState<any[]>([]);
   const [portalSettingsData, setPortalSettingsData] = useState<any>(null);
+  const [paymentRequirementStage, setPaymentRequirementStage] = useState('registration');
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -46,6 +47,7 @@ export default function SettingsDashboard() {
           const parsed = JSON.parse(portalData.content);
           if (parsed.isRegistrationOpen !== undefined) setIsRegistrationOpen(parsed.isRegistrationOpen);
           if (parsed.waves) setWaves(parsed.waves);
+          if (parsed.paymentRequirementStage !== undefined) setPaymentRequirementStage(parsed.paymentRequirementStage);
         } catch (e) {
           console.error("Gagal parsing portal settings:", e);
         }
@@ -77,6 +79,7 @@ export default function SettingsDashboard() {
         const parsed = JSON.parse(portalSettingsData.content);
         parsed.waves = waves;
         parsed.isRegistrationOpen = isRegistrationOpen;
+        parsed.paymentRequirementStage = paymentRequirementStage;
         const newContent = JSON.stringify(parsed);
         const { error: pErr } = await supabase
           .from('announcements')
@@ -100,6 +103,39 @@ export default function SettingsDashboard() {
     } else {
       setToastMessage("Beberapa pengaturan gagal disimpan.");
       setTimeout(() => setToastMessage(""), 3000);
+    }
+  };
+
+  const handleUpdatePaymentStage = async (newStage: string) => {
+    if (portalSettingsData) {
+      try {
+        const parsed = JSON.parse(portalSettingsData.content);
+        parsed.paymentRequirementStage = newStage;
+        const newContent = JSON.stringify(parsed);
+        const { error } = await supabase
+          .from('announcements')
+          .update({ content: newContent })
+          .eq('title', 'SYS_PORTAL_SETTINGS');
+        
+        if (error) {
+          console.error("Gagal menyimpan tahap pembayaran:", error);
+          setToastMessage(`Gagal menyimpan: ${error.message}`);
+          setTimeout(() => setToastMessage(""), 4000);
+        } else {
+          setPaymentRequirementStage(newStage);
+          setPortalSettingsData({ ...portalSettingsData, content: newContent });
+          setToastMessage(`Kewajiban Pembayaran diatur ke: ${
+            newStage === 'registration' ? 'Awal Pendaftaran' :
+            newStage === 'tahap1' ? 'Lolos Tahap 1' :
+            newStage === 'tahap2' ? 'Lolos Tahap 2' : 'Bebas Biaya'
+          }`);
+          setTimeout(() => setToastMessage(""), 3000);
+        }
+      } catch (e: any) {
+        console.error(e);
+        setToastMessage(`Gagal memproses data: ${e.message}`);
+        setTimeout(() => setToastMessage(""), 4000);
+      }
     }
   };
 
@@ -338,6 +374,87 @@ export default function SettingsDashboard() {
                 </p>
               </div>
             )}
+          </div>
+
+          {/* 1.5. KONFIGURASI KEWAJIBAN PEMBAYARAN */}
+          <div className="bg-white rounded-[24px] p-8 shadow-sm border border-gray-100">
+            <div className="mb-6">
+              <h3 className="text-xl font-black text-slate-800">Kewajiban Pembayaran Lomba</h3>
+              <p className="text-sm text-slate-500 mt-1">Tentukan pada fase/tahap mana peserta diwajibkan untuk menyelesaikan administrasi pembayaran.</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[
+                {
+                  id: 'registration',
+                  title: 'Awal Pendaftaran',
+                  desc: 'Peserta wajib membayar langsung setelah mendaftar biodata untuk mengaktifkan akun.',
+                  badge: 'Tahap Awal',
+                  color: 'indigo'
+                },
+                {
+                  id: 'tahap1',
+                  title: 'Lolos Tahap 1',
+                  desc: 'Peserta mendaftar gratis. Pembayaran hanya ditagih jika peserta dinyatakan lolos Babak Penyisihan (Tahap 1).',
+                  badge: 'Semi-Finalis',
+                  color: 'blue'
+                },
+                {
+                  id: 'tahap2',
+                  title: 'Lolos Tahap 2',
+                  desc: 'Pembayaran hanya ditagih jika peserta berhasil lolos Babak Semi Final (Tahap 2) menuju Grand Final.',
+                  badge: 'Finalis',
+                  color: 'purple'
+                },
+                {
+                  id: 'free',
+                  title: 'Bebas Biaya (Gratis)',
+                  desc: 'Pendaftaran sepenuhnya gratis untuk seluruh peserta tanpa ada pungutan biaya apapun.',
+                  badge: 'Bebas Administrasi',
+                  color: 'emerald'
+                }
+              ].map((stage) => {
+                const isActive = paymentRequirementStage === stage.id;
+                return (
+                  <button
+                    key={stage.id}
+                    onClick={() => handleUpdatePaymentStage(stage.id)}
+                    className={`text-left p-5 rounded-2xl border-2 transition-all flex flex-col justify-between h-full relative group ${
+                      isActive
+                        ? 'border-indigo-600 bg-indigo-50/30 shadow-md shadow-indigo-100/50'
+                        : 'border-slate-100 bg-slate-50/50 hover:border-slate-200 hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="w-full flex justify-between items-start gap-4">
+                      <div>
+                        <span className={`inline-block px-2.5 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest mb-2.5 ${
+                          isActive
+                            ? 'bg-indigo-100 text-indigo-700'
+                            : 'bg-slate-200 text-slate-600'
+                        }`}>
+                          {stage.badge}
+                        </span>
+                        <h4 className="font-bold text-slate-800 text-base flex items-center gap-1.5">
+                          {stage.title}
+                        </h4>
+                      </div>
+                      
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all ${
+                        isActive 
+                          ? 'border-indigo-600 bg-indigo-600 text-white' 
+                          : 'border-slate-300 bg-white group-hover:border-slate-400'
+                      }`}>
+                        {isActive && <CheckCircle2 size={12} strokeWidth={3} />}
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-slate-500 font-medium leading-relaxed mt-3">
+                      {stage.desc}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* 2. MANAJEMEN GELOMBANG */}

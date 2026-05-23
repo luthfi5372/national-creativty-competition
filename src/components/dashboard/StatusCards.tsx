@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { AlertCircle, CheckCircle2, Clock, User, IdCard, ImageIcon, FolderOpen, BookOpen, MessageCircle, Target, Sparkles, ChevronRight, Ticket, Copy, Check } from "lucide-react";
+import { AlertCircle, CheckCircle2, Clock, User, IdCard, ImageIcon, FolderOpen, BookOpen, MessageCircle, Target, Sparkles, ChevronRight, Ticket, Copy, Check, Loader2, Upload } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
 import { generateTicketCode } from "@/lib/utils";
@@ -13,6 +13,7 @@ interface StatusCardsProps {
   setShowIdCard: (val: boolean) => void;
   showToast: (msg: string, type: "success" | "error") => void;
   progress: number;
+  paymentRequirementStage?: string;
 }
 
 export default function StatusCards({
@@ -23,7 +24,8 @@ export default function StatusCards({
   setShowForm,
   setShowIdCard,
   showToast,
-  progress
+  progress,
+  paymentRequirementStage = 'registration'
 }: StatusCardsProps) {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -186,6 +188,72 @@ export default function StatusCards({
     }
   };
 
+  const [isUploadingPayment, setIsUploadingPayment] = useState(false);
+  const [paymentFile, setPaymentFile] = useState<File | null>(null);
+
+  const handleUploadPaymentProof = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!paymentFile) return showToast("Mohon pilih file bukti transfer terlebih dahulu!", "error");
+    if (paymentFile.size > 2 * 1024 * 1024) { 
+      return showToast("Ukuran foto maksimal 2MB!", "error");
+    }
+
+    setIsUploadingPayment(true);
+    try {
+      const fileExt = paymentFile.name.split('.').pop();
+      const fileName = `${userEntry?.id}-payment-${Math.random()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage.from('payment-proofs').upload(fileName, paymentFile);
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage.from('payment-proofs').getPublicUrl(fileName);
+      const photoUrl = urlData.publicUrl;
+
+      const { error: dbError } = await supabase
+        .from('competition_entries')
+        .update({
+          payment_proof_url: photoUrl,
+          payment_status: 'Pending'
+        })
+        .eq('id', userEntry?.id);
+
+      if (dbError) throw dbError;
+
+      showToast("Bukti transfer berhasil diunggah! Menunggu verifikasi admin.", "success");
+      setUserEntry((prev: any) => ({
+        ...prev,
+        payment_proof_url: photoUrl,
+        payment_status: 'Pending'
+      }));
+      setPaymentFile(null);
+    } catch (err: any) {
+      showToast(`Gagal mengunggah bukti: ${err.message}`, "error");
+    } finally {
+      setIsUploadingPayment(false);
+    }
+  };
+
+  // Deteksi stage dan status kelulusan dari notes
+  let currentStage = 1;
+  let isFailed = false;
+  if (userEntry?.notes) {
+    try {
+      const notesObj = JSON.parse(userEntry.notes);
+      if (notesObj.current_stage) currentStage = Number(notesObj.current_stage);
+      if (notesObj.is_failed) isFailed = Boolean(notesObj.is_failed);
+    } catch (e) {}
+  }
+
+  // Cek apakah wajib bayar di tahap ini
+  let isPaymentRequired = true;
+  if (paymentRequirementStage === 'registration') {
+    isPaymentRequired = true;
+  } else if (paymentRequirementStage === 'tahap1') {
+    isPaymentRequired = currentStage >= 2 && !isFailed;
+  } else if (paymentRequirementStage === 'tahap2') {
+    isPaymentRequired = currentStage >= 3 && !isFailed;
+  } else if (paymentRequirementStage === 'free') {
+    isPaymentRequired = false;
+  }
 
   return (
     <div className="space-y-6">
@@ -241,6 +309,150 @@ export default function StatusCards({
             {isSubmitting ? "Memproses..." : "Ajukan Ulang Berkas"}
           </button>
         </div>
+      )}
+
+      {userEntry && userEntry.payment_status !== 'Verified' && userEntry.payment_status !== 'Pending' && userEntry.payment_status !== 'Rejected' && (
+        isPaymentRequired ? (
+          <div className="bg-white border border-slate-200 shadow-xl shadow-slate-100 rounded-3xl p-6 relative overflow-hidden group">
+            {/* Elegant Background Accent */}
+            <div className="absolute top-0 right-0 w-28 h-28 bg-indigo-50 rounded-full blur-2xl pointer-events-none group-hover:scale-110 transition-transform duration-700"></div>
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="font-black text-slate-800 text-sm leading-tight">Pembayaran Lomba</h3>
+                <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-[8px] font-black uppercase tracking-widest rounded">Administrasi Wajib</span>
+              </div>
+            </div>
+
+            <p className="text-[11px] text-slate-500 font-medium leading-relaxed mb-4">
+              Untuk mengaktifkan kepesertaan Anda di cabang <strong className="text-indigo-600">{userEntry.competition_type}</strong>, silakan lakukan transfer administrasi pendaftaran:
+            </p>
+
+            {/* Bank Card Info */}
+            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 space-y-3 mb-4">
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-slate-400 font-medium">Bank Tujuan</span>
+                <span className="font-extrabold text-slate-700 flex items-center gap-1.5">
+                  <span className="px-1.5 py-0.5 bg-blue-600 text-white font-black text-[9px] rounded">MANDIRI</span>
+                  Bank Mandiri
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-slate-400 font-medium">Nomor Rekening</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-mono font-black text-slate-800 tracking-wider">123-456-789-0123</span>
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText("1234567890123");
+                      showToast("Nomor rekening berhasil disalin!", "success");
+                    }}
+                    className="p-1 hover:bg-slate-200 rounded-md text-slate-400 hover:text-slate-600 transition-colors"
+                    title="Salin Nomor Rekening"
+                  >
+                    <Copy size={12} />
+                  </button>
+                </div>
+              </div>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-slate-400 font-medium">Atas Nama (A.N.)</span>
+                <span className="font-bold text-slate-800">Panitia National Creativity Competition</span>
+              </div>
+              <div className="flex justify-between items-center text-xs pt-2 border-t border-slate-200/50">
+                <span className="text-slate-400 font-medium">Biaya Pendaftaran</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-black text-indigo-600 text-sm">Rp 150.000</span>
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText("150000");
+                      showToast("Biaya pendaftaran disalin!", "success");
+                    }}
+                    className="p-1 hover:bg-slate-200 rounded-md text-slate-400 hover:text-slate-600 transition-colors"
+                    title="Salin Nominal"
+                  >
+                    <Copy size={12} />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Drag and Drop Uploader */}
+            <form onSubmit={handleUploadPaymentProof} className="space-y-4">
+              <div className="relative">
+                <div className={`border-2 border-dashed rounded-2xl p-5 text-center transition-all cursor-pointer relative ${
+                  paymentFile 
+                    ? 'border-emerald-300 bg-emerald-50/20' 
+                    : 'border-slate-200 hover:border-indigo-300 bg-slate-50/50'
+                }`}>
+                  <input 
+                    required 
+                    type="file" 
+                    accept="image/*" 
+                    className="absolute inset-0 opacity-0 cursor-pointer z-10" 
+                    onChange={(e) => setPaymentFile(e.target.files?.[0] || null)}
+                  />
+                  <div className="flex flex-col items-center gap-2">
+                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center shadow-sm ${
+                      paymentFile 
+                        ? 'bg-emerald-100 text-emerald-600' 
+                        : 'bg-white text-slate-400 border border-slate-100'
+                    }`}>
+                      {paymentFile ? <CheckCircle2 size={16} /> : <Upload size={16} />}
+                    </div>
+                    <div>
+                      <p className={`text-[11px] font-bold ${paymentFile ? 'text-emerald-700' : 'text-slate-600'}`}>
+                        {paymentFile ? paymentFile.name : "Unggah Bukti Transfer"}
+                      </p>
+                      <p className="text-[9px] text-slate-400 font-medium mt-0.5">
+                        Format gambar (JPG, PNG). Maksimal 2MB.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <button 
+                type="submit" 
+                disabled={isUploadingPayment} 
+                className="w-full bg-slate-900 hover:bg-slate-800 text-white font-black py-3 rounded-xl transition-all shadow-md text-xs tracking-wider uppercase disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {isUploadingPayment ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" />
+                    Memproses Bukti...
+                  </>
+                ) : (
+                  "Kirim Bukti Pembayaran"
+                )}
+              </button>
+            </form>
+          </div>
+        ) : (
+          /* Deferred Payment Note */
+          <div className="bg-gradient-to-br from-[#f8fafc] to-[#f1f5f9] border border-slate-200/60 rounded-3xl p-6 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-full blur-2xl pointer-events-none"></div>
+
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center shadow-sm">
+                <CheckCircle2 size={20} />
+              </div>
+              <div>
+                <h3 className="font-black text-slate-800 text-sm">Status Pembayaran</h3>
+                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[8px] font-black uppercase tracking-widest rounded">Bebas Administrasi</span>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 font-medium leading-relaxed">
+              Ditangguhkan (Belum Wajib). Tahap kompetisi aktif saat ini dibebaskan dari biaya pendaftaran. Silakan lanjutkan pengerjaan berkas atau persiapan ujian Anda secara penuh!
+            </p>
+          </div>
+        )
       )}
 
       {userEntry && (

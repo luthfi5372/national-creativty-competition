@@ -23,6 +23,7 @@ export default function UserDashboard() {
    const [globalTimeline, setGlobalTimeline] = useState<any[]>([]);
   const [portalWaves, setPortalWaves] = useState<any[]>([]);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [paymentRequirementStage, setPaymentRequirementStage] = useState('registration');
   const router = useRouter();
 
   const handleLogout = async () => {
@@ -135,6 +136,7 @@ export default function UserDashboard() {
           try {
             const parsed = JSON.parse(portalData.content);
             if (parsed.waves) setPortalWaves(parsed.waves);
+            if (parsed.paymentRequirementStage) setPaymentRequirementStage(parsed.paymentRequirementStage);
             const userCategory = entry?.competition_type; 
             
             let matchingKeyPrefix = "";
@@ -239,6 +241,7 @@ export default function UserDashboard() {
             try {
               const parsed = JSON.parse(updated.content);
               if (parsed.waves) setPortalWaves(parsed.waves);
+              if (parsed.paymentRequirementStage) setPaymentRequirementStage(parsed.paymentRequirementStage);
               // Update status pendaftaran secara real-time
               const userCategory = userEntry?.competition_type; 
               let matchingKeyPrefix = "";
@@ -263,24 +266,10 @@ export default function UserDashboard() {
     };
   }, [userEntry]); // Re-subscribe if userEntry (category) changes
 
-  const handleSubmitEntry = async (localFormData: any, localFile: File | null) => {
-    if (!localFile) return showToast("Mohon unggah bukti transfer terlebih dahulu!", "error");
-    if (localFile.size > 2 * 1024 * 1024) { 
-      return showToast("Ukuran foto maksimal 2MB agar sistem tidak melambat!", "error");
-    }
-
+  const handleSubmitEntry = async (localFormData: any) => {
     setIsSubmitting(true);
     try {
       if (!currentUser) throw new Error("Sesi berakhir, silakan login kembali.");
-
-      const fileExt = localFile.name.split('.').pop();
-      const fileName = `${currentUser.id}-${Math.random()}.${fileExt}`;
-      const { error: uploadError } = await supabase.storage.from('payment-proofs').upload(fileName, localFile);
-
-      if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage.from('payment-proofs').getPublicUrl(fileName);
-      const photoUrl = urlData.publicUrl;
 
       const isTeam = localFormData?.competition_type === "Olimpiade MIPA" || localFormData?.competition_type === "LKTI Nasional";
 
@@ -290,7 +279,7 @@ export default function UserDashboard() {
         localFormData.mentor_phone?.trim()
       ].filter(Boolean).join(" | ");
 
-      const { error: dbError } = await supabase
+      const { data: newEntries, error: dbError } = await supabase
         .from('competition_entries')
         .insert([{
           user_id: currentUser.id,
@@ -304,14 +293,19 @@ export default function UserDashboard() {
           team_name: isTeam ? localFormData.team_name : null,
           participant2_name: isTeam ? localFormData.participant2_name : null,
           participant2_nisn: isTeam ? localFormData.participant2_nisn : null,
-          payment_proof_url: photoUrl,
-          payment_status: 'Pending'
-        }]);
+          payment_proof_url: null,
+          payment_status: 'Unpaid'
+        }])
+        .select('*');
 
       if (dbError) throw dbError;
 
-      showToast("Pendaftaran Berhasil! Menunggu verifikasi admin.", "success");
-      setUserEntry({ ...localFormData, payment_status: 'Pending', id: 'new-entry-temp' });
+      showToast("Pendaftaran Berhasil! Silakan lengkapi pembayaran jika diperlukan.", "success");
+      if (newEntries && newEntries.length > 0) {
+        setUserEntry(newEntries[0]);
+      } else {
+        setUserEntry({ ...localFormData, payment_status: 'Unpaid', id: 'new-entry-temp' });
+      }
       setTimeout(() => setShowForm(false), 1500); 
 
     } catch (error: any) {
@@ -368,6 +362,7 @@ export default function UserDashboard() {
             setShowIdCard={setShowIdCard}
             showToast={showToast}
             progress={progress}
+            paymentRequirementStage={paymentRequirementStage}
           />
 
           {/* Kolom Kanan */}
