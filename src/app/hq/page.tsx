@@ -1075,35 +1075,70 @@ function ModernHQDashboardContent() {
   const executeBroadcast = async () => {
     setConfirmModal(prev => ({ ...prev, show: false }));
     setIsSending(true);
+
+    // Pencadangan input (Backup) untuk penanganan error & rollback
+    const titleBackup = broadcastTitle;
+    const messageBackup = broadcastMessage;
+    const targetBackup = broadcastTarget;
+    const selectedBackup = selectedUserIds;
+
+    // 1. Optimistic UI update: Buat objek broadcast tiruan dan masukkan ke list paling atas secara instan
+    const tempId = 'temp-' + Date.now();
+    const optimisticBroadcast = {
+      id: tempId,
+      title: broadcastTitle,
+      message: broadcastMessage,
+      target_audience: broadcastTarget,
+      created_at: new Date().toISOString()
+    };
+    
+    setBroadcasts(prev => [optimisticBroadcast, ...prev]);
+
+    // 2. Bersihkan form secara instan agar admin bisa langsung mengetik pesan lain tanpa ter-freeze!
+    setBroadcastTitle("");
+    setBroadcastMessage("");
+    setSelectedUserIds([]);
+    setIsSending(false); // Kembalikan ke false agar tombol kirim bisa langsung digunakan
+    showToast("Pesan sedang diproses dan diantarkan ke seluruh peserta di latar belakang...", "success");
+
+    // 3. Eksekusi pengiriman ke database Supabase di latar belakang (Non-Blocking)
     try {
-      // Simpan target_user_ids di dalam content sebagai JSON agar tidak butuh kolom baru
       const contentPayload = JSON.stringify({
-        message: broadcastMessage,
-        target_user_ids: broadcastTarget === 'specific' ? selectedUserIds : []
+        message: messageBackup,
+        target_user_ids: targetBackup === 'specific' ? selectedBackup : []
       });
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('announcements')
         .insert([
           {
-            title: broadcastTitle,
-            message: broadcastMessage,
+            title: titleBackup,
+            message: messageBackup,
             content: contentPayload,
-            target_audience: broadcastTarget
+            target_audience: targetBackup
           }
-        ]);
+        ])
+        .select()
+        .single();
 
       if (error) throw error;
 
-      showToast("Pengumuman resmi berhasil mengudara ke peserta!", "success");
-      setBroadcastTitle("");
-      setBroadcastMessage("");
-      setSelectedUserIds([]);
-      fetchBroadcasts();
+      // Ganti ID tiruan dengan data asli dari database
+      if (data) {
+        setBroadcasts(prev => prev.map(b => b.id === tempId ? data : b));
+      }
     } catch (error: any) {
-      showToast(`Gagal menyiarkan: ${error.message}`, "error");
-    } finally {
-      setIsSending(false);
+      console.error("Gagal menyiarkan di latar belakang:", error);
+      showToast(`Gagal menyiarkan ke database: ${error.message}`, "error");
+      
+      // Rollback: Hapus item tiruan dari layar
+      setBroadcasts(prev => prev.filter(b => b.id !== tempId));
+      
+      // Kembalikan tulisan yang diketik sebelumnya ke form agar kerja keras admin tidak hilang
+      setBroadcastTitle(titleBackup);
+      setBroadcastMessage(messageBackup);
+      setBroadcastTarget(targetBackup);
+      setSelectedUserIds(selectedBackup);
     }
   };
 
@@ -2034,13 +2069,13 @@ function ModernHQDashboardContent() {
                             {broadcast.message}
                           </p>
 
-                          {/* Tombol Hapus */}
+                          {/* Tombol Hapus - Selalu Terlihat Jelas */}
                           <button
                             onClick={() => handleDeleteBroadcast(broadcast.id)}
-                            className="absolute right-3 top-3 lg:opacity-0 group-hover:opacity-100 transition-opacity p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                            className="absolute right-3 top-3 p-2 text-rose-500 hover:text-white bg-rose-50 hover:bg-rose-600 border border-rose-100 hover:border-rose-600 rounded-xl transition-all duration-200 cursor-pointer shadow-sm"
                             title="Hapus Siaran"
                           >
-                            <Trash2 size={15} />
+                            <Trash2 size={13} strokeWidth={2.5} />
                           </button>
                         </div>
                       );
