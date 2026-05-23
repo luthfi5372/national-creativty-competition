@@ -31,22 +31,34 @@ export default function SettingsDashboard() {
   const [paymentRequirementStage, setPaymentRequirementStage] = useState('registration');
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
 
+  const [loadError, setLoadError] = useState<string | null>(null);
+
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const { data: cbtData } = await supabase.from('cbt_settings').select('*').eq('id', 1).single();
-        if (cbtData) {
+        const { data: cbtData, error: cbtErr } = await supabase.from('cbt_settings').select('*').eq('id', 1).single();
+        if (cbtErr) {
+          console.error("Gagal memuat cbt_settings:", cbtErr);
+          setLoadError(`cbt_settings: ${cbtErr.message} (Code: ${cbtErr.code})`);
+        } else if (cbtData) {
           setStrictMode(cbtData.strict_mode);
           setAutoSave(cbtData.auto_save);
           setMaintenance(cbtData.maintenance_mode);
         }
-        // Ambil status result dari site_settings
-        const { data: siteData } = await supabase.from('site_settings').select('result_visible').eq('id', 1).single();
-        if (siteData) setResultVisible(siteData.result_visible ?? false);
 
-        // Ambil status portal dari announcements
-        const { data: portalData } = await supabase.from('announcements').select('*').eq('title', 'SYS_PORTAL_SETTINGS').single();
-        if (portalData) {
+        const { data: siteData, error: siteErr } = await supabase.from('site_settings').select('result_visible').eq('id', 1).single();
+        if (siteErr) {
+          console.error("Gagal memuat site_settings:", siteErr);
+          setLoadError(prev => prev ? `${prev} | site_settings: ${siteErr.message}` : `site_settings: ${siteErr.message} (Code: ${siteErr.code})`);
+        } else if (siteData) {
+          setResultVisible(siteData.result_visible ?? false);
+        }
+
+        const { data: portalData, error: portalErr } = await supabase.from('announcements').select('*').eq('title', 'SYS_PORTAL_SETTINGS').single();
+        if (portalErr) {
+          console.error("Gagal memuat announcements:", portalErr);
+          setLoadError(prev => prev ? `${prev} | portal_settings: ${portalErr.message}` : `portal_settings: ${portalErr.message} (Code: ${portalErr.code})`);
+        } else if (portalData) {
           setPortalSettingsData(portalData);
           try {
             const parsed = JSON.parse(portalData.content);
@@ -57,8 +69,9 @@ export default function SettingsDashboard() {
             console.error("Gagal parsing portal settings:", e);
           }
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("Gagal memuat pengaturan:", err);
+        setLoadError(err.message || "Unknown error during fetch");
       } finally {
         setIsLoadingSettings(false);
       }
@@ -447,6 +460,17 @@ export default function SettingsDashboard() {
         </header>
 
         {/* CONTENT */}
+        {loadError && (
+          <div className="mx-6 md:mx-8 mt-6 p-4 bg-red-50 border border-red-200 rounded-2xl flex items-start gap-3">
+            <AlertCircle size={20} className="text-red-500 mt-0.5 shrink-0" />
+            <div>
+              <h4 className="font-bold text-red-800 text-sm">Gagal Sinkronisasi dengan Database</h4>
+              <p className="text-xs text-red-700 mt-1 leading-relaxed">{loadError}</p>
+              <p className="text-[10px] text-red-500 mt-2 font-medium">Langkah perbaikan: Pastikan tabel Supabase di atas memiliki RLS yang di-disable atau memiliki policy yang memperbolehkan akses read/write.</p>
+            </div>
+          </div>
+        )}
+
         {isLoadingSettings ? (
           <div className="p-6 md:p-8 space-y-6 max-w-5xl flex-1 animate-pulse">
             {/* Profile Card Skeleton */}
