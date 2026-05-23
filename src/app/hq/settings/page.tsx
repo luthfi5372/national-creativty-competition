@@ -60,18 +60,18 @@ export default function SettingsDashboard() {
   const handleSave = async () => {
     setIsSaving(true);
     // Simpan pengaturan CBT
-    await supabase.from('cbt_settings').upsert({
-      id: 1,
+    await supabase.from('cbt_settings').update({
       strict_mode: strictMode,
       auto_save: autoSave,
       maintenance_mode: maintenance,
       updated_at: new Date().toISOString()
-    });
+    }).eq('id', 1);
     // Simpan status result ke site_settings
-    const { error } = await supabase.from('site_settings').upsert({
-      id: 1,
-      result_visible: resultVisible
-    }, { onConflict: 'id' });
+    const { error } = await supabase.from('site_settings').update({
+      result_visible: resultVisible,
+      is_registration_open: isRegistrationOpen,
+      maintenance_mode: maintenance
+    }).eq('id', 1);
 
     // Simpan status portal (Gerbang Pendaftaran & Waves) ke announcements
     let portalError = null;
@@ -181,10 +181,9 @@ export default function SettingsDashboard() {
 
   // Toggle result langsung tanpa perlu klik Simpan
   const handleToggleResult = async (newValue: boolean) => {
-    const { error } = await supabase.from('site_settings').upsert(
-      { id: 1, result_visible: newValue },
-      { onConflict: 'id' }
-    );
+    const { error } = await supabase.from('site_settings').update(
+      { result_visible: newValue }
+    ).eq('id', 1);
     if (error) {
       console.error("Gagal menyimpan status pengumuman:", error);
       setToastMessage(`Gagal menyimpan: ${error.message}`);
@@ -264,6 +263,11 @@ export default function SettingsDashboard() {
         setTimeout(() => setToastMessage(""), 4000);
       } else if (updatedData) {
         setPortalSettingsData(updatedData);
+        // Sync with site_settings table as well
+        await supabase
+          .from('site_settings')
+          .update({ is_registration_open: newValue })
+          .eq('id', 1);
       }
     } catch (e: any) {
       console.error(e);
@@ -657,13 +661,12 @@ export default function SettingsDashboard() {
                 <button 
                   onClick={async () => {
                     const nextVal = !strictMode;
-                    const { error } = await supabase.from('cbt_settings').upsert({
-                      id: 1,
+                    const { error } = await supabase.from('cbt_settings').update({
                       strict_mode: nextVal,
                       auto_save: autoSave,
                       maintenance_mode: maintenance,
                       updated_at: new Date().toISOString()
-                    });
+                    }).eq('id', 1);
                     if (error) {
                       setToastMessage(`Gagal menyimpan: ${error.message}`);
                       setTimeout(() => setToastMessage(""), 4000);
@@ -687,13 +690,12 @@ export default function SettingsDashboard() {
                 <button 
                   onClick={async () => {
                     const nextVal = !autoSave;
-                    const { error } = await supabase.from('cbt_settings').upsert({
-                      id: 1,
+                    const { error } = await supabase.from('cbt_settings').update({
                       strict_mode: strictMode,
                       auto_save: nextVal,
                       maintenance_mode: maintenance,
                       updated_at: new Date().toISOString()
-                    });
+                    }).eq('id', 1);
                     if (error) {
                       setToastMessage(`Gagal menyimpan: ${error.message}`);
                       setTimeout(() => setToastMessage(""), 4000);
@@ -725,13 +727,19 @@ export default function SettingsDashboard() {
                 <button 
                   onClick={async () => {
                     const nextVal = !maintenance;
-                    const { error } = await supabase.from('cbt_settings').upsert({
-                      id: 1,
+                    const { error } = await supabase.from('cbt_settings').update({
                       strict_mode: strictMode,
                       auto_save: autoSave,
                       maintenance_mode: nextVal,
                       updated_at: new Date().toISOString()
-                    });
+                    }).eq('id', 1);
+                    if (!error) {
+                      // Sync with site_settings table as well
+                      await supabase
+                        .from('site_settings')
+                        .update({ maintenance_mode: nextVal })
+                        .eq('id', 1);
+                    }
                     if (error) {
                       setToastMessage(`Gagal menyimpan: ${error.message}`);
                       setTimeout(() => setToastMessage(""), 4000);
