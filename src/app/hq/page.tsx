@@ -11,7 +11,7 @@ import {
   LayoutDashboard, Users, FileCheck, Settings, 
   ArrowUpRight, ArrowDownRight, Download, Calendar, 
   Bell, MoreHorizontal, Sparkles, Search, Filter, Printer, X, IdCard, Megaphone, Send, ArrowRight, Save,
-  CheckCircle2, AlertCircle, LogOut, Trash2, MapPin, School, Target, XCircle, Power, Shield, Clock, CalendarDays, FolderOpen, ShieldCheck, CheckCircle, Eye, FileText, ImageIcon, Camera, Trophy, Medal, GraduationCap, Building2, ClipboardCheck, Pencil, History, MegaphoneOff
+  CheckCircle2, AlertCircle, LogOut, Trash2, MapPin, School, Target, XCircle, Power, Shield, Clock, CalendarDays, FolderOpen, ShieldCheck, CheckCircle, Eye, EyeOff, FileText, ImageIcon, Camera, Trophy, Medal, GraduationCap, Building2, ClipboardCheck, Pencil, History, MegaphoneOff
 } from "lucide-react";
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -317,6 +317,47 @@ function ModernHQDashboardContent() {
   const [dynamicChartData, setDynamicChartData] = useState<any[]>([]);
   const [dynamicBarData, setDynamicBarData] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('Dashboard');
+  const [activeToken, setActiveToken] = useState("------");
+  const [showToken, setShowToken] = useState(false);
+
+  useEffect(() => {
+    const fetchActiveToken = async () => {
+      try {
+        const { data: exams } = await supabase
+          .from('cbt_exams')
+          .select('id, title')
+          .eq('is_active', true);
+          
+        if (exams && exams.length > 0) {
+          const updateToken = () => {
+            const now = Math.floor(Date.now() / 1000);
+            const interval10Min = 600;
+            const currentInterval = Math.floor(now / interval10Min);
+            const charPool = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+            
+            const exam = exams[0];
+            let expectedToken = "";
+            let idSum = 0;
+            for (let i = 0; i < exam.id.length; i++) {
+              idSum += exam.id.charCodeAt(i);
+            }
+            let seed = (idSum + currentInterval) % 10000;
+            for (let i = 0; i < 6; i++) {
+              seed = (seed * 9301 + 49297) % 233280;
+              expectedToken += charPool[Math.floor((seed / 233280) * charPool.length)];
+            }
+            setActiveToken(expectedToken);
+          };
+          updateToken();
+          const timer = setInterval(updateToken, 10000);
+          return () => clearInterval(timer);
+        }
+      } catch (err) {
+        console.error("Gagal memuat token ujian:", err);
+      }
+    };
+    fetchActiveToken();
+  }, []);
 
   useEffect(() => {
     const tabParam = searchParams.get('tab');
@@ -2783,10 +2824,19 @@ function ModernHQDashboardContent() {
                     </p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-slate-400 font-medium">Password / Token Akses</p>
-                    <p className="text-slate-700 text-xs font-semibold">
-                      Live (10 mnt) / Cukup menggunakan ID Tiket di atas
-                    </p>
+                    <p className="text-[10px] text-slate-400 font-medium">Password / Token Akses (10 Menit)</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <p className="font-mono text-sm font-black text-slate-800 tracking-widest bg-slate-100/60 px-2.5 py-1 rounded border border-slate-200/40 select-all">
+                        {showToken ? activeToken : "••••••"}
+                      </p>
+                      <button 
+                        onClick={() => setShowToken(!showToken)}
+                        className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition-colors border border-transparent hover:border-slate-200 flex items-center justify-center shrink-0"
+                        title={showToken ? "Sembunyikan" : "Tampilkan"}
+                      >
+                        {showToken ? <EyeOff size={14} /> : <Eye size={14} />}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
