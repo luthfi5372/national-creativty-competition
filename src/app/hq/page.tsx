@@ -516,6 +516,7 @@ function ModernHQDashboardContent() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState("All");
+  const [filterProgress, setFilterProgress] = useState("All");
   const [timeFilter, setTimeFilter] = useState("All"); // Opsi: 'Today', '7Days', '1Month', 'All'
   const [selectedParticipant, setSelectedParticipant] = useState<any | null>(null);
   const [selectedIdCard, setSelectedIdCard] = useState<any | null>(null);
@@ -1760,7 +1761,7 @@ function ModernHQDashboardContent() {
                 </div>
                 
                 {/* Dropdown Kategori Lomba */}
-                <div className="relative w-full md:w-64">
+                <div className="relative w-full md:w-52">
                   <select
                     value={filterCategory}
                     onChange={(e) => setFilterCategory(e.target.value)}
@@ -1771,6 +1772,25 @@ function ModernHQDashboardContent() {
                     <option value="Speech Contest">Speech Contest</option>
                     <option value="LKTI Nasional">LKTI Nasional</option>
                     <option value="MTQ Nasional">MTQ Nasional</option>
+                  </select>
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    <Filter size={14} className="text-slate-400" />
+                  </div>
+                </div>
+
+                {/* Dropdown Status Progres */}
+                <div className="relative w-full md:w-52">
+                  <select
+                    value={filterProgress}
+                    onChange={(e) => setFilterProgress(e.target.value)}
+                    className="w-full pl-4 pr-10 py-2.5 bg-white/90 backdrop-blur-md border border-white/60 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 appearance-none text-slate-700 font-medium shadow-sm"
+                  >
+                    <option value="All">Semua Progres</option>
+                    <option value="tahap1">Lolos / Aktif Tahap 1</option>
+                    <option value="gagal1">Gagal Tahap 1</option>
+                    <option value="tahap2">Lolos / Aktif Tahap 2</option>
+                    <option value="gagal2">Gagal Tahap 2</option>
+                    <option value="final">Final (Tahap 3)</option>
                   </select>
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                     <Filter size={14} className="text-slate-400" />
@@ -1804,6 +1824,24 @@ function ModernHQDashboardContent() {
                              `ncc-${generateTicketCode(e.id)}`.toLowerCase().includes(query);
                     })
                     .filter(e => filterCategory === "All" || (e.competition_type || e.category) === filterCategory)
+                    .filter(e => {
+                      if (filterProgress === "All") return true;
+                      let stage = 1;
+                      let isFailed = false;
+                      if (e.notes) {
+                        try {
+                          const n = JSON.parse(e.notes);
+                          if (n.current_stage) stage = n.current_stage;
+                          if (n.is_failed) isFailed = n.is_failed;
+                        } catch (err) {}
+                      }
+                      const status = stage === 1 
+                        ? (isFailed ? "gagal1" : "tahap1")
+                        : stage === 2
+                          ? (isFailed ? "gagal2" : "tahap2")
+                          : "final";
+                      return status === filterProgress;
+                    })
                     .length === 0 ? (
                       <tr>
                         <td colSpan={7} className="py-12 text-center text-slate-400 font-medium">
@@ -1821,6 +1859,24 @@ function ModernHQDashboardContent() {
                                `ncc-${generateTicketCode(e.id)}`.toLowerCase().includes(query);
                       })
                       .filter(e => filterCategory === "All" || (e.competition_type || e.category) === filterCategory)
+                      .filter(e => {
+                        if (filterProgress === "All") return true;
+                        let stage = 1;
+                        let isFailed = false;
+                        if (e.notes) {
+                          try {
+                            const n = JSON.parse(e.notes);
+                            if (n.current_stage) stage = n.current_stage;
+                            if (n.is_failed) isFailed = n.is_failed;
+                          } catch (err) {}
+                        }
+                        const status = stage === 1 
+                          ? (isFailed ? "gagal1" : "tahap1")
+                          : stage === 2
+                            ? (isFailed ? "gagal2" : "tahap2")
+                            : "final";
+                        return status === filterProgress;
+                      })
                       .map((entry: any) => (
                         <ParticipantRow 
                           key={entry.id} 
