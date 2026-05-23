@@ -1,5 +1,3 @@
-"use client";
-
 // Force dynamic rendering — prevents static prerendering which crashes on useEffect/hooks
 export const dynamic = 'force-dynamic';
 
