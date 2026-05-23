@@ -234,18 +234,23 @@ export default function UserDashboard() {
         },
         (payload) => {
           const updated = (payload.new || payload.old) as any;
+          if (!updated) return;
+
+          // 1. Jika ada perubahan timeline global
           if (updated.title === 'SYSTEM_TIMELINE_CONFIG') {
             try {
               setGlobalTimeline(JSON.parse(updated.content));
             } catch (e) {}
           }
+          
+          // 2. Jika ada perubahan status gerbang pendaftaran/gelombang
           if (updated.title === 'SYS_PORTAL_SETTINGS') {
             try {
               const parsed = JSON.parse(updated.content);
               if (parsed.waves) setPortalWaves(parsed.waves);
               if (parsed.paymentRequirementStage) setPaymentRequirementStage(parsed.paymentRequirementStage);
               if (parsed.isRegistrationOpen !== undefined) setIsRegistrationOpen(parsed.isRegistrationOpen);
-              // Update status pendaftaran secara real-time
+              
               const userCategory = userEntry?.competition_type; 
               let matchingKeyPrefix = "";
               if (userCategory === "Olimpiade MIPA") matchingKeyPrefix = "mipa";
@@ -260,6 +265,40 @@ export default function UserDashboard() {
               }
             } catch (e) {}
           }
+
+          // 3. JIKA ADA PENGUMUMAN BARU / DIHAPUS (REAL-TIME SYNC FOR USER BROADCASTS)
+          if (updated.title !== 'SYSTEM_TIMELINE_CONFIG' && updated.title !== 'SYS_PORTAL_SETTINGS') {
+            const refetchAnnouncements = async () => {
+              try {
+                const { data: latestData } = await supabase
+                  .from('announcements')
+                  .select('*')
+                  .order('created_at', { ascending: false });
+
+                const userStatus = userEntry?.payment_status === 'Verified' ? 'Verified' : 'Pending';
+                
+                const filtered = (latestData || []).filter((item: any) => {
+                  if (item.title === 'SYS_PORTAL_SETTINGS' || item.title === 'SYSTEM_TIMELINE_CONFIG') return false;
+                  if (!item.target_audience) return true;
+                  if (item.target_audience === 'All') return true;
+                  if (item.target_audience === userStatus) return true;
+                  if (item.target_audience === 'specific') {
+                    try {
+                      const parsed = JSON.parse(item.content);
+                      return Array.isArray(parsed.target_user_ids) && parsed.target_user_ids.includes(currentUser?.id);
+                    } catch (e) {
+                      return false;
+                    }
+                  }
+                  return false;
+                });
+                setAnnouncements(filtered);
+              } catch (err) {
+                console.error("Gagal melakukan real-time sync pengumuman:", err);
+              }
+            };
+            refetchAnnouncements();
+          }
         }
       )
       .subscribe();
@@ -267,7 +306,7 @@ export default function UserDashboard() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [userEntry]); // Re-subscribe if userEntry (category) changes
+  }, [userEntry, currentUser]); // Re-subscribe if userEntry or currentUser changes
 
   const handleSubmitEntry = async (localFormData: any) => {
     setIsSubmitting(true);
