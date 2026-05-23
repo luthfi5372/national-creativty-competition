@@ -105,13 +105,19 @@ export default function SettingsDashboard() {
 
   // Toggle result langsung tanpa perlu klik Simpan
   const handleToggleResult = async (newValue: boolean) => {
-    setResultVisible(newValue);
-    await supabase.from('site_settings').upsert(
+    const { error } = await supabase.from('site_settings').upsert(
       { id: 1, result_visible: newValue },
       { onConflict: 'id' }
     );
-    setToastMessage(newValue ? "Sistem hasil kelulusan AKTIF — peserta dapat melihat status." : "Sistem hasil kelulusan DIMATIKAN — pengumuman disembunyikan.");
-    setTimeout(() => setToastMessage(""), 3000);
+    if (error) {
+      console.error("Gagal menyimpan status pengumuman:", error);
+      setToastMessage(`Gagal menyimpan: ${error.message}`);
+      setTimeout(() => setToastMessage(""), 4000);
+    } else {
+      setResultVisible(newValue);
+      setToastMessage(newValue ? "Sistem hasil kelulusan AKTIF — peserta dapat melihat status." : "Sistem hasil kelulusan DIMATIKAN — pengumuman disembunyikan.");
+      setTimeout(() => setToastMessage(""), 3000);
+    }
   };
 
   const handleLogout = async () => {
@@ -121,21 +127,30 @@ export default function SettingsDashboard() {
 
   // Toggle Gerbang Pendaftaran langsung
   const handleToggleRegistration = async (newValue: boolean) => {
-    setIsRegistrationOpen(newValue);
     if (portalSettingsData) {
       try {
         const parsed = JSON.parse(portalSettingsData.content);
         parsed.isRegistrationOpen = newValue;
         const newContent = JSON.stringify(parsed);
-        await supabase
+        const { error } = await supabase
           .from('announcements')
           .update({ content: newContent })
           .eq('title', 'SYS_PORTAL_SETTINGS');
-        setPortalSettingsData({ ...portalSettingsData, content: newContent });
-        setToastMessage(newValue ? "Gerbang pendaftaran BERHASIL DIBUKA!" : "Gerbang pendaftaran DITUTUP SEMENTARA.");
-        setTimeout(() => setToastMessage(""), 3000);
-      } catch (e) {
+        
+        if (error) {
+          console.error("Gagal menyimpan gerbang pendaftaran:", error);
+          setToastMessage(`Gagal menyimpan: ${error.message}`);
+          setTimeout(() => setToastMessage(""), 4000);
+        } else {
+          setIsRegistrationOpen(newValue);
+          setPortalSettingsData({ ...portalSettingsData, content: newContent });
+          setToastMessage(newValue ? "Gerbang pendaftaran BERHASIL DIBUKA!" : "Gerbang pendaftaran DITUTUP SEMENTARA.");
+          setTimeout(() => setToastMessage(""), 3000);
+        }
+      } catch (e: any) {
         console.error(e);
+        setToastMessage(`Gagal memproses data: ${e.message}`);
+        setTimeout(() => setToastMessage(""), 4000);
       }
     }
   };
@@ -433,16 +448,21 @@ export default function SettingsDashboard() {
                 <button 
                   onClick={async () => {
                     const nextVal = !strictMode;
-                    setStrictMode(nextVal);
-                    await supabase.from('cbt_settings').upsert({
+                    const { error } = await supabase.from('cbt_settings').upsert({
                       id: 1,
                       strict_mode: nextVal,
                       auto_save: autoSave,
                       maintenance_mode: maintenance,
                       updated_at: new Date().toISOString()
                     });
-                    setToastMessage(`Strict Fullscreen Mode ${nextVal ? 'AKTIF' : 'DIMATIKAN'}!`);
-                    setTimeout(() => setToastMessage(""), 3000);
+                    if (error) {
+                      setToastMessage(`Gagal menyimpan: ${error.message}`);
+                      setTimeout(() => setToastMessage(""), 4000);
+                    } else {
+                      setStrictMode(nextVal);
+                      setToastMessage(`Strict Fullscreen Mode ${nextVal ? 'AKTIF' : 'DIMATIKAN'}!`);
+                      setTimeout(() => setToastMessage(""), 3000);
+                    }
                   }}
                   className={`w-12 h-6 rounded-full transition-colors relative flex items-center flex-shrink-0 ${strictMode ? 'bg-emerald-500 animate-pulse' : 'bg-gray-200'}`}
                 >
@@ -458,16 +478,21 @@ export default function SettingsDashboard() {
                 <button 
                   onClick={async () => {
                     const nextVal = !autoSave;
-                    setAutoSave(nextVal);
-                    await supabase.from('cbt_settings').upsert({
+                    const { error } = await supabase.from('cbt_settings').upsert({
                       id: 1,
                       strict_mode: strictMode,
                       auto_save: nextVal,
                       maintenance_mode: maintenance,
                       updated_at: new Date().toISOString()
                     });
-                    setToastMessage(`Auto-Save Telemetry ${nextVal ? 'AKTIF' : 'DIMATIKAN'}!`);
-                    setTimeout(() => setToastMessage(""), 3000);
+                    if (error) {
+                      setToastMessage(`Gagal menyimpan: ${error.message}`);
+                      setTimeout(() => setToastMessage(""), 4000);
+                    } else {
+                      setAutoSave(nextVal);
+                      setToastMessage(`Auto-Save Telemetry ${nextVal ? 'AKTIF' : 'DIMATIKAN'}!`);
+                      setTimeout(() => setToastMessage(""), 3000);
+                    }
                   }}
                   className={`w-12 h-6 rounded-full transition-colors relative flex items-center flex-shrink-0 ${autoSave ? 'bg-emerald-500 animate-pulse' : 'bg-gray-200'}`}
                 >
@@ -491,16 +516,21 @@ export default function SettingsDashboard() {
                 <button 
                   onClick={async () => {
                     const nextVal = !maintenance;
-                    setMaintenance(nextVal);
-                    await supabase.from('cbt_settings').upsert({
+                    const { error } = await supabase.from('cbt_settings').upsert({
                       id: 1,
                       strict_mode: strictMode,
                       auto_save: autoSave,
                       maintenance_mode: nextVal,
                       updated_at: new Date().toISOString()
                     });
-                    setToastMessage(nextVal ? "Mode Pemeliharaan (Maintenance) AKTIF!" : "Mode Pemeliharaan (Maintenance) DIMATIKAN.");
-                    setTimeout(() => setToastMessage(""), 3000);
+                    if (error) {
+                      setToastMessage(`Gagal menyimpan: ${error.message}`);
+                      setTimeout(() => setToastMessage(""), 4000);
+                    } else {
+                      setMaintenance(nextVal);
+                      setToastMessage(nextVal ? "Mode Pemeliharaan (Maintenance) AKTIF!" : "Mode Pemeliharaan (Maintenance) DIMATIKAN.");
+                      setTimeout(() => setToastMessage(""), 3000);
+                    }
                   }}
                   className={`w-12 h-6 rounded-full transition-colors relative flex items-center flex-shrink-0 ${maintenance ? 'bg-rose-500 animate-pulse' : 'bg-gray-200'}`}
                 >
