@@ -29,31 +29,38 @@ export default function SettingsDashboard() {
   const [waves, setWaves] = useState<any[]>([]);
   const [portalSettingsData, setPortalSettingsData] = useState<any>(null);
   const [paymentRequirementStage, setPaymentRequirementStage] = useState('registration');
+  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
 
   useEffect(() => {
     const fetchSettings = async () => {
-      const { data: cbtData } = await supabase.from('cbt_settings').select('*').eq('id', 1).single();
-      if (cbtData) {
-        setStrictMode(cbtData.strict_mode);
-        setAutoSave(cbtData.auto_save);
-        setMaintenance(cbtData.maintenance_mode);
-      }
-      // Ambil status result dari site_settings
-      const { data: siteData } = await supabase.from('site_settings').select('result_visible').eq('id', 1).single();
-      if (siteData) setResultVisible(siteData.result_visible ?? false);
-
-      // Ambil status portal dari announcements
-      const { data: portalData } = await supabase.from('announcements').select('*').eq('title', 'SYS_PORTAL_SETTINGS').single();
-      if (portalData) {
-        setPortalSettingsData(portalData);
-        try {
-          const parsed = JSON.parse(portalData.content);
-          if (parsed.isRegistrationOpen !== undefined) setIsRegistrationOpen(parsed.isRegistrationOpen);
-          if (parsed.waves) setWaves(parsed.waves);
-          if (parsed.paymentRequirementStage !== undefined) setPaymentRequirementStage(parsed.paymentRequirementStage);
-        } catch (e) {
-          console.error("Gagal parsing portal settings:", e);
+      try {
+        const { data: cbtData } = await supabase.from('cbt_settings').select('*').eq('id', 1).single();
+        if (cbtData) {
+          setStrictMode(cbtData.strict_mode);
+          setAutoSave(cbtData.auto_save);
+          setMaintenance(cbtData.maintenance_mode);
         }
+        // Ambil status result dari site_settings
+        const { data: siteData } = await supabase.from('site_settings').select('result_visible').eq('id', 1).single();
+        if (siteData) setResultVisible(siteData.result_visible ?? false);
+
+        // Ambil status portal dari announcements
+        const { data: portalData } = await supabase.from('announcements').select('*').eq('title', 'SYS_PORTAL_SETTINGS').single();
+        if (portalData) {
+          setPortalSettingsData(portalData);
+          try {
+            const parsed = JSON.parse(portalData.content);
+            if (parsed.isRegistrationOpen !== undefined) setIsRegistrationOpen(parsed.isRegistrationOpen);
+            if (parsed.waves) setWaves(parsed.waves);
+            if (parsed.paymentRequirementStage !== undefined) setPaymentRequirementStage(parsed.paymentRequirementStage);
+          } catch (e) {
+            console.error("Gagal parsing portal settings:", e);
+          }
+        }
+      } catch (err) {
+        console.error("Gagal memuat pengaturan:", err);
+      } finally {
+        setIsLoadingSettings(false);
       }
     };
     fetchSettings();
@@ -61,86 +68,94 @@ export default function SettingsDashboard() {
 
   const handleSave = async () => {
     setIsSaving(true);
-    // Simpan pengaturan CBT
-    await supabase.from('cbt_settings').update({
-      strict_mode: strictMode,
-      auto_save: autoSave,
-      maintenance_mode: maintenance,
-      updated_at: new Date().toISOString()
-    }).eq('id', 1);
-    // Simpan status result ke site_settings
-    const { error } = await supabase.from('site_settings').update({
-      result_visible: resultVisible,
-      is_registration_open: isRegistrationOpen,
-      maintenance_mode: maintenance
-    }).eq('id', 1);
+    setToastMessage("");
 
-    // Simpan status portal (Gerbang Pendaftaran & Waves) ke announcements
-    let portalError = null;
-    
-    // Inisialisasi ID dan konten teraktual
-    let activeContent = portalSettingsData?.content;
-    let activeId = portalSettingsData?.id;
-    
-    if (!activeId) {
-      const { data: existing } = await supabase
-        .from('announcements')
-        .select('id, content')
-        .eq('title', 'SYS_PORTAL_SETTINGS')
-        .maybeSingle();
-      if (existing) {
-        activeId = existing.id;
-        activeContent = existing.content;
+    try {
+      // 1. Validasi Input Gelombang (Cegah Tanggal Kosong / Data Loss)
+      const hasEmptyDates = waves.some(w => !w.startDate || !w.endDate);
+      if (hasEmptyDates) {
+        throw new Error("Semua gelombang wajib memiliki Tanggal Mulai dan Tanggal Selesai!");
       }
-    }
 
-    let parsed = { isRegistrationOpen: isRegistrationOpen, waves: waves, paymentRequirementStage: paymentRequirementStage };
-    if (activeContent) {
-      try {
-        parsed = { ...parsed, ...JSON.parse(activeContent) };
-        parsed.waves = waves;
-        parsed.isRegistrationOpen = isRegistrationOpen;
-        parsed.paymentRequirementStage = paymentRequirementStage;
-      } catch (e) {}
-    }
-    const newContent = JSON.stringify(parsed);
+      // 2. Simpan pengaturan CBT
+      const { error: cbtError } = await supabase.from('cbt_settings').update({
+        strict_mode: strictMode,
+        auto_save: autoSave,
+        maintenance_mode: maintenance,
+        updated_at: new Date().toISOString()
+      }).eq('id', 1);
 
-    if (activeId) {
-      const { data: uData, error: pErr } = await supabase
-        .from('announcements')
-        .update({ content: newContent })
-        .eq('id', activeId)
-        .select()
-        .single();
-      if (pErr) {
-        portalError = pErr;
-      } else if (uData) {
-        setPortalSettingsData(uData);
+      if (cbtError) throw cbtError;
+
+      // 3. Simpan status result, gate register & server maintenance ke site_settings
+      const { error: siteError } = await supabase.from('site_settings').update({
+        result_visible: resultVisible,
+        is_registration_open: isRegistrationOpen,
+        maintenance_mode: maintenance
+      }).eq('id', 1);
+
+      if (siteError) throw siteError;
+
+      // 4. Simpan status portal (Gerbang Pendaftaran & Waves) ke announcements
+      // Inisialisasi ID dan konten teraktual
+      let activeContent = portalSettingsData?.content;
+      let activeId = portalSettingsData?.id;
+      
+      if (!activeId) {
+        const { data: existing } = await supabase
+          .from('announcements')
+          .select('id, content')
+          .eq('title', 'SYS_PORTAL_SETTINGS')
+          .maybeSingle();
+        if (existing) {
+          activeId = existing.id;
+          activeContent = existing.content;
+        }
       }
-    } else {
-      const { data: iData, error: pErr } = await supabase
-        .from('announcements')
-        .insert([{
-          title: 'SYS_PORTAL_SETTINGS',
-          content: newContent,
-          target_audience: 'All'
-        }])
-        .select()
-        .single();
-      if (pErr) {
-        portalError = pErr;
-      } else if (iData) {
-        setPortalSettingsData(iData);
-      }
-    }
 
-    setIsSaving(false);
-    if (!error && !portalError) {
+      let parsed = { isRegistrationOpen: isRegistrationOpen, waves: waves, paymentRequirementStage: paymentRequirementStage };
+      if (activeContent) {
+        try {
+          parsed = { ...parsed, ...JSON.parse(activeContent) };
+          parsed.waves = waves;
+          parsed.isRegistrationOpen = isRegistrationOpen;
+          parsed.paymentRequirementStage = paymentRequirementStage;
+        } catch (e) {}
+      }
+      const newContent = JSON.stringify(parsed);
+
+      if (activeId) {
+        const { data: uData, error: pErr } = await supabase
+          .from('announcements')
+          .update({ content: newContent })
+          .eq('id', activeId)
+          .select()
+          .single();
+        if (pErr) throw pErr;
+        if (uData) setPortalSettingsData(uData);
+      } else {
+        const { data: iData, error: pErr } = await supabase
+          .from('announcements')
+          .insert([{
+            title: 'SYS_PORTAL_SETTINGS',
+            content: newContent,
+            target_audience: 'All'
+          }])
+          .select()
+          .single();
+        if (pErr) throw pErr;
+        if (iData) setPortalSettingsData(iData);
+      }
+
+      // Berhasil
       setToastMessage("Semua pengaturan berhasil disinkronisasi ke server!");
       setTimeout(() => setToastMessage(""), 3000);
-    } else {
-      setToastMessage("Beberapa pengaturan gagal disimpan.");
-      setTimeout(() => setToastMessage(""), 3000);
+    } catch (err: any) {
+      console.error("Gagal menyimpan pengaturan:", err);
+      setToastMessage(`Gagal menyimpan: ${err.message}`);
+      setTimeout(() => setToastMessage(""), 4000);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -419,7 +434,40 @@ export default function SettingsDashboard() {
         </header>
 
         {/* CONTENT */}
-        <div className="p-6 md:p-8 space-y-6 max-w-5xl flex-1">
+        {isLoadingSettings ? (
+          <div className="p-6 md:p-8 space-y-6 max-w-5xl flex-1 animate-pulse">
+            {/* Profile Card Skeleton */}
+            <div className="bg-white rounded-[24px] border border-gray-100 p-8 flex flex-col md:flex-row gap-8 items-center">
+              <div className="w-24 h-24 bg-slate-100 rounded-full flex-shrink-0"></div>
+              <div className="flex-1 space-y-3 w-full">
+                <div className="h-6 bg-slate-100 rounded-lg w-1/3"></div>
+                <div className="h-4 bg-slate-100 rounded-lg w-1/4"></div>
+                <div className="h-10 bg-slate-100 rounded-lg w-full mt-4"></div>
+              </div>
+            </div>
+
+            {/* Portal Card Skeleton */}
+            <div className="bg-white rounded-[24px] p-8 border border-gray-100 space-y-4">
+              <div className="h-6 bg-slate-100 rounded-lg w-1/4"></div>
+              <div className="h-4 bg-slate-100 rounded-lg w-2/3"></div>
+              <div className="h-14 bg-slate-100 rounded-xl w-full"></div>
+            </div>
+
+            {/* Payment Stage Skeleton */}
+            <div className="bg-white rounded-[24px] p-8 border border-gray-100 space-y-6">
+              <div className="space-y-2">
+                <div className="h-6 bg-slate-100 rounded-lg w-1/3"></div>
+                <div className="h-4 bg-slate-100 rounded-lg w-1/2"></div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="h-28 bg-slate-50 border border-slate-100 rounded-2xl p-5"></div>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="p-6 md:p-8 space-y-6 max-w-5xl flex-1">
           
           {/* Bagian Profil Institusi & Admin */}
           <div className="bg-white rounded-[24px] shadow-sm border border-gray-100 p-8 flex flex-col md:flex-row gap-8 items-center md:items-start">
@@ -852,6 +900,7 @@ export default function SettingsDashboard() {
           </div>
 
         </div>
+        )}
       </main>
 
       {/* TOAST NOTIFICATION */}
