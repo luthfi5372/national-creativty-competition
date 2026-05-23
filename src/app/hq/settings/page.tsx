@@ -67,8 +67,7 @@ export default function SettingsDashboard() {
     // Simpan status result ke site_settings
     const { error } = await supabase.from('site_settings').upsert({
       id: 1,
-      result_visible: resultVisible,
-      updated_at: new Date().toISOString()
+      result_visible: resultVisible
     }, { onConflict: 'id' });
 
     // Simpan status portal (Gerbang Pendaftaran & Waves) ke announcements
@@ -108,7 +107,7 @@ export default function SettingsDashboard() {
   const handleToggleResult = async (newValue: boolean) => {
     setResultVisible(newValue);
     await supabase.from('site_settings').upsert(
-      { id: 1, result_visible: newValue, updated_at: new Date().toISOString() },
+      { id: 1, result_visible: newValue },
       { onConflict: 'id' }
     );
     setToastMessage(newValue ? "Sistem hasil kelulusan AKTIF — peserta dapat melihat status." : "Sistem hasil kelulusan DIMATIKAN — pengumuman disembunyikan.");
@@ -432,8 +431,20 @@ export default function SettingsDashboard() {
                   <p className="text-[10px] text-gray-400 font-medium mt-1 w-4/5">Siswa otomatis log out jika menekan Alt+Tab atau keluar layar.</p>
                 </div>
                 <button 
-                  onClick={() => setStrictMode(!strictMode)}
-                  className={`w-12 h-6 rounded-full transition-colors relative flex items-center flex-shrink-0 ${strictMode ? 'bg-emerald-500' : 'bg-gray-200'}`}
+                  onClick={async () => {
+                    const nextVal = !strictMode;
+                    setStrictMode(nextVal);
+                    await supabase.from('cbt_settings').upsert({
+                      id: 1,
+                      strict_mode: nextVal,
+                      auto_save: autoSave,
+                      maintenance_mode: maintenance,
+                      updated_at: new Date().toISOString()
+                    });
+                    setToastMessage(`Strict Fullscreen Mode ${nextVal ? 'AKTIF' : 'DIMATIKAN'}!`);
+                    setTimeout(() => setToastMessage(""), 3000);
+                  }}
+                  className={`w-12 h-6 rounded-full transition-colors relative flex items-center flex-shrink-0 ${strictMode ? 'bg-emerald-500 animate-pulse' : 'bg-gray-200'}`}
                 >
                   <div className={`w-4 h-4 bg-white rounded-full shadow-sm transform transition-transform ${strictMode ? 'translate-x-7' : 'translate-x-1'}`}></div>
                 </button>
@@ -445,8 +456,20 @@ export default function SettingsDashboard() {
                   <p className="text-[10px] text-gray-400 font-medium mt-1 w-4/5">Simpan jawaban ke database setiap kali siswa memilih opsi.</p>
                 </div>
                 <button 
-                  onClick={() => setAutoSave(!autoSave)}
-                  className={`w-12 h-6 rounded-full transition-colors relative flex items-center flex-shrink-0 ${autoSave ? 'bg-emerald-500' : 'bg-gray-200'}`}
+                  onClick={async () => {
+                    const nextVal = !autoSave;
+                    setAutoSave(nextVal);
+                    await supabase.from('cbt_settings').upsert({
+                      id: 1,
+                      strict_mode: strictMode,
+                      auto_save: nextVal,
+                      maintenance_mode: maintenance,
+                      updated_at: new Date().toISOString()
+                    });
+                    setToastMessage(`Auto-Save Telemetry ${nextVal ? 'AKTIF' : 'DIMATIKAN'}!`);
+                    setTimeout(() => setToastMessage(""), 3000);
+                  }}
+                  className={`w-12 h-6 rounded-full transition-colors relative flex items-center flex-shrink-0 ${autoSave ? 'bg-emerald-500 animate-pulse' : 'bg-gray-200'}`}
                 >
                   <div className={`w-4 h-4 bg-white rounded-full shadow-sm transform transition-transform ${autoSave ? 'translate-x-7' : 'translate-x-1'}`}></div>
                 </button>
@@ -466,8 +489,20 @@ export default function SettingsDashboard() {
                   <p className="text-[10px] text-gray-400 font-medium mt-1 w-4/5">Tutup akses login siswa sementara waktu.</p>
                 </div>
                 <button 
-                  onClick={() => setMaintenance(!maintenance)}
-                  className={`w-12 h-6 rounded-full transition-colors relative flex items-center flex-shrink-0 ${maintenance ? 'bg-rose-500' : 'bg-gray-200'}`}
+                  onClick={async () => {
+                    const nextVal = !maintenance;
+                    setMaintenance(nextVal);
+                    await supabase.from('cbt_settings').upsert({
+                      id: 1,
+                      strict_mode: strictMode,
+                      auto_save: autoSave,
+                      maintenance_mode: nextVal,
+                      updated_at: new Date().toISOString()
+                    });
+                    setToastMessage(nextVal ? "Mode Pemeliharaan (Maintenance) AKTIF!" : "Mode Pemeliharaan (Maintenance) DIMATIKAN.");
+                    setTimeout(() => setToastMessage(""), 3000);
+                  }}
+                  className={`w-12 h-6 rounded-full transition-colors relative flex items-center flex-shrink-0 ${maintenance ? 'bg-rose-500 animate-pulse' : 'bg-gray-200'}`}
                 >
                   <div className={`w-4 h-4 bg-white rounded-full shadow-sm transform transition-transform ${maintenance ? 'translate-x-7' : 'translate-x-1'}`}></div>
                 </button>
