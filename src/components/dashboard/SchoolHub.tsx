@@ -1,0 +1,432 @@
+"use client";
+
+import { useState, useEffect, useRef } from "react";
+import { MessageSquare, Users, Send, Building2, ShieldAlert, Award, Loader2, CheckCircle2, ChevronRight } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { createClient } from "@/lib/supabase/client";
+
+interface SchoolHubProps {
+  userEntry: any;
+  currentUser: any;
+}
+
+export default function SchoolHub({ userEntry, currentUser }: SchoolHubProps) {
+  const [activeTab, setActiveTab] = useState<"chat" | "schoolmates">("chat");
+  const [messages, setMessages] = useState<any[]>([]);
+  const [schoolmates, setSchoolmates] = useState<any[]>([]);
+  const [inputText, setInputText] = useState("");
+  const [isSending, setIsSending] = useState(false);
+  const [isLoadingChats, setIsLoadingChats] = useState(true);
+  const [isLoadingMates, setIsLoadingMates] = useState(true);
+  const [chatError, setChatError] = useState<string | null>(null);
+
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const supabase = createClient();
+
+  const activeSchool = userEntry?.school_name || userEntry?.school || currentUser?.user_metadata?.school || "";
+
+  // Auto-scroll chat to bottom
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    if (activeTab === "chat" && messages.length > 0) {
+      scrollToBottom();
+    }
+  }, [messages, activeTab]);
+
+  // 1. Fetch & Subscribe to School Messages (Real-Time Group Chat)
+  useEffect(() => {
+    if (!activeSchool) return;
+
+    const fetchMessages = async () => {
+      setIsLoadingChats(true);
+      setChatError(null);
+      try {
+        const { data, error } = await supabase
+          .from("school_messages")
+          .select("*")
+          .eq("school_name", activeSchool)
+          .order("created_at", { ascending: true })
+          .limit(100);
+
+        if (error) {
+          // If table doesn't exist yet, show a clean, friendly setup instruction
+          if (error.code === "PGRST116" || error.message.includes("does not exist")) {
+            setChatError("TableNotCreated");
+          } else {
+            throw error;
+          }
+        } else {
+          setMessages(data || []);
+        }
+      } catch (err: any) {
+        console.error("Failed to fetch school messages:", err);
+        setChatError(err.message || "Gagal memuat obrolan.");
+      } finally {
+        setIsLoadingChats(false);
+      }
+    };
+
+    fetchMessages();
+
+    // Listen to real-time additions of messages for this school
+    let channel: any;
+    try {
+      channel = supabase
+        .channel(`school_chat_${activeSchool.replace(/\s+/g, "_")}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "school_messages",
+            filter: `school_name=eq.${activeSchool}`,
+          },
+          (payload) => {
+            setMessages((prev) => [...prev, payload.new]);
+          }
+        )
+        .subscribe();
+    } catch (e) {
+      console.warn("Real-time subscription failed:", e);
+    }
+
+    return () => {
+      if (channel) supabase.removeChannel(channel);
+    };
+  }, [activeSchool]);
+
+  // 2. Fetch Schoolmates & Kelolosan statuses
+  useEffect(() => {
+    if (!activeSchool) return;
+
+    const fetchSchoolmates = async () => {
+      setIsLoadingMates(true);
+      try {
+        const { data, error } = await supabase
+          .from("competition_entries")
+          .select("id, full_name, email, competition_type, category, payment_status, notes")
+          .eq("payment_status", "Verified") // Only show verified participants
+          .or(`school_name.eq."${activeSchool}",school.eq."${activeSchool}"`)
+          .order("full_name", { ascending: true });
+
+        if (error) throw error;
+        setSchoolmates(data || []);
+      } catch (err) {
+        console.error("Failed to fetch schoolmates:", err);
+      } finally {
+        setIsLoadingMates(false);
+      }
+    };
+
+    fetchSchoolmates();
+  }, [activeSchool]);
+
+  // Handle send message
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputText.trim() || isSending || !activeSchool) return;
+
+    setIsSending(true);
+    const messageText = inputText.trim();
+    setInputText("");
+
+    try {
+      const senderName = currentUser?.user_metadata?.full_name || currentUser?.email?.split("@")[0] || "Peserta NCC";
+      const { error } = await supabase
+        .from("school_messages")
+        .insert([
+          {
+            school_name: activeSchool,
+            sender_id: currentUser.id,
+            sender_name: senderName,
+            message: messageText,
+          }
+        ]);
+
+      if (error) throw error;
+    } catch (err: any) {
+      console.error("Failed to send message:", err);
+      // Fallback optimistic rendering or error display if blocked by RLS / database setup
+      alert("Gagal mengirim pesan: Pastikan tabel SQL sudah di-setup dan Anda terdaftar di sekolah ini.");
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  // Helper to parse stage progress
+  const getProgressDetails = (entry: any) => {
+    let stage = 1;
+    let isFailed = false;
+    if (entry.notes) {
+      try {
+        const n = JSON.parse(entry.notes);
+        if (n.current_stage) stage = n.current_stage;
+        if (n.is_failed) isFailed = n.is_failed;
+      } catch (e) {}
+    }
+
+    if (stage === 1) {
+      return isFailed 
+        ? { text: "Gagal T1", color: "bg-rose-50 text-rose-600 border-rose-200" } 
+        : { text: "Tahap 1", color: "bg-slate-100 text-slate-500 border-slate-200" };
+    }
+    if (stage === 2) {
+      return isFailed 
+        ? { text: "Gagal T2", color: "bg-rose-50 text-rose-600 border-rose-200" } 
+        : { text: "Tahap 2", color: "bg-blue-50 text-blue-600 border-blue-200" };
+    }
+    return { text: "Final", color: "bg-amber-50 text-amber-600 border-amber-200" };
+  };
+
+  // If no school info is filled yet, show a prompt to complete registration
+  if (!activeSchool) {
+    return (
+      <div className="bg-white border border-slate-100/90 shadow-md rounded-[24px] p-6 text-center mt-6">
+        <Building2 size={40} className="mx-auto text-slate-300 mb-3" />
+        <h3 className="font-bold text-slate-700">Ruang Sekolah Belum Aktif</h3>
+        <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+          Silakan lengkapi profil biodata pendaftaran kompetisi Anda terlebih dahulu untuk membuka Forum Diskusi rekan satu sekolah.
+        </p>
+      </div>
+    );
+  }
+
+  // Calculate statistics
+  const totalSchoolmates = schoolmates.length;
+  const passedMatesCount = schoolmates.filter(mate => {
+    let stage = 1;
+    let isFailed = false;
+    if (mate.notes) {
+      try {
+        const n = JSON.parse(mate.notes);
+        stage = n.current_stage || 1;
+        isFailed = n.is_failed || false;
+      } catch (e) {}
+    }
+    return stage >= 2 && !isFailed;
+  }).length;
+
+  return (
+    <div className="mt-6 bg-white border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.015)] rounded-[24px] overflow-hidden flex flex-col min-h-[460px]">
+      
+      {/* ─── HEADER: School Information & Stats ─── */}
+      <div className="p-6 bg-gradient-to-br from-indigo-50/40 via-purple-50/20 to-transparent border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100/70 flex items-center justify-center text-indigo-600 shrink-0 shadow-sm">
+            <Building2 size={20} />
+          </div>
+          <div>
+            <h3 className="font-black text-slate-800 text-sm tracking-tight uppercase">Ruang Sekolah</h3>
+            <p className="font-semibold text-slate-500 text-xs tracking-wide">{activeSchool}</p>
+          </div>
+        </div>
+
+        {/* School Mini Stats Badges */}
+        <div className="flex items-center gap-2">
+          <span className="bg-indigo-50 text-indigo-700 border border-indigo-100/60 px-3 py-1 rounded-full text-[10px] font-bold shadow-sm">
+            {totalSchoolmates} Terdaftar
+          </span>
+          <span className="bg-emerald-50 text-emerald-700 border border-emerald-100/60 px-3 py-1 rounded-full text-[10px] font-bold shadow-sm">
+            {passedMatesCount} Lolos T2/Final
+          </span>
+        </div>
+      </div>
+
+      {/* ─── TABS SELECTOR ─── */}
+      <div className="flex border-b border-slate-100 px-4 bg-slate-50/50">
+        <button
+          onClick={() => setActiveTab("chat")}
+          className={`flex items-center gap-2 px-4 py-3.5 text-xs font-bold transition-all relative border-b-2 ${
+            activeTab === "chat"
+              ? "text-indigo-600 border-indigo-600"
+              : "text-slate-500 border-transparent hover:text-slate-800"
+          }`}
+        >
+          <MessageSquare size={14} />
+          Diskusi Kelompok
+        </button>
+        <button
+          onClick={() => setActiveTab("schoolmates")}
+          className={`flex items-center gap-2 px-4 py-3.5 text-xs font-bold transition-all relative border-b-2 ${
+            activeTab === "schoolmates"
+              ? "text-indigo-600 border-indigo-600"
+              : "text-slate-500 border-transparent hover:text-slate-800"
+          }`}
+        >
+          <Users size={14} />
+          Rekan Sekolah ({totalSchoolmates})
+        </button>
+      </div>
+
+      {/* ─── TAB CONTENT: LIVE CHAT ROOM ─── */}
+      <div className="flex-1 flex flex-col p-4 min-h-[300px]">
+        {activeTab === "chat" ? (
+          <div className="flex-1 flex flex-col justify-between h-full min-h-[280px]">
+            
+            {/* Messages Scroll Area */}
+            <div className="flex-1 overflow-y-auto max-h-[280px] space-y-3.5 pr-1 mb-4 flex flex-col scroll-smooth">
+              {isLoadingChats ? (
+                <div className="flex-1 flex flex-col items-center justify-center py-12">
+                  <Loader2 size={24} className="text-indigo-600 animate-spin mb-2" />
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Menyinkronkan percakapan...</p>
+                </div>
+              ) : chatError === "TableNotCreated" ? (
+                /* Graceful Setup Prompt for SQL migration */
+                <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 text-center my-4">
+                  <ShieldAlert size={32} className="mx-auto text-amber-500 mb-2.5 animate-pulse" />
+                  <h4 className="font-bold text-slate-700 text-xs uppercase tracking-wider">Forum Chat Belum Aktif</h4>
+                  <p className="text-[11px] text-slate-400 mt-1 max-w-[280px] mx-auto leading-relaxed">
+                    Tabel database `school_messages` belum dibuat oleh Admin. 
+                  </p>
+                  <div className="mt-3.5 text-[9px] bg-amber-50 text-amber-700 border border-amber-200/50 p-2 rounded-xl text-left font-mono">
+                    Jalankan file migrasi:<br />
+                    supabase/migrations/add_school_chat.sql
+                  </div>
+                </div>
+              ) : chatError ? (
+                <div className="text-center py-12 text-rose-500 text-xs font-bold">
+                  {chatError}
+                </div>
+              ) : messages.length === 0 ? (
+                <div className="flex-1 flex flex-col items-center justify-center text-center py-10">
+                  <MessageSquare size={36} className="text-slate-200 mb-3" />
+                  <h4 className="font-bold text-slate-600 text-xs">Belum Ada Percakapan</h4>
+                  <p className="text-[11px] text-slate-400 mt-1 max-w-[240px]">
+                    Jadilah yang pertama mengirim pesan dan memulai diskusi sekolah Anda!
+                  </p>
+                </div>
+              ) : (
+                messages.map((msg, index) => {
+                  const isMe = msg.sender_id === currentUser?.id;
+                  const dateObj = new Date(msg.created_at);
+                  const timeStr = dateObj.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+
+                  return (
+                    <div
+                      key={msg.id || index}
+                      className={`flex flex-col max-w-[80%] ${isMe ? "self-end items-end" : "self-start items-start"}`}
+                    >
+                      {/* Sender Name */}
+                      {!isMe && (
+                        <span className="text-[10px] text-slate-400 font-bold mb-1 ml-1.5 uppercase tracking-wider">
+                          {msg.sender_name}
+                        </span>
+                      )}
+                      {/* Bubble Message */}
+                      <div
+                        className={`px-4 py-2.5 rounded-2xl text-xs leading-relaxed shadow-sm border ${
+                          isMe
+                            ? "bg-indigo-600 text-white border-indigo-700 rounded-tr-none shadow-indigo-100"
+                            : "bg-slate-50 text-slate-700 border-slate-100 rounded-tl-none"
+                        }`}
+                      >
+                        {msg.message}
+                      </div>
+                      {/* Time Sent */}
+                      <span className="text-[9px] text-slate-400 font-medium mt-1 mx-1.5">
+                        {timeStr} WIB
+                      </span>
+                    </div>
+                  );
+                })
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Form Input Message */}
+            {chatError !== "TableNotCreated" && (
+              <form onSubmit={handleSendMessage} className="relative flex gap-2 items-center">
+                <input
+                  type="text"
+                  required
+                  placeholder="Ketik pesan diskusi sekolah..."
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                  disabled={isSending || chatError !== null}
+                  className="flex-1 pl-4 pr-12 py-3 bg-slate-50 border border-slate-200 focus:bg-white rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all text-slate-700 placeholder:text-slate-400 shadow-inner disabled:opacity-50"
+                />
+                <button
+                  type="submit"
+                  disabled={!inputText.trim() || isSending}
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                >
+                  {isSending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                </button>
+              </form>
+            )}
+
+          </div>
+        ) : (
+          /* ─── TAB CONTENT: SCHOOLMATE DIRECTORY ─── */
+          <div className="flex-1 flex flex-col justify-start min-h-[280px]">
+            {isLoadingMates ? (
+              <div className="flex-1 flex flex-col items-center justify-center py-12">
+                <Loader2 size={24} className="text-indigo-600 animate-spin mb-2" />
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Menyinkronkan data rekan...</p>
+              </div>
+            ) : schoolmates.length === 0 ? (
+              <div className="flex-1 flex flex-col items-center justify-center text-center py-10">
+                <Users size={36} className="text-slate-200 mb-3" />
+                <h4 className="font-bold text-slate-600 text-xs">Pionir Pertama Sekolah Anda</h4>
+                <p className="text-[11px] text-slate-400 mt-1 max-w-[260px] mx-auto leading-relaxed">
+                  Anda adalah peserta pertama terverifikasi dari sekolah ini! Ajak siswa lain mendaftar untuk memantau status mereka di sini.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                {schoolmates.map((mate) => {
+                  const progress = getProgressDetails(mate);
+                  const isMe = mate.email === currentUser?.email;
+
+                  return (
+                    <div
+                      key={mate.id}
+                      className={`flex items-center justify-between p-3.5 border rounded-xl hover:shadow-sm transition-all ${
+                        isMe
+                          ? "bg-indigo-50/30 border-indigo-100"
+                          : "bg-white border-slate-100"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-lg font-extrabold text-xs flex items-center justify-center shrink-0 border ${
+                          isMe
+                            ? "bg-indigo-600 text-white border-indigo-700 shadow-sm"
+                            : "bg-slate-50 text-slate-600 border-slate-100"
+                        }`}>
+                          {mate.full_name?.charAt(0).toUpperCase() || "P"}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold text-slate-700 text-xs">
+                              {mate.full_name || "Peserta NCC"}
+                            </span>
+                            {isMe && (
+                              <span className="bg-indigo-100 text-indigo-700 font-black text-[8px] uppercase px-1 rounded">Saya</span>
+                            )}
+                          </div>
+                          <span className="text-[10px] text-slate-400 font-bold block mt-0.5 uppercase tracking-wider">
+                            {mate.competition_type || mate.category || "-"}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Progress Badge */}
+                      <span className={`px-2.5 py-1 rounded-md text-[9px] font-black border flex items-center gap-1 uppercase tracking-wide shrink-0 shadow-sm ${progress.color}`}>
+                        {progress.text === "Final" ? <Award size={10} /> : <CheckCircle2 size={10} />}
+                        {progress.text}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+    </div>
+  );
+}

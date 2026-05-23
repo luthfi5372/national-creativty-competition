@@ -15,6 +15,7 @@ import TimelineWidget from "@/components/dashboard/TimelineWidget";
 import RegistrationModal from "@/components/dashboard/RegistrationModal";
 import IdCardModal from "@/components/dashboard/IdCardModal";
 import WelcomeOverlay from "@/components/dashboard/WelcomeOverlay";
+import SchoolHub from "@/components/dashboard/SchoolHub";
 
 export default function UserDashboard() {
   const [announcements, setAnnouncements] = useState<any[]>([]);
@@ -418,6 +419,8 @@ export default function UserDashboard() {
               globalTimeline={globalTimeline}
               portalWaves={portalWaves}
             />
+            
+            <SchoolHub userEntry={userEntry} currentUser={currentUser} />
             
             {/* KARTU AKSES PORTAL UJIAN LLMS (KHUSUS MIPA) */}
             {userEntry?.competition_type === 'Olimpiade MIPA' && userEntry?.payment_status === 'Verified' && (
