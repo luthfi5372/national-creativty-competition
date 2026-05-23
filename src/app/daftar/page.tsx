@@ -14,7 +14,8 @@ export default function DaftarPage() {
     email: "",
     password: "",
     confirmPassword: "",
-    npsn: ""
+    npsn: "",
+    school: ""
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,7 +37,7 @@ export default function DaftarPage() {
     setError(null);
 
     // 1. Validasi Keamanan Dasar
-    if (!formData.username || !formData.fullName || !formData.email || !formData.password || !formData.confirmPassword || !formData.npsn) {
+    if (!formData.username || !formData.fullName || !formData.email || !formData.password || !formData.confirmPassword || !formData.npsn || !formData.school) {
       setError("⚠️ Semua kolom wajib diisi, Komandan!");
       return;
     }
@@ -64,6 +65,7 @@ export default function DaftarPage() {
             full_name: formData.fullName,
             username: formData.username,
             npsn: formData.npsn,
+            school: formData.school,
           }
         }
       });
@@ -208,6 +210,23 @@ export default function DaftarPage() {
                   onChange={(e) => setFormData({...formData, npsn: e.target.value.replace(/\D/g, "")})}
                 />
               </div>
+            </div>
+          </div>
+
+          {/* Baris 2.5: Nama Sekolah */}
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-1">Nama Sekolah</label>
+            <div className="relative group">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                <Building2 size={16} className="text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+              </div>
+              <input 
+                type="text" 
+                placeholder="Nama Sekolah Anda (misal: SMA Negeri 1 Jakarta)" 
+                className="w-full pl-10 pr-4 py-3 bg-white/60 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-slate-700 placeholder:text-slate-400 shadow-sm"
+                value={formData.school}
+                onChange={(e) => setFormData({...formData, school: e.target.value})}
+              />
             </div>
           </div>
 
