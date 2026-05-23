@@ -7,7 +7,8 @@ import { createClient } from '@/lib/supabase/client';
 import { 
   LayoutGrid, Users, BadgeCheck, Megaphone, 
   Calendar, Image as ImageIcon, Server, Settings,
-  LogOut, UserCircle, ShieldCheck, BellRing, Database, Clock, Loader2, Trophy
+  LogOut, UserCircle, ShieldCheck, BellRing, Database, Clock, Loader2, Trophy,
+  Power, XCircle, CheckCircle2, Trash2, AlertCircle, Plus, CheckCircle
 } from 'lucide-react';
 
 export default function SettingsDashboard() {
@@ -20,6 +21,11 @@ export default function SettingsDashboard() {
   const [isSaving, setIsSaving] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
 
+  // States for unified registration settings
+  const [isRegistrationOpen, setIsRegistrationOpen] = useState(true);
+  const [waves, setWaves] = useState<any[]>([]);
+  const [portalSettingsData, setPortalSettingsData] = useState<any>(null);
+
   useEffect(() => {
     const fetchSettings = async () => {
       const { data: cbtData } = await supabase.from('cbt_settings').select('*').eq('id', 1).single();
@@ -31,6 +37,19 @@ export default function SettingsDashboard() {
       // Ambil status result dari site_settings
       const { data: siteData } = await supabase.from('site_settings').select('result_visible').eq('id', 1).single();
       if (siteData) setResultVisible(siteData.result_visible ?? false);
+
+      // Ambil status portal dari announcements
+      const { data: portalData } = await supabase.from('announcements').select('*').eq('title', 'SYS_PORTAL_SETTINGS').single();
+      if (portalData) {
+        setPortalSettingsData(portalData);
+        try {
+          const parsed = JSON.parse(portalData.content);
+          if (parsed.isRegistrationOpen !== undefined) setIsRegistrationOpen(parsed.isRegistrationOpen);
+          if (parsed.waves) setWaves(parsed.waves);
+        } catch (e) {
+          console.error("Gagal parsing portal settings:", e);
+        }
+      }
     };
     fetchSettings();
   }, []);
@@ -45,15 +64,42 @@ export default function SettingsDashboard() {
       maintenance_mode: maintenance,
       updated_at: new Date().toISOString()
     });
-    // Simpan status result ke site_settings (langsung, tanpa tunggu save button)
+    // Simpan status result ke site_settings
     const { error } = await supabase.from('site_settings').upsert({
       id: 1,
       result_visible: resultVisible,
       updated_at: new Date().toISOString()
     }, { onConflict: 'id' });
+
+    // Simpan status portal (Gerbang Pendaftaran & Waves) ke announcements
+    let portalError = null;
+    if (portalSettingsData) {
+      try {
+        const parsed = JSON.parse(portalSettingsData.content);
+        parsed.waves = waves;
+        parsed.isRegistrationOpen = isRegistrationOpen;
+        const newContent = JSON.stringify(parsed);
+        const { error: pErr } = await supabase
+          .from('announcements')
+          .update({ content: newContent })
+          .eq('title', 'SYS_PORTAL_SETTINGS');
+        if (pErr) {
+          portalError = pErr;
+        } else {
+          setPortalSettingsData({ ...portalSettingsData, content: newContent });
+        }
+      } catch (e: any) {
+        console.error(e);
+        portalError = e;
+      }
+    }
+
     setIsSaving(false);
-    if (!error) {
-      setToastMessage("Pengaturan berhasil disinkronisasi ke server!");
+    if (!error && !portalError) {
+      setToastMessage("Semua pengaturan berhasil disinkronisasi ke server!");
+      setTimeout(() => setToastMessage(""), 3000);
+    } else {
+      setToastMessage("Beberapa pengaturan gagal disimpan.");
       setTimeout(() => setToastMessage(""), 3000);
     }
   };
@@ -72,6 +118,35 @@ export default function SettingsDashboard() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push('/login');
+  };
+
+  // Toggle Gerbang Pendaftaran langsung
+  const handleToggleRegistration = async (newValue: boolean) => {
+    setIsRegistrationOpen(newValue);
+    if (portalSettingsData) {
+      try {
+        const parsed = JSON.parse(portalSettingsData.content);
+        parsed.isRegistrationOpen = newValue;
+        const newContent = JSON.stringify(parsed);
+        await supabase
+          .from('announcements')
+          .update({ content: newContent })
+          .eq('title', 'SYS_PORTAL_SETTINGS');
+        setPortalSettingsData({ ...portalSettingsData, content: newContent });
+        setToastMessage(newValue ? "Gerbang pendaftaran BERHASIL DIBUKA!" : "Gerbang pendaftaran DITUTUP SEMENTARA.");
+        setTimeout(() => setToastMessage(""), 3000);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  };
+
+  const toggleWaveStatus = (id: number) => {
+    setWaves(prev => prev.map(w => 
+      w.id === id 
+        ? { ...w, status: w.status === 'Aktif' ? 'Tutup' : 'Aktif' } 
+        : w
+    ));
   };
 
   return (
@@ -193,6 +268,153 @@ export default function SettingsDashboard() {
                    <p className="text-sm font-semibold text-gray-700 mt-0.5">Full System Override</p>
                  </div>
               </div>
+            </div>
+          </div>
+
+          {/* 1. SAKLAR UTAMA PORTAL */}
+          <div className="bg-white rounded-[24px] p-8 shadow-sm border border-gray-100">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="flex items-center gap-5">
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 ${
+                  isRegistrationOpen 
+                    ? 'bg-emerald-100 text-emerald-600 shadow-lg shadow-emerald-100' 
+                    : 'bg-rose-100 text-rose-600 shadow-lg shadow-rose-100'
+                }`}>
+                  <Power size={28} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-slate-800">Gerbang Pendaftaran</h3>
+                  <div className="text-sm font-medium text-slate-500 mt-1 flex items-center gap-2 flex-wrap">
+                    <span>Status saat ini:</span>
+                    <div className={`px-4 py-1 rounded-full text-[10px] font-black tracking-widest inline-flex items-center gap-1.5 ${isRegistrationOpen ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-red-100 text-red-700 border border-red-200'}`}>
+                      {isRegistrationOpen ? <CheckCircle size={12} /> : <XCircle size={12} />}
+                      {isRegistrationOpen ? 'TERBUKA UNTUK PUBLIK' : 'DITUTUP SEMENTARA'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Toggle Switch Modern */}
+              <button 
+                onClick={() => {
+                  handleToggleRegistration(!isRegistrationOpen);
+                }}
+                className={`relative w-20 h-10 rounded-full transition-colors duration-300 focus:outline-none shadow-inner shrink-0 ${
+                  isRegistrationOpen ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'
+                }`}
+              >
+                <div className={`absolute top-1 left-1 bg-white w-8 h-8 rounded-full shadow-md transition-transform duration-300 flex items-center justify-center ${
+                  isRegistrationOpen ? 'translate-x-10' : 'translate-x-0'
+                }`}>
+                  {isRegistrationOpen 
+                    ? <CheckCircle2 size={16} className="text-emerald-500" /> 
+                    : <XCircle size={16} className="text-slate-400" />
+                  }
+                </div>
+              </button>
+            </div>
+
+            {/* Peringatan saat ditutup */}
+            {!isRegistrationOpen && (
+              <div className="mt-6 p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-3">
+                <AlertCircle size={18} className="text-rose-500 mt-0.5 shrink-0" />
+                <p className="text-sm text-rose-700">
+                  <strong>Perhatian:</strong> Peserta baru tidak dapat mendaftar saat portal ditutup. 
+                  Peserta yang sudah mendaftar tetap bisa login dan melihat status mereka.
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* 2. MANAJEMEN GELOMBANG */}
+          <div className="bg-white rounded-[24px] p-8 shadow-sm border border-gray-100">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+              <div>
+                <h3 className="text-xl font-black text-slate-800">Manajemen Gelombang</h3>
+                <p className="text-sm text-slate-500 mt-1">Atur jadwal pendaftaran per gelombang.</p>
+              </div>
+              <button 
+                onClick={() => {
+                  const newId = waves.length + 1;
+                  setWaves([...waves, {
+                    id: newId,
+                    name: `Gelombang ${newId}`,
+                    status: 'Tutup',
+                    startDate: '',
+                    endDate: '',
+                  }]);
+                  setToastMessage(`Gelombang ${newId} berhasil ditambahkan.`);
+                  setTimeout(() => setToastMessage(""), 3000);
+                }}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-md transition-all active:scale-95 flex items-center gap-2 shrink-0"
+              >
+                <Plus size={16} /> Tambah Gelombang
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              {waves.map((wave) => (
+                <div 
+                  key={wave.id} 
+                  className={`border-2 rounded-2xl p-6 transition-all duration-300 ${
+                    wave.status === 'Aktif' 
+                      ? 'border-blue-400 bg-blue-50/40 shadow-md shadow-blue-50' 
+                      : 'border-slate-100 bg-slate-50/50 hover:border-slate-200'
+                  }`}
+                >
+                  <div className="flex justify-between items-start mb-4">
+                    <h4 className="font-bold text-lg text-slate-800">{wave.name}</h4>
+                    <span className={`text-[10px] font-black px-2.5 py-1 rounded-lg flex items-center gap-1 ${wave.status === 'Aktif' ? 'bg-green-50 text-green-600 border border-green-100' : 'bg-slate-100 text-slate-400'}`}>
+                      <div className={`w-1.5 h-1.5 rounded-full ${wave.status === 'Aktif' ? 'bg-green-500 animate-pulse' : 'bg-slate-400'}`}></div>
+                      {wave.status === 'Aktif' ? 'Live' : 'Tutup'}
+                    </span>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Tanggal Mulai</label>
+                      <input 
+                        type="date" 
+                        value={wave.startDate}
+                        onChange={(e) => setWaves(prev => prev.map(w => w.id === wave.id ? {...w, startDate: e.target.value} : w))}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all" 
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Tanggal Selesai</label>
+                      <input 
+                        type="date" 
+                        value={wave.endDate}
+                        onChange={(e) => setWaves(prev => prev.map(w => w.id === wave.id ? {...w, endDate: e.target.value} : w))}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all" 
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-5 pt-4 border-t border-slate-100 flex gap-2">
+                    <button 
+                      onClick={() => toggleWaveStatus(wave.id)}
+                      className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all active:scale-95 flex items-center justify-center gap-1.5 ${
+                        wave.status === 'Aktif'
+                          ? 'bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200'
+                          : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200'
+                      }`}
+                    >
+                      {wave.status === 'Aktif' ? <><XCircle size={13}/> Nonaktifkan</> : <><CheckCircle2 size={13}/> Aktifkan</>}
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setWaves(prev => prev.filter(w => w.id !== wave.id));
+                        setToastMessage(`${wave.name} dihapus.`);
+                        setTimeout(() => setToastMessage(""), 3000);
+                      }}
+                      className="px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-500 hover:bg-slate-200 transition-all active:scale-95"
+                    >
+                      <Trash2 size={13}/>
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 

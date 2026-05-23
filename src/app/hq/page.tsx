@@ -1413,10 +1413,10 @@ export default function ModernHQDashboard() {
             { id: "LLMS", icon: <GraduationCap size={18} />, label: "Manajemen LLMS", badge: "New" },
             { id: "Pengaturan", icon: <Settings size={18} />, label: "Pengaturan" }
           ].map((item) => (
-            item.id === "LLMS" ? (
+            item.id === "LLMS" || item.id === "Pengaturan" ? (
               <Link
                 key={item.id}
-                href="/hq/llms"
+                href={item.id === "LLMS" ? "/hq/llms" : "/hq/settings"}
                 className="w-full flex items-center justify-between gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300 font-bold text-sm bg-white text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 border border-transparent hover:border-indigo-100"
               >
                 <div className="flex items-center gap-3">
