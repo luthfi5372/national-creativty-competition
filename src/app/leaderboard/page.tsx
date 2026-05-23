@@ -29,7 +29,81 @@ interface HasilCek {
   participant2Nisn?: string;
   mentorName?: string;
   statusPassing: "PASSED" | "FAILED" | "PENDING" | null;
+  currentStage: number;
 }
+
+const getStageDetails = (hasilCek: HasilCek) => {
+  const stage = hasilCek.currentStage || 1;
+  const status = hasilCek.statusPassing;
+
+  if (stage === 1) {
+    if (status === "PASSED") {
+      return {
+        headerStatus: "PASSED" as const,
+        title: "Selamat, Kamu LOLOS!",
+        subtitle: "Lolos Babak Penyisihan (Tahap 1) dan berhak ke Babak Semi Final (Tahap 2)."
+      };
+    } else if (status === "FAILED") {
+      return {
+        headerStatus: "FAILED" as const,
+        title: "Belum Lolos Tahap 1",
+        subtitle: "Kamu belum berhasil lolos Babak Penyisihan (Tahap 1). Tetap semangat berkarya!"
+      };
+    } else {
+      return {
+        headerStatus: "PENDING" as const,
+        title: "Hasil Belum Keluar",
+        subtitle: "Status kelulusan Babak Penyisihan (Tahap 1) masih dalam proses penilaian dewan juri."
+      };
+    }
+  } else if (stage === 2) {
+    if (status === "PASSED") {
+      return {
+        headerStatus: "PASSED" as const,
+        title: "Luar Biasa, Kamu LOLOS!",
+        subtitle: "Lolos Babak Semi Final (Tahap 2) dan berhak melaju ke Babak Grand Final (Tahap 3)!"
+      };
+    } else if (status === "FAILED") {
+      return {
+        headerStatus: "FAILED" as const,
+        title: "Belum Lolos Tahap 2",
+        subtitle: "Kamu telah berjuang hebat hingga Semi Final (Tahap 2), namun belum berhasil lolos ke Grand Final."
+      };
+    } else {
+      return {
+        headerStatus: "PASSED" as const,
+        title: "Selamat, Kamu LOLOS!",
+        subtitle: "Kamu lolos Babak Penyisihan (Tahap 1) dan saat ini berada di Babak Semi Final (Tahap 2)."
+      };
+    }
+  } else if (stage === 3) {
+    if (status === "PASSED") {
+      return {
+        headerStatus: "PASSED" as const,
+        title: "Selamat, Kamu JUARA!",
+        subtitle: "Sempurna! Kamu dinyatakan berhasil meraih posisi terbaik di Babak Grand Final (Tahap 3)."
+      };
+    } else if (status === "FAILED") {
+      return {
+        headerStatus: "FAILED" as const,
+        title: "Grand Finalis Hebat!",
+        subtitle: "Kamu adalah salah satu Finalis Terbaik di Babak Grand Final (Tahap 3). Tetap bangga atas prestasimu!"
+      };
+    } else {
+      return {
+        headerStatus: "PASSED" as const,
+        title: "Selamat, Kamu FINALIS!",
+        subtitle: "Luar biasa! Kamu lolos Semi Final (Tahap 2) dan saat ini berada di Babak Grand Final (Tahap 3)."
+      };
+    }
+  }
+
+  return {
+    headerStatus: "PENDING" as const,
+    title: "Hasil Belum Keluar",
+    subtitle: "Panitia masih dalam proses penilaian."
+  };
+};
 
 // ── Konfetti Canvas native ────────────────────────────────────────────────────
 function ConfettiBlast() {
@@ -81,14 +155,34 @@ export default function LeaderboardPage() {
   const [cekError, setCekError] = useState("");
   // Status sistem dari admin — default TRUE (tampilkan form)
   const [resultVisible, setResultVisible] = useState<boolean | null>(null);
+  const [activePhases, setActivePhases] = useState<any[]>([]);
 
   useEffect(() => {
     loadLeaderboard();
     const interval = setInterval(loadLeaderboard, 30000);
     // Cek status sistem pengumuman dari site_settings
     checkResultVisible();
+    fetchPortalSettings();
     return () => clearInterval(interval);
   }, []);
+
+  async function fetchPortalSettings() {
+    try {
+      const { data, error } = await supabase
+        .from("announcements")
+        .select("content")
+        .eq("title", "SYS_PORTAL_SETTINGS")
+        .single();
+      if (data && !error) {
+        const parsed = JSON.parse(data.content);
+        if (parsed.phaseStatus) {
+          setActivePhases(parsed.phaseStatus);
+        }
+      }
+    } catch (e) {
+      console.error("Gagal memuat status tahap kompetisi:", e);
+    }
+  }
 
   async function checkResultVisible() {
     try {
@@ -127,6 +221,17 @@ export default function LeaderboardPage() {
         setCekError("NISN tidak ditemukan atau belum terverifikasi.");
         setIsCekLoading(false); return;
       }
+      
+      let currentStage = 1;
+      if (entry.notes) {
+        try {
+          const notesObj = JSON.parse(entry.notes);
+          if (notesObj.current_stage) {
+            currentStage = Number(notesObj.current_stage);
+          }
+        } catch (e) {}
+      }
+
       const ticketCode = `NCC-${generateTicketCode(entry.id)}`;
       const { data: attempt } = await supabase
         .from("cbt_attempts").select("status_passing").eq("user_id", ticketCode).maybeSingle();
@@ -149,7 +254,8 @@ export default function LeaderboardPage() {
         participant2Name: entry.participant2_name || undefined,
         participant2Nisn: entry.participant2_nisn || undefined,
         mentorName: entry.mentor_name || entry.teacher_name || undefined,
-        statusPassing
+        statusPassing,
+        currentStage
       });
       setShowPopup(true);
     } catch { setCekError("Terjadi kesalahan. Coba lagi."); }
@@ -163,15 +269,17 @@ export default function LeaderboardPage() {
     .filter(i => selectedCategory === "SEMUA" || i.category === selectedCategory)
     .filter(i => i.name?.toLowerCase().includes(searchTerm.toLowerCase()) || i.school?.toLowerCase().includes(searchTerm.toLowerCase()));
 
+  const stageDetails = hasilCek ? getStageDetails(hasilCek) : null;
+
   return (
     <div className="min-h-screen bg-white text-slate-800 overflow-x-hidden font-sans">
 
       {/* Konfetti */}
-      {showPopup && hasilCek?.statusPassing === "PASSED" && <ConfettiBlast />}
+      {showPopup && stageDetails?.headerStatus === "PASSED" && <ConfettiBlast />}
 
       {/* ── POP-UP HASIL ────────────────────────────────────────────────────── */}
       <AnimatePresence>
-        {showPopup && hasilCek && (
+        {showPopup && hasilCek && stageDetails && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
@@ -187,8 +295,8 @@ export default function LeaderboardPage() {
             >
               {/* Stripe warna status */}
               <div className={`h-1.5 w-full ${
-                hasilCek.statusPassing === "PASSED" ? "bg-gradient-to-r from-emerald-400 to-teal-400" :
-                hasilCek.statusPassing === "FAILED" ? "bg-gradient-to-r from-rose-400 to-red-400" :
+                stageDetails.headerStatus === "PASSED" ? "bg-gradient-to-r from-emerald-400 to-teal-400" :
+                stageDetails.headerStatus === "FAILED" ? "bg-gradient-to-r from-rose-400 to-red-400" :
                 "bg-gradient-to-r from-amber-400 to-yellow-400"}`}
               />
 
@@ -201,29 +309,29 @@ export default function LeaderboardPage() {
 
                 {/* Ikon + status */}
                 <div className="flex flex-col items-center text-center mb-5">
-                  {hasilCek.statusPassing === "PASSED" ? (
+                  {stageDetails.headerStatus === "PASSED" ? (
                     <>
                       <div className="w-16 h-16 bg-emerald-50 border-2 border-emerald-200 rounded-2xl flex items-center justify-center mb-3">
                         <CheckCircle2 size={32} className="text-emerald-500" />
                       </div>
-                      <h2 className="text-xl font-black text-slate-900">Selamat, Kamu LOLOS!</h2>
-                      <p className="text-xs text-slate-400 mt-1">Berhak melanjutkan ke babak berikutnya</p>
+                      <h2 className="text-xl font-black text-slate-900 leading-snug">{stageDetails.title}</h2>
+                      <p className="text-xs text-slate-400 mt-1 max-w-[280px] leading-relaxed mx-auto">{stageDetails.subtitle}</p>
                     </>
-                  ) : hasilCek.statusPassing === "FAILED" ? (
+                  ) : stageDetails.headerStatus === "FAILED" ? (
                     <>
                       <div className="w-16 h-16 bg-rose-50 border-2 border-rose-200 rounded-2xl flex items-center justify-center mb-3">
                         <XCircle size={32} className="text-rose-500" />
                       </div>
-                      <h2 className="text-xl font-black text-slate-900">Belum Lolos</h2>
-                      <p className="text-xs text-slate-400 mt-1">Jangan menyerah, tetap semangat berkarya!</p>
+                      <h2 className="text-xl font-black text-slate-900 leading-snug">{stageDetails.title}</h2>
+                      <p className="text-xs text-slate-400 mt-1 max-w-[280px] leading-relaxed mx-auto">{stageDetails.subtitle}</p>
                     </>
                   ) : (
                     <>
                       <div className="w-16 h-16 bg-amber-50 border-2 border-amber-200 rounded-2xl flex items-center justify-center mb-3">
                         <Clock size={32} className="text-amber-500" />
                       </div>
-                      <h2 className="text-xl font-black text-slate-900">Hasil Belum Keluar</h2>
-                      <p className="text-xs text-slate-400 mt-1">Panitia masih dalam proses penilaian</p>
+                      <h2 className="text-xl font-black text-slate-900 leading-snug">{stageDetails.title}</h2>
+                      <p className="text-xs text-slate-400 mt-1 max-w-[280px] leading-relaxed mx-auto">{stageDetails.subtitle}</p>
                     </>
                   )}
                 </div>
@@ -239,6 +347,13 @@ export default function LeaderboardPage() {
                     { icon: School, label: "Sekolah", value: hasilCek.sekolah },
                     { icon: MapPin, label: "Provinsi", value: hasilCek.provinsi },
                     { icon: Trophy, label: "Kategori", value: hasilCek.kategori },
+                    { 
+                      icon: Medal, 
+                      label: "Tahap Aktif", 
+                      value: hasilCek.currentStage === 3 ? "Tahap 3 (Grand Final)" :
+                             hasilCek.currentStage === 2 ? "Tahap 2 (Semi Final)" :
+                             "Tahap 1 (Penyisihan)"
+                    }
                   ].map(({ icon: Icon, label, value }) => (
                     <div key={label} className="flex items-start gap-2.5">
                       <Icon size={13} className="text-indigo-400 shrink-0 mt-0.5" />
@@ -300,11 +415,11 @@ export default function LeaderboardPage() {
 
                 {/* Badge status */}
                 <div className={`mt-4 py-2.5 rounded-xl text-center font-black text-xs uppercase tracking-widest flex items-center justify-center gap-1.5 ${
-                  hasilCek.statusPassing === "PASSED" ? "bg-emerald-50 text-emerald-600 border border-emerald-200" :
-                  hasilCek.statusPassing === "FAILED" ? "bg-rose-50 text-rose-600 border border-rose-200" :
+                  stageDetails.headerStatus === "PASSED" ? "bg-emerald-50 text-emerald-600 border border-emerald-200" :
+                  stageDetails.headerStatus === "FAILED" ? "bg-rose-50 text-rose-600 border border-rose-200" :
                   "bg-amber-50 text-amber-600 border border-amber-200"}`}>
-                  {hasilCek.statusPassing === "PASSED" ? <><CheckCircle2 size={14}/> Dinyatakan LOLOS</> :
-                   hasilCek.statusPassing === "FAILED" ? <><XCircle size={14}/> Belum Lolos</> :
+                  {stageDetails.headerStatus === "PASSED" ? <><CheckCircle2 size={14}/> Dinyatakan LOLOS</> :
+                   stageDetails.headerStatus === "FAILED" ? <><XCircle size={14}/> Belum Lolos</> :
                    <><Clock size={14}/> Menunggu Pengumuman</>}
                 </div>
 
@@ -350,9 +465,22 @@ export default function LeaderboardPage() {
             <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-3 tracking-tight">
               Apakah Kamu <span className="text-indigo-600">Lolos?</span>
             </h2>
-            <p className="text-slate-400 text-sm max-w-md mx-auto leading-relaxed">
+            <p className="text-slate-400 text-sm max-w-md mx-auto leading-relaxed mb-4">
               Masukkan NISN untuk melihat data & status kelulusan resmi dari panitia NCC 13th.
             </p>
+            {activePhases.length > 0 && (
+              <div className="flex justify-center gap-2 mt-4 flex-wrap">
+                {activePhases.map(phase => (
+                  <span key={phase.id} className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider border transition-all ${
+                    phase.isOpen 
+                      ? "bg-indigo-50 border-indigo-200 text-indigo-600 shadow-sm" 
+                      : "bg-slate-50 border-slate-100 text-slate-400"
+                  }`}>
+                    {phase.isOpen ? "● " : "○ "} {phase.name}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Sistem dimatikan admin */}
