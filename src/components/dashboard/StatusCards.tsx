@@ -111,7 +111,12 @@ export default function StatusCards({
       setProfilePhoto(null);
       setStudentCard(null);
     } catch (err: any) {
-      showToast(`Gagal mengunggah berkas: ${err.message}`, "error");
+      console.error("Upload files error:", err);
+      let errMsg = err.message || "Kesalahan tidak dikenal";
+      if (errMsg.toLowerCase().includes("bucket") || errMsg.toLowerCase().includes("not_found") || errMsg.toLowerCase().includes("not found")) {
+        errMsg = "Bucket 'payment-proofs' tidak ditemukan di database Supabase. Silakan hubungi admin untuk menjalankan migrasi database/storage.";
+      }
+      showToast(`Gagal mengunggah berkas: ${errMsg}`, "error");
     } finally {
       setIsUploadingFiles(false);
     }
@@ -236,7 +241,12 @@ export default function StatusCards({
       }));
       setPaymentFile(null);
     } catch (err: any) {
-      showToast(`Gagal mengunggah bukti: ${err.message}`, "error");
+      console.error("Upload payment error:", err);
+      let errMsg = err.message || "Kesalahan tidak dikenal";
+      if (errMsg.toLowerCase().includes("bucket") || errMsg.toLowerCase().includes("not_found") || errMsg.toLowerCase().includes("not found")) {
+        errMsg = "Bucket 'payment-proofs' tidak ditemukan di database Supabase. Silakan hubungi admin untuk menjalankan migrasi database/storage.";
+      }
+      showToast(`Gagal mengunggah bukti: ${errMsg}`, "error");
     } finally {
       setIsUploadingPayment(false);
     }

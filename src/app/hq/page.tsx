@@ -754,7 +754,14 @@ function ModernHQDashboardContent() {
         showToast(`Gambar ${key} berhasil diperbarui!`, "success");
       }
     } catch (error: any) {
-      showToast(`Gagal upload: ${error.message}`, "error");
+      console.error("Upload error:", error);
+      let errMsg = error.message || "Kesalahan tidak dikenal";
+      if (errMsg.toLowerCase().includes("bucket") || errMsg.toLowerCase().includes("not_found") || errMsg.toLowerCase().includes("not found")) {
+        errMsg = "Bucket 'payment-proofs' tidak ditemukan. Jalankan SQL di supabase/migrations/add_payment_proofs_bucket.sql pada SQL editor Supabase Anda.";
+      } else if (errMsg.toLowerCase().includes("policy") || errMsg.toLowerCase().includes("row-level security") || errMsg.toLowerCase().includes("permission")) {
+        errMsg = "Akses ditolak kebijakan RLS. Pastikan kebijakan storage pada supabase/migrations/add_payment_proofs_bucket.sql telah terpasang.";
+      }
+      showToast(`Gagal upload: ${errMsg}`, "error");
     } finally {
       setIsUploadingAsset(null);
     }
