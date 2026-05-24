@@ -121,11 +121,12 @@ export default function StatusCards({
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('competition_entries')
         .update({
           full_name: profileForm.full_name,
           school_name: profileForm.school_name,
+          school: profileForm.school_name, // Sinkronisasi kolom 'school' lama demi integritas modul lain
           phone: profileForm.phone,
           nisn: profileForm.nisn,
           province: profileForm.province,
@@ -133,18 +134,25 @@ export default function StatusCards({
           participant2_name: profileForm.participant2_name,
           participant2_nisn: profileForm.participant2_nisn
         })
-        .eq('id', userEntry?.id);
+        .eq('id', userEntry?.id)
+        .select();
 
       if (error) throw error;
+      
+      if (!data || data.length === 0) {
+        throw new Error("Izin update ditolak. Pastikan skrip SQL RLS sudah dijalankan di Supabase SQL Editor.");
+      }
       
       showToast("Profil berhasil diperbarui!", "success");
       setUserEntry((prev: any) => ({
         ...prev,
-        ...profileForm
+        ...profileForm,
+        school: profileForm.school_name // Sync state lokal juga!
       }));
       setIsEditingProfile(false);
     } catch (err: any) {
-      showToast(`Gagal memperbarui profil: ${err.message}`, "error");
+      console.error("DEBUG FAIL UPDATE PROFILE:", err);
+      showToast(`Gagal: ${err.message || "Akses RLS ditolak (Pastikan SQL sudah dijalankan)"}`, "error");
     } finally {
       setIsSubmitting(false);
     }

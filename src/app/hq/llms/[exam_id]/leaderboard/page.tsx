@@ -115,10 +115,59 @@ export default function LiveLeaderboard() {
     if (!examId) return;
     fetchLeaderboardData();
 
+    // 📡 DENGAR SKOR REAL-TIME (Optimasi Bebas Lag & Tanpa Loop Query)
     const channel = supabase
       .channel(`live-cbt-scores-${examId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'cbt_attempts' }, () => {
-        fetchLeaderboardData();
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'cbt_attempts' }, (payload) => {
+        if (payload.new && payload.new.exam_id === examId) {
+          setAttempts((prev) => {
+            let nextList = [...prev];
+            const updated = payload.new;
+            
+            const idx = nextList.findIndex(p => p.user_id === updated.user_id);
+            if (idx !== -1) {
+              nextList[idx] = updated;
+            } else {
+              nextList.push(updated);
+            }
+            
+            // Urutkan ulang data (Score DESC, Violations ASC, updated_at ASC)
+            nextList.sort((a, b) => {
+              const sA = a.score ?? 0;
+              const sB = b.score ?? 0;
+              if (sB !== sA) return sB - sA;
+              if (a.violations_count !== b.violations_count) return a.violations_count - b.violations_count;
+              return new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime();
+            });
+            
+            // Perbarui statistik secara lokal (tanpa kueri jaringan)
+            if (nextList.length > 0) {
+              const skorList = nextList.map(p => p.score ?? 0);
+              setTopScore(Math.max(...skorList));
+              setAvgScore(Math.round(skorList.reduce((a, b) => a + b, 0) / skorList.length));
+              setTotalCheatAlert(nextList.reduce((acc, curr) => acc + (curr.violations_count || 0), 0));
+            }
+            
+            return nextList;
+          });
+        } else if (payload.eventType === 'DELETE' && payload.old) {
+          setAttempts((prev) => {
+            // Jika dihapus, bersihkan secara lokal
+            const nextList = prev.filter(p => p.id !== payload.old.id && p.user_id !== payload.old.user_id);
+            
+            if (nextList.length > 0) {
+              const skorList = nextList.map(p => p.score ?? 0);
+              setTopScore(Math.max(...skorList));
+              setAvgScore(Math.round(skorList.reduce((a, b) => a + b, 0) / skorList.length));
+              setTotalCheatAlert(nextList.reduce((acc, curr) => acc + (curr.violations_count || 0), 0));
+            } else {
+              setTopScore(0);
+              setAvgScore(0);
+              setTotalCheatAlert(0);
+            }
+            return nextList;
+          });
+        }
       })
       .subscribe();
 

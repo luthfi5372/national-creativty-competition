@@ -130,6 +130,10 @@ export default function IntegratedLLMSDashboard() {
     router.push('/login');
   };
 
+  // Refs & Throttling untuk menghindari self-DDOS (Refetch Loop) saat ribuan peserta submit jawaban
+  const lastFetchTimeRef = React.useRef<number>(0);
+  const fetchTimeoutRef = React.useRef<any>(null);
+
   const fetchTelemetryData = async () => {
     setRefreshing(true);
     try {
@@ -161,14 +165,37 @@ export default function IntegratedLLMSDashboard() {
     } catch (err) { console.error(err); } finally { setLoading(false); setTimeout(() => setRefreshing(false), 500); }
   };
 
+  const fetchTelemetryThrottled = () => {
+    const now = Date.now();
+    const throttleDelay = 5000; // Batasi query maksimal sekali dalam 5 detik
+    
+    if (fetchTimeoutRef.current) return;
+    
+    const timeSinceLastFetch = now - lastFetchTimeRef.current;
+    if (timeSinceLastFetch >= throttleDelay) {
+      lastFetchTimeRef.current = now;
+      fetchTelemetryData();
+    } else {
+      const delayRemaining = throttleDelay - timeSinceLastFetch;
+      fetchTimeoutRef.current = setTimeout(() => {
+        lastFetchTimeRef.current = Date.now();
+        fetchTelemetryData();
+        fetchTimeoutRef.current = null;
+      }, delayRemaining);
+    }
+  };
+
   useEffect(() => {
     fetchTelemetryData();
     const channel = supabase.channel('dashboard-live')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'cbt_attempts' }, fetchTelemetryData)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'cbt_questions' }, fetchTelemetryData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'cbt_attempts' }, fetchTelemetryThrottled)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'cbt_questions' }, fetchTelemetryThrottled)
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    return () => { 
+      supabase.removeChannel(channel); 
+      if (fetchTimeoutRef.current) clearTimeout(fetchTimeoutRef.current);
+    };
   }, []);
 
   useEffect(() => {

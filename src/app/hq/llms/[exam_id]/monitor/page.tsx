@@ -65,10 +65,35 @@ export default function LiveMonitor() {
 
     fetchCCTVData();
 
-    // 📡 ANTENA RADAR REAL-TIME SUPABASE
+    // 📡 ANTENA RADAR REAL-TIME SUPABASE (Optimasi Bebas Lag & Tanpa Loop Query)
     const channel = supabase.channel('live-cctv')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'cbt_attempts' }, () => {
-         fetchCCTVData();
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'cbt_attempts' }, (payload) => {
+        if (payload.new && payload.new.exam_id === examId) {
+          setParticipants((prev) => {
+            let nextList = [...prev];
+            const updated = payload.new;
+            
+            const idx = nextList.findIndex(p => p.user_id === updated.user_id);
+            if (idx !== -1) {
+              nextList[idx] = updated;
+            } else {
+              nextList.push(updated);
+            }
+            
+            // Urutkan ulang berdasarkan updated_at DESC agar urutannya konsisten
+            nextList.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+            
+            // Hitung ulang statistik secara lokal (tanpa kueri jaringan!)
+            let w = 0, s = 0, c = 0;
+            nextList.forEach(p => {
+              if (p.submitted_at) s++; else w++;
+              if (p.violations_count > 0) c++;
+            });
+            setStats({ working: w, submitted: s, cheating: c });
+            
+            return nextList;
+          });
+        }
       })
       .subscribe();
 
