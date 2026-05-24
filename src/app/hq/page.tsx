@@ -1347,6 +1347,14 @@ function ModernHQDashboardContent() {
     fetchPortalSettings();
     fetchBroadcasts();
 
+    // Safety Guard: Force end loading after 3 seconds to prevent indefinite loading spinner loops on network or db failures
+    const safetyTimer = setTimeout(() => {
+      setIsLoading(false);
+      setIsPortalLoaded(true);
+      setIsTimelineLoaded(true);
+      console.warn("Safety timeout triggered: forcing loader closure to prevent blank screen.");
+    }, 3000);
+
     // 2. 📡 AKTIFKAN SENSOR RADAR (Supabase WebSockets)
     const radarSubscription = supabase
       .channel('pantau_pendaftaran_ncc') // Nama saluran bebas
@@ -1365,6 +1373,7 @@ function ModernHQDashboardContent() {
 
     // 3. Matikan radar secara otomatis jika Presiden menutup halaman
     return () => {
+      clearTimeout(safetyTimer);
       supabase.removeChannel(radarSubscription);
     };
   }, []);

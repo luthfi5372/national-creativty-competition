@@ -1,6 +1,13 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { unstable_cache } from 'next/cache';
+import { createClient as createBaseClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder-disabled.supabase.co";
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder";
+
+// Create a cookie-free base client for cached queries to prevent next/headers cookies dynamic bail-out
+const baseSupabase = createBaseClient(supabaseUrl, supabaseKey);
 
 const PROVINCE_TO_REGION: Record<string, string> = {
   "DI. ACEH": "Sumatera", "SUMATERA UTARA": "Sumatera", "SUMATERA BARAT": "Sumatera", "RIAU": "Sumatera", "JAMBI": "Sumatera", "SUMATERA SELATAN": "Sumatera", "BENGKULU": "Sumatera", "LAMPUNG": "Sumatera", "BANGKA BELITUNG": "Sumatera", "KEPULAUAN RIAU": "Sumatera",
@@ -20,6 +27,23 @@ export interface GlobalStats {
   detailedProvinceStats: Record<string, number>;
 }
 
+// Cache the public statistics query for 60 seconds using a cookie-free client
+const getCachedEntries = unstable_cache(
+  async () => {
+    const { data: supabaseEntries, error } = await baseSupabase
+      .from("competition_entries")
+      .select("category, competition_type, city, province, payment_status");
+
+    if (error) {
+      console.error("Supabase cached stats fetch error in action:", error);
+      throw error;
+    }
+    return supabaseEntries || [];
+  },
+  ['global-stats-entries'],
+  { revalidate: 60 }
+);
+
 export async function getLiveStatsAction(): Promise<GlobalStats> {
   const defaultStats: GlobalStats = {
     totalParticipants: 0,
@@ -31,17 +55,8 @@ export async function getLiveStatsAction(): Promise<GlobalStats> {
   };
 
   try {
-    const supabase = await createClient();
-    
-    // Fetch only the fields needed to calculate stats from Supabase
-    const { data: supabaseEntries, error } = await supabase
-      .from("competition_entries")
-      .select("category, competition_type, city, province, payment_status");
-
-    if (error) {
-      console.error("Supabase stats fetch error in action:", error);
-      return defaultStats;
-    }
+    // Fetch cached entries without cookie dependency
+    const supabaseEntries = await getCachedEntries();
 
     if (!supabaseEntries || supabaseEntries.length === 0) {
       return defaultStats;
