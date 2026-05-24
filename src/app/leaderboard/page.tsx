@@ -446,12 +446,7 @@ export default function LeaderboardPage() {
                     </div>
                   )}
 
-                  {/* ── ID Tiket ── */}
-                  <div className="pt-2 border-t border-slate-200 flex items-center gap-2.5">
-                    <Ticket size={13} className="text-indigo-400 shrink-0" />
-                    <span className="text-slate-400 font-medium w-20 shrink-0">ID Tiket</span>
-                    <span className="font-mono font-black text-indigo-600 tracking-widest flex-1 text-right">{hasilCek.idTiket}</span>
-                  </div>
+
                 </div>
 
                 {/* Badge status */}
