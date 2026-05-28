@@ -518,6 +518,7 @@ function ModernHQDashboardContent() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState("All");
+  const [filterWave, setFilterWave] = useState("All");
   const [filterProgress, setFilterProgress] = useState("All");
   const [timeFilter, setTimeFilter] = useState("All"); // Opsi: 'Today', '7Days', '1Month', 'All'
   const [selectedParticipant, setSelectedParticipant] = useState<any | null>(null);
@@ -1558,6 +1559,94 @@ function ModernHQDashboardContent() {
     document.body.removeChild(link);
   };
 
+  // --- 🌊 DYNAMIC WAVE DETECTION HELPER ---
+  const getParticipantWave = (createdAtStr: string) => {
+    if (!createdAtStr) return "Gelombang 1 (Early Bird)";
+    const date = new Date(createdAtStr);
+    
+    // Sort waves chronologically by start date
+    const sortedWaves = [...waves].sort((a, b) => {
+      const aTime = a.startDate ? new Date(a.startDate).getTime() : 0;
+      const bTime = b.startDate ? new Date(b.startDate).getTime() : 0;
+      return aTime - bTime;
+    });
+    
+    // Exact range matching
+    for (const wave of sortedWaves) {
+      if (!wave.startDate || !wave.endDate) continue;
+      const start = new Date(wave.startDate + "T00:00:00");
+      const end = new Date(wave.endDate + "T23:59:59");
+      if (date >= start && date <= end) {
+        return wave.name;
+      }
+    }
+    
+    // Fallback: compare boundaries
+    if (sortedWaves.length > 0) {
+      const firstWaveEnd = sortedWaves[0].endDate ? new Date(sortedWaves[0].endDate + "T23:59:59") : new Date();
+      if (date <= firstWaveEnd) {
+        return sortedWaves[0].name;
+      } else if (sortedWaves.length > 1) {
+        return sortedWaves[1].name;
+      }
+      return sortedWaves[0].name;
+    }
+    
+    return "Gelombang 1 (Early Bird)";
+  };
+
+  // --- 🌊 EXPORT SUBMISSIONS CSV ---
+  const handleExportKaryaCSV = () => {
+    const submissions = realEntries.filter(e => {
+      if (!e.notes) return false;
+      try {
+        return !!JSON.parse(e.notes).submission_url;
+      } catch (err) { return false; }
+    });
+
+    if (submissions.length === 0) {
+      alert("Tidak ada karya untuk di-ekspor.");
+      return;
+    }
+
+    const headers = [
+      "ID Tiket", "Nama Lengkap", "Email", "Sekolah", "Provinsi", "Kategori Lomba", 
+      "Gelombang", "Tautan Karya", "Tanggal Pendaftaran"
+    ];
+
+    const rows = submissions.map(e => {
+      let submissionUrl = "";
+      try {
+        submissionUrl = JSON.parse(e.notes).submission_url || "";
+      } catch (err) {}
+
+      return [
+        `NCC-${generateTicketCode(e.id)}`,
+        e.full_name || "-",
+        e.email || "-",
+        e.school_name || e.school || "-",
+        e.province || e.city || "-",
+        e.competition_type || e.category || "-",
+        getParticipantWave(e.created_at),
+        submissionUrl,
+        new Date(e.created_at).toLocaleString('id-ID')
+      ];
+    });
+
+    const csvContent = [headers, ...rows].map(row => 
+      row.map(cell => `"${(cell || "").toString().replace(/"/g, '""')}"`).join(",")
+    ).join("\n");
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Daftar_Karya_NCC13_${new Date().toLocaleDateString()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // --- 🖨️ FITUR 2: MESIN CETAK FISIK ---
   const handlePrintCard = () => {
     window.print(); // Cara termudah & paling stabil untuk browser
@@ -1979,14 +2068,52 @@ function ModernHQDashboardContent() {
                 </div>
                 
                 <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-start lg:justify-end">
-                  <span className="bg-emerald-100 text-emerald-700 px-4 py-1.5 rounded-full text-xs font-bold border border-emerald-200 shadow-sm shrink-0">
-                    Total Karya Dikumpul: {realEntries.filter(e => {
-                      if (!e.notes) return false;
-                      try {
-                        return !!JSON.parse(e.notes).submission_url;
-                      } catch (err) { return false; }
-                    }).length}
+                  {/* Total Karya */}
+                  <span className="bg-emerald-50 text-emerald-700 px-3.5 py-1.5 rounded-xl text-xs font-black border border-emerald-100 shadow-sm shrink-0 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                    Total Karya: {
+                      realEntries.filter(e => {
+                        if (!e.notes) return false;
+                        try { return !!JSON.parse(e.notes).submission_url; } catch (err) { return false; }
+                      }).length
+                    }
                   </span>
+                  {/* Gelombang 1 */}
+                  <span className="bg-sky-50 text-sky-700 px-3.5 py-1.5 rounded-xl text-xs font-black border border-sky-100 shadow-sm shrink-0 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
+                    {waves[0]?.name?.split(" (")[0] || "Gelombang 1"}: {
+                      realEntries.filter(e => {
+                        if (!e.notes) return false;
+                        try {
+                          if (!JSON.parse(e.notes).submission_url) return false;
+                          const wName = getParticipantWave(e.created_at);
+                          return wName.toLowerCase().includes("gelombang 1") || wName.toLowerCase().includes("early bird");
+                        } catch (err) { return false; }
+                      }).length
+                    }
+                  </span>
+                  {/* Gelombang 2 */}
+                  <span className="bg-amber-50 text-amber-700 px-3.5 py-1.5 rounded-xl text-xs font-black border border-amber-100 shadow-sm shrink-0 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                    {waves[1]?.name?.split(" (")[0] || "Gelombang 2"}: {
+                      realEntries.filter(e => {
+                        if (!e.notes) return false;
+                        try {
+                          if (!JSON.parse(e.notes).submission_url) return false;
+                          const wName = getParticipantWave(e.created_at);
+                          return wName.toLowerCase().includes("gelombang 2") || wName.toLowerCase().includes("regular");
+                        } catch (err) { return false; }
+                      }).length
+                    }
+                  </span>
+                  {/* Ekspor CSV Karya Button */}
+                  <button
+                    onClick={handleExportKaryaCSV}
+                    className="flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-black transition-all shadow-md active:scale-95 shrink-0"
+                  >
+                    <Download size={13} />
+                    Ekspor CSV Karya
+                  </button>
                 </div>
               </div>
 
@@ -2006,27 +2133,51 @@ function ModernHQDashboardContent() {
                   />
                 </div>
                 
-                {/* Selector Pembagian Kategori (LKTI, MIPA, SPEECH, MTQ) */}
-                <div className="flex bg-slate-100 p-1 rounded-xl w-full md:w-auto border border-slate-200/60 shadow-inner">
-                  {[
-                    { value: "All", label: "Semua Lomba" },
-                    { value: "LKTI Nasional", label: "LKTI" },
-                    { value: "Olimpiade MIPA", label: "MIPA" },
-                    { value: "Speech Contest", label: "Speech" },
-                    { value: "MTQ Nasional", label: "MTQ" }
-                  ].map((tab) => (
-                    <button
-                      key={tab.value}
-                      onClick={() => setFilterCategory(tab.value)}
-                      className={`px-4 py-2 rounded-lg text-xs font-black transition-all ${
-                        filterCategory === tab.value
-                          ? 'bg-white text-slate-800 shadow-sm border border-slate-200/40'
-                          : 'text-slate-500 hover:text-slate-800'
-                      }`}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
+                {/* Selector Pembagian Kategori (LKTI, MIPA, SPEECH, MTQ) dan Filter Gelombang */}
+                <div className="flex flex-wrap gap-2.5 w-full md:w-auto items-center">
+                  {/* Kategori Lomba */}
+                  <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200/60 shadow-inner">
+                    {[
+                      { value: "All", label: "Semua Lomba" },
+                      { value: "LKTI Nasional", label: "LKTI" },
+                      { value: "Olimpiade MIPA", label: "MIPA" },
+                      { value: "Speech Contest", label: "Speech" },
+                      { value: "MTQ Nasional", label: "MTQ" }
+                    ].map((tab) => (
+                      <button
+                        key={tab.value}
+                        onClick={() => setFilterCategory(tab.value)}
+                        className={`px-4 py-2 rounded-lg text-xs font-black transition-all ${
+                          filterCategory === tab.value
+                            ? 'bg-white text-slate-800 shadow-sm border border-slate-200/40'
+                            : 'text-slate-500 hover:text-slate-800'
+                        }`}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Filter Gelombang */}
+                  <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200/60 shadow-inner">
+                    {[
+                      { value: "All", label: "Semua Gelombang" },
+                      { value: "Gelombang 1", label: "Gelombang 1" },
+                      { value: "Gelombang 2", label: "Gelombang 2" }
+                    ].map((wTab) => (
+                      <button
+                        key={wTab.value}
+                        onClick={() => setFilterWave(wTab.value)}
+                        className={`px-4 py-2 rounded-lg text-xs font-black transition-all ${
+                          filterWave === wTab.value
+                            ? 'bg-white text-slate-800 shadow-sm border border-slate-200/40'
+                            : 'text-slate-500 hover:text-slate-800'
+                        }`}
+                      >
+                        {wTab.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -2038,6 +2189,7 @@ function ModernHQDashboardContent() {
                     <th className="py-4 px-6">ID TIKET</th>
                     <th className="py-4 px-6">PESERTA</th>
                     <th className="py-4 px-6">ASAL SEKOLAH</th>
+                    <th className="py-4 px-6">GELOMBANG</th>
                     <th className="py-4 px-6">BIDANG LOMBA</th>
                     <th className="py-4 px-6">TAUTAN KARYA</th>
                     <th className="py-4 px-6 text-center">AKSI</th>
@@ -2063,6 +2215,17 @@ function ModernHQDashboardContent() {
                         return cat === filterCategory;
                       })
                       .filter(e => {
+                        if (filterWave === "All") return true;
+                        const wName = getParticipantWave(e.created_at);
+                        if (filterWave === "Gelombang 1") {
+                          return wName.toLowerCase().includes("gelombang 1") || wName.toLowerCase().includes("early bird");
+                        }
+                        if (filterWave === "Gelombang 2") {
+                          return wName.toLowerCase().includes("gelombang 2") || wName.toLowerCase().includes("regular");
+                        }
+                        return true;
+                      })
+                      .filter(e => {
                         if (!searchQuery) return true;
                         const query = searchQuery.toLowerCase();
                         return (e.full_name || "").toLowerCase().includes(query) || 
@@ -2074,13 +2237,13 @@ function ModernHQDashboardContent() {
                     if (filtered.length === 0) {
                       return (
                         <tr>
-                          <td colSpan={6} className="py-16 text-center">
+                          <td colSpan={7} className="py-16 text-center">
                             <div className="flex flex-col items-center gap-3">
                               <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center">
                                 <FolderOpen size={28} className="text-slate-300" />
                               </div>
                               <p className="text-slate-500 font-semibold text-sm">
-                                Belum ada karya yang diunggah untuk kategori ini.
+                                Belum ada karya yang diunggah untuk kategori/gelombang ini.
                               </p>
                             </div>
                           </td>
@@ -2109,6 +2272,16 @@ function ModernHQDashboardContent() {
                           <td className="py-4 px-6">
                             <div className="font-bold text-slate-700">{entry.school_name || entry.school || "-"}</div>
                             <div className="text-[10px] text-slate-400 mt-0.5">{entry.province || "-"}</div>
+                          </td>
+                          <td className="py-4 px-6">
+                            <span className={`px-2.5 py-1 rounded-xl text-[11px] font-bold border transition-colors ${
+                              getParticipantWave(entry.created_at).toLowerCase().includes("gelombang 2") ||
+                              getParticipantWave(entry.created_at).toLowerCase().includes("regular")
+                                ? 'bg-amber-50 text-amber-700 border-amber-100/80 hover:bg-amber-100/50'
+                                : 'bg-sky-50 text-sky-700 border-sky-100/80 hover:bg-sky-100/50'
+                            }`}>
+                              {getParticipantWave(entry.created_at).split(" (")[0]}
+                            </span>
                           </td>
                           <td className="py-4 px-6">
                             <span className="bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-xl text-xs font-bold border border-indigo-100">
