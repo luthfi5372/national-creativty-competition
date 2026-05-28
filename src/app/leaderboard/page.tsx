@@ -253,8 +253,21 @@ export default function LeaderboardPage() {
       const { data: entry, error } = await supabase
         .from("competition_entries").select("*")
         .eq("nisn", nisnInput.trim()).eq("payment_status", "Verified").single();
+      
       if (error || !entry) {
-        setCekError("NISN tidak ditemukan atau belum terverifikasi.");
+        // Cek apakah ini NISN Anggota Tim
+        const { data: memberEntry } = await supabase
+          .from("competition_entries")
+          .select("competition_type")
+          .eq("participant2_nisn", nisnInput.trim())
+          .eq("payment_status", "Verified")
+          .maybeSingle();
+
+        if (memberEntry) {
+          setCekError("Pengecekan kategori tim wajib menggunakan NISN Ketua Tim.");
+        } else {
+          setCekError("NISN tidak ditemukan atau belum terverifikasi.");
+        }
         setIsCekLoading(false); return;
       }
       

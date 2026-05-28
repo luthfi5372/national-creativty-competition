@@ -624,10 +624,16 @@ export default function StatusCards({
               })()}
 
               {[
-                { label: "Nama Lengkap", value: userEntry.full_name },
+                ...((userEntry.competition_type === "LKTI Nasional" || userEntry.competition_type === "Olimpiade MIPA") ? [
+                  { label: "Nama Ketua (Anggota 1)", value: userEntry.full_name },
+                  { label: "Nama Tim", value: userEntry.team_name },
+                  { label: "NISN Ketua", value: userEntry.nisn }
+                ] : [
+                  { label: "Nama Lengkap", value: userEntry.full_name },
+                  { label: "NISN", value: userEntry.nisn }
+                ]),
                 { label: "Asal Sekolah", value: userEntry.school_name || userEntry.school },
                 { label: "WhatsApp", value: userEntry.phone },
-                { label: "NISN", value: userEntry.nisn },
                 { label: "Provinsi", value: userEntry.province },
                 // Tambahkan data Anggota 2 jika kategori Tim
                 ...((userEntry.competition_type === "LKTI Nasional" || userEntry.competition_type === "Olimpiade MIPA") ? [
@@ -685,11 +691,23 @@ export default function StatusCards({
             </div>
           ) : (
             <form onSubmit={handleUpdateProfile} className="space-y-3 text-xs">
-              <input type="text" placeholder="Nama Lengkap (Anggota 1)" className="w-full p-2.5 bg-slate-50 border rounded-xl" value={profileForm.full_name} onChange={(e) => setProfileForm({...profileForm, full_name: e.target.value})} />
-              <input type="text" placeholder="Sekolah" className="w-full p-2.5 bg-slate-50 border rounded-xl" value={profileForm.school_name} onChange={(e) => setProfileForm({...profileForm, school_name: e.target.value})} />
-              <input type="text" placeholder="WhatsApp" className="w-full p-2.5 bg-slate-50 border rounded-xl" value={profileForm.phone} onChange={(e) => setProfileForm({...profileForm, phone: e.target.value})} />
+              <input 
+                type="text" 
+                placeholder={(userEntry.competition_type === "LKTI Nasional" || userEntry.competition_type === "Olimpiade MIPA") ? "Nama Ketua (Anggota 1)" : "Nama Lengkap"} 
+                className="w-full p-2.5 bg-slate-50 border rounded-xl font-semibold" 
+                value={profileForm.full_name} 
+                onChange={(e) => setProfileForm({...profileForm, full_name: e.target.value})} 
+              />
+              <input type="text" placeholder="Sekolah" className="w-full p-2.5 bg-slate-50 border rounded-xl font-semibold" value={profileForm.school_name} onChange={(e) => setProfileForm({...profileForm, school_name: e.target.value})} />
+              <input type="text" placeholder="WhatsApp" className="w-full p-2.5 bg-slate-50 border rounded-xl font-semibold" value={profileForm.phone} onChange={(e) => setProfileForm({...profileForm, phone: e.target.value})} />
               <div className="grid grid-cols-2 gap-2">
-                <input type="text" placeholder="NISN 1" className="w-full p-2.5 bg-slate-50 border rounded-xl" value={profileForm.nisn} onChange={(e) => setProfileForm({...profileForm, nisn: e.target.value})} />
+                <input 
+                  type="text" 
+                  placeholder={(userEntry.competition_type === "LKTI Nasional" || userEntry.competition_type === "Olimpiade MIPA") ? "NISN Ketua" : "NISN"} 
+                  className="w-full p-2.5 bg-slate-50 border rounded-xl font-semibold" 
+                  value={profileForm.nisn} 
+                  onChange={(e) => setProfileForm({...profileForm, nisn: e.target.value})} 
+                />
                 <select 
                   value={profileForm.province || ""} 
                   onChange={(e) => setProfileForm({...profileForm, province: e.target.value})}
@@ -740,7 +758,8 @@ export default function StatusCards({
               {/* Form Tambahan Anggota 2 jika kategori Tim */}
               {(userEntry.competition_type === "LKTI Nasional" || userEntry.competition_type === "Olimpiade MIPA") && (
                 <div className="pt-2 space-y-2 border-t border-dashed border-slate-200 mt-2">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Data Anggota 2</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Data Tim & Anggota 2</p>
+                  <input type="text" placeholder="Nama Tim" className="w-full p-2.5 bg-slate-50 border rounded-xl font-bold" value={profileForm.team_name} onChange={(e) => setProfileForm({...profileForm, team_name: e.target.value})} />
                   <input type="text" placeholder="Nama Anggota 2" className="w-full p-2.5 bg-slate-50 border rounded-xl" value={profileForm.participant2_name} onChange={(e) => setProfileForm({...profileForm, participant2_name: e.target.value})} />
                   <input type="text" placeholder="NISN Anggota 2" className="w-full p-2.5 bg-slate-50 border rounded-xl" value={profileForm.participant2_nisn} onChange={(e) => setProfileForm({...profileForm, participant2_nisn: e.target.value})} />
                 </div>
