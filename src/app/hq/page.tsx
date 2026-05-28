@@ -1611,6 +1611,14 @@ function ModernHQDashboardContent() {
             { id: "Dashboard", icon: <LayoutDashboard size={18} />, label: "Dashboard" },
             { id: "Peserta", icon: <Users size={18} />, label: "Buku Peserta", count: realEntries.filter((e: any) => e.payment_status === 'Verified' || e.payment_status === 'success').length },
             { id: "Verifikasi", icon: <CheckCircle size={18} />, label: "Verifikasi Berkas", count: realEntries.filter((e: any) => e.payment_status === 'Pending').length },
+            { id: "Karya", icon: <FolderOpen size={18} />, label: "Pengumpulan Karya", count: realEntries.filter((e: any) => {
+              if (!e.notes) return false;
+              try {
+                return !!JSON.parse(e.notes).submission_url;
+              } catch (err) {
+                return false;
+              }
+            }).length },
             { id: "Pengumuman", icon: <Megaphone size={18} />, label: "Siaran Info" },
             { id: "Kegiatan", icon: <CalendarDays size={18} />, label: "Kegiatan" },
             { id: "Schedule", icon: <Calendar size={18} />, label: "Schedule Lomba" },
@@ -1674,6 +1682,7 @@ function ModernHQDashboardContent() {
               {activeTab === "Dashboard" && "Pantau pergerakan data pendaftaran NCC 13th."}
               {activeTab === "Peserta" && "Manajemen seluruh data peserta kompetisi."}
               {activeTab === "Verifikasi" && "Pusat verifikasi pembayaran dan dokumen."}
+              {activeTab === "Karya" && "Manajemen dan direktori pengumpulan karya tulis, video, dan naskah peserta."}
               {activeTab === "Kegiatan" && "Kawal gerbang pendaftaran dan fail karya."}
               {activeTab === "Pengaturan" && "Konfigurasi sistem Markas Besar."}
             </p>
@@ -1953,6 +1962,197 @@ function ModernHQDashboardContent() {
                         />
                       ))
                     )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* 🎛️ KONTEN TAB: PENGUMPULAN KARYA */}
+        {activeTab === "Karya" && (
+          <div className="bg-white border border-slate-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.02)] rounded-2xl overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-slate-100">
+              <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
+                <div>
+                  <h3 className="font-bold text-slate-800">Direktori Pengumpulan Karya Peserta</h3>
+                  <p className="text-xs text-slate-500 mt-1">Daftar karya/submission yang telah diunggah oleh peserta resmi NCC 13th.</p>
+                </div>
+                
+                <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-start lg:justify-end">
+                  <span className="bg-emerald-100 text-emerald-700 px-4 py-1.5 rounded-full text-xs font-bold border border-emerald-200 shadow-sm shrink-0">
+                    Total Karya Dikumpul: {realEntries.filter(e => {
+                      if (!e.notes) return false;
+                      try {
+                        return !!JSON.parse(e.notes).submission_url;
+                      } catch (err) { return false; }
+                    }).length}
+                  </span>
+                </div>
+              </div>
+
+              {/* 🔍 BARIS PENCARIAN & FILTER KELOMPOK LOMBA */}
+              <div className="flex flex-col md:flex-row gap-4 items-center">
+                {/* Kolom Pencarian */}
+                <div className="relative flex-1 w-full">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Search size={16} className="text-slate-400" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Cari nama peserta, email, atau asal sekolah..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-slate-700"
+                  />
+                </div>
+                
+                {/* Selector Pembagian Kategori (LKTI, MIPA, SPEECH, MTQ) */}
+                <div className="flex bg-slate-100 p-1 rounded-xl w-full md:w-auto border border-slate-200/60 shadow-inner">
+                  {[
+                    { value: "All", label: "Semua Lomba" },
+                    { value: "LKTI Nasional", label: "LKTI" },
+                    { value: "Olimpiade MIPA", label: "MIPA" },
+                    { value: "Speech Contest", label: "Speech" },
+                    { value: "MTQ Nasional", label: "MTQ" }
+                  ].map((tab) => (
+                    <button
+                      key={tab.value}
+                      onClick={() => setFilterCategory(tab.value)}
+                      className={`px-4 py-2 rounded-lg text-xs font-black transition-all ${
+                        filterCategory === tab.value
+                          ? 'bg-white text-slate-800 shadow-sm border border-slate-200/40'
+                          : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm text-slate-600 whitespace-nowrap">
+                <thead className="bg-slate-50/50 text-slate-500 font-bold border-b border-slate-100 text-[11px] uppercase tracking-wider">
+                  <tr>
+                    <th className="py-4 px-6">ID TIKET</th>
+                    <th className="py-4 px-6">PESERTA</th>
+                    <th className="py-4 px-6">ASAL SEKOLAH</th>
+                    <th className="py-4 px-6">BIDANG LOMBA</th>
+                    <th className="py-4 px-6">TAUTAN KARYA</th>
+                    <th className="py-4 px-6 text-center">AKSI</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {(() => {
+                    const filtered = realEntries
+                      .filter(e => {
+                        // Hanya tampilkan yang sudah memiliki submission_url di notes
+                        if (!e.notes) return false;
+                        try {
+                          return !!JSON.parse(e.notes).submission_url;
+                        } catch (err) { return false; }
+                      })
+                      .filter(e => {
+                        if (filterCategory === "All") return true;
+                        // Cocokkan kategori
+                        const cat = e.competition_type || e.category || "";
+                        if (filterCategory === "MTQ Nasional") {
+                          return cat === "MTQ" || cat === "MTQ Nasional";
+                        }
+                        return cat === filterCategory;
+                      })
+                      .filter(e => {
+                        if (!searchQuery) return true;
+                        const query = searchQuery.toLowerCase();
+                        return (e.full_name || "").toLowerCase().includes(query) || 
+                               (e.email || "").toLowerCase().includes(query) || 
+                               (e.school_name || e.school || "").toLowerCase().includes(query) ||
+                               `ncc-${generateTicketCode(e.id)}`.toLowerCase().includes(query);
+                      });
+
+                    if (filtered.length === 0) {
+                      return (
+                        <tr>
+                          <td colSpan={6} className="py-16 text-center">
+                            <div className="flex flex-col items-center gap-3">
+                              <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center">
+                                <FolderOpen size={28} className="text-slate-300" />
+                              </div>
+                              <p className="text-slate-500 font-semibold text-sm">
+                                Belum ada karya yang diunggah untuk kategori ini.
+                              </p>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    }
+
+                    return filtered.map((entry: any) => {
+                      let submissionUrl = "";
+                      try {
+                        submissionUrl = JSON.parse(entry.notes).submission_url || "";
+                      } catch (err) {}
+
+                      return (
+                        <tr 
+                          key={entry.id} 
+                          className="hover:bg-slate-50/50 transition-colors"
+                        >
+                          <td className="py-4 px-6 font-black text-blue-600">
+                            NCC-{generateTicketCode(entry.id)}
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="font-bold text-slate-800">{entry.full_name || "Peserta Anonim"}</div>
+                            <div className="text-[11px] text-slate-400 mt-0.5">{entry.email}</div>
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="font-bold text-slate-700">{entry.school_name || entry.school || "-"}</div>
+                            <div className="text-[10px] text-slate-400 mt-0.5">{entry.province || "-"}</div>
+                          </td>
+                          <td className="py-4 px-6">
+                            <span className="bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-xl text-xs font-bold border border-indigo-100">
+                              {entry.competition_type || entry.category}
+                            </span>
+                          </td>
+                          <td className="py-4 px-6 max-w-xs">
+                            <div className="flex items-center gap-2">
+                              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                              <a 
+                                href={submissionUrl} 
+                                target="_blank" 
+                                rel="noreferrer" 
+                                className="text-xs text-blue-600 font-bold hover:underline truncate max-w-[200px]"
+                                title={submissionUrl}
+                              >
+                                {submissionUrl}
+                              </a>
+                            </div>
+                          </td>
+                          <td className="py-4 px-6 text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <a 
+                                href={submissionUrl} 
+                                target="_blank" 
+                                rel="noreferrer"
+                                className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-xl font-bold text-xs transition-all shadow-sm active:scale-95"
+                              >
+                                <FolderOpen size={13} />
+                                Buka Karya
+                              </a>
+                              <button 
+                                onClick={() => setSelectedParticipant(entry)}
+                                className="p-2 bg-slate-50 text-slate-500 hover:bg-slate-100 rounded-xl transition-colors border border-slate-200"
+                                title="Lihat Detail Administrasi"
+                              >
+                                <Eye size={14} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    });
+                  })()}
                 </tbody>
               </table>
             </div>
