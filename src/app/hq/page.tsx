@@ -216,6 +216,86 @@ const ParticipantRow = memo(({ entry, onRowClick, onIdCardClick, onDeleteClick, 
          prevProps.entry.email === nextProps.entry.email;
 });
 
+const ParticipantSkeletonRow = () => (
+  <tr className="animate-pulse border-b border-slate-100">
+    <td className="py-4 px-6">
+      <div className="h-4 w-16 bg-slate-200/80 rounded animate-pulse"></div>
+    </td>
+    <td className="py-4 px-6 flex items-center gap-3">
+      <div className="w-10 h-10 rounded-full bg-slate-200/80 shrink-0 animate-pulse"></div>
+      <div className="space-y-1.5 flex-1 min-w-0">
+        <div className="h-4 w-32 bg-slate-200/80 rounded animate-pulse"></div>
+        <div className="h-3 w-24 bg-slate-200/50 rounded animate-pulse"></div>
+      </div>
+    </td>
+    <td className="py-4 px-6">
+      <div className="h-4 w-36 bg-slate-200/80 rounded animate-pulse"></div>
+    </td>
+    <td className="py-4 px-6">
+      <div className="h-6 w-20 bg-slate-200/60 rounded-full animate-pulse"></div>
+    </td>
+    <td className="py-4 px-6">
+      <div className="w-24 space-y-1">
+        <div className="h-1.5 bg-slate-200/80 rounded-full w-full animate-pulse"></div>
+        <div className="h-2.5 w-8 bg-slate-200/50 rounded animate-pulse"></div>
+      </div>
+    </td>
+    <td className="py-4 px-6">
+      <div className="space-y-1">
+        <div className="h-4 w-28 bg-slate-200/80 rounded animate-pulse"></div>
+        <div className="h-3 w-16 bg-slate-200/50 rounded animate-pulse"></div>
+      </div>
+    </td>
+    <td className="py-4 px-6">
+      <div className="space-y-1">
+        <div className="h-4 w-20 bg-slate-200/80 rounded animate-pulse"></div>
+        <div className="h-3 w-12 bg-slate-200/50 rounded animate-pulse"></div>
+      </div>
+    </td>
+    <td className="py-4 px-6">
+      <div className="h-6 w-16 bg-slate-200/60 rounded-full animate-pulse"></div>
+    </td>
+    <td className="py-4 px-6 text-center">
+      <div className="flex gap-1.5 justify-center">
+        <div className="w-8 h-8 bg-slate-200/60 rounded-xl animate-pulse"></div>
+        <div className="w-8 h-8 bg-slate-200/60 rounded-xl animate-pulse"></div>
+      </div>
+    </td>
+  </tr>
+);
+
+const KaryaSkeletonRow = () => (
+  <tr className="animate-pulse border-b border-slate-100">
+    <td className="py-4 px-6">
+      <div className="h-4 w-16 bg-slate-200/80 rounded animate-pulse"></div>
+    </td>
+    <td className="py-4 px-6">
+      <div className="space-y-1.5">
+        <div className="h-4 w-32 bg-slate-200/80 rounded animate-pulse"></div>
+        <div className="h-3 w-24 bg-slate-200/50 rounded animate-pulse"></div>
+      </div>
+    </td>
+    <td className="py-4 px-6">
+      <div className="space-y-1.5">
+        <div className="h-4 w-36 bg-slate-200/80 rounded animate-pulse"></div>
+        <div className="h-3 w-20 bg-slate-200/50 rounded animate-pulse"></div>
+      </div>
+    </td>
+    <td className="py-4 px-6">
+      <div className="h-6 w-20 bg-slate-200/60 rounded-full animate-pulse"></div>
+    </td>
+    <td className="py-4 px-6">
+      <div className="h-6 w-24 bg-slate-200/60 rounded-xl animate-pulse"></div>
+    </td>
+    <td className="py-4 px-6">
+      <div className="h-7 w-28 bg-slate-200/70 rounded-lg animate-pulse"></div>
+    </td>
+    <td className="py-4 px-6 text-center">
+      <div className="w-10 h-7 bg-slate-200/60 rounded-lg mx-auto animate-pulse"></div>
+    </td>
+  </tr>
+);
+
 interface VerificationCardProps {
   entry: any;
   onUpdateStatus: (id: any, status: string, reason?: string) => void;
@@ -1663,13 +1743,7 @@ function ModernHQDashboardContent() {
     window.print(); // Cara termudah & paling stabil untuk browser
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full"></div>
-      </div>
-    );
-  }
+
 
   return (
     <div className="flex h-screen bg-slate-50 text-slate-800 font-sans overflow-hidden relative">
@@ -1831,10 +1905,10 @@ function ModernHQDashboardContent() {
         {activeTab === "Dashboard" && (
           <>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <StatCard title="Total Pendaftar" value={realEntries.length.toString()} trend="Live" isUp={true} />
-          <StatCard title="Terverifikasi" value={realEntries.filter(e => e.payment_status === 'Verified').length.toString()} trend="Aman" isUp={true} />
-          <StatCard title="Menunggu Review" value={realEntries.filter(e => e.payment_status === 'Pending').length.toString()} trend="Action Needed" isUp={false} />
-          <StatCard title="Estimasi Dana" value={`Rp ${(realEntries.length * 150000).toLocaleString('id-ID')}`} trend="IDR" isUp={true} />
+          <StatCard title="Total Pendaftar" value={realEntries.length.toString()} trend="Live" isUp={true} isLoading={isLoading} />
+          <StatCard title="Terverifikasi" value={realEntries.filter(e => e.payment_status === 'Verified').length.toString()} trend="Aman" isUp={true} isLoading={isLoading} />
+          <StatCard title="Menunggu Review" value={realEntries.filter(e => e.payment_status === 'Pending').length.toString()} trend="Action Needed" isUp={false} isLoading={isLoading} />
+          <StatCard title="Estimasi Dana" value={`Rp ${(realEntries.length * 150000).toLocaleString('id-ID')}`} trend="IDR" isUp={true} isLoading={isLoading} />
         </div>
 
         {/* 🔥 PANEL KENDALI MESIN WAKTU */}
@@ -1882,15 +1956,22 @@ function ModernHQDashboardContent() {
               <MoreHorizontal size={20} className="text-slate-400 cursor-pointer" />
             </div>
             <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={dynamicChartData}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94A3B8', fontSize: 12}} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#94A3B8', fontSize: 12}} dx={-10} />
-                  <Tooltip contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
-                  <Line type="monotone" dataKey="pendaftar" stroke="#2563EB" strokeWidth={3} dot={{r: 4, fill: '#2563EB', strokeWidth: 2, stroke: '#fff'}} activeDot={{r: 6}} />
-                </LineChart>
-              </ResponsiveContainer>
+              {isLoading ? (
+                <div className="w-full h-full bg-slate-50 border border-slate-100 rounded-2xl animate-pulse flex flex-col items-center justify-center text-slate-400 font-bold text-xs gap-2">
+                  <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent animate-spin rounded-full"></div>
+                  Memuat tren pendaftaran...
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={dynamicChartData}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94A3B8', fontSize: 12}} dy={10} />
+                    <YAxis axisLine={false} tickLine={false} tick={{fill: '#94A3B8', fontSize: 12}} dx={-10} />
+                    <Tooltip contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                    <Line type="monotone" dataKey="pendaftar" stroke="#2563EB" strokeWidth={3} dot={{r: 4, fill: '#2563EB', strokeWidth: 2, stroke: '#fff'}} activeDot={{r: 6}} />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </div>
 
@@ -1900,14 +1981,21 @@ function ModernHQDashboardContent() {
               <MoreHorizontal size={20} className="text-slate-400" />
             </div>
             <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={dynamicBarData}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94A3B8', fontSize: 12}} dy={10} />
-                  <Tooltip cursor={{fill: '#F1F5F9'}} contentStyle={{borderRadius: '12px', border: 'none'}} />
-                  <Bar dataKey="total" fill="#3B82F6" radius={[6, 6, 0, 0]} barSize={40} />
-                </BarChart>
-              </ResponsiveContainer>
+              {isLoading ? (
+                <div className="w-full h-full bg-slate-50 border border-slate-100 rounded-2xl animate-pulse flex flex-col items-center justify-center text-slate-400 font-bold text-xs gap-2">
+                  <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent animate-spin rounded-full"></div>
+                  Memuat data peminat...
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={dynamicBarData}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94A3B8', fontSize: 12}} dy={10} />
+                    <Tooltip cursor={{fill: '#F1F5F9'}} contentStyle={{borderRadius: '12px', border: 'none'}} />
+                    <Bar dataKey="total" fill="#3B82F6" radius={[6, 6, 0, 0]} barSize={40} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </div>
         </div>
@@ -1925,31 +2013,43 @@ function ModernHQDashboardContent() {
                 </div>
                 
                 <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto justify-start lg:justify-end">
-                  <span className="bg-blue-50 text-blue-700 px-3.5 py-1.5 rounded-xl text-xs font-black border border-blue-100 shadow-sm shrink-0 flex items-center gap-1.5">
+                  <span className="bg-blue-50 text-blue-700 px-3.5 py-1.5 rounded-xl text-xs font-black border border-blue-100 shadow-sm shrink-0 flex items-center gap-1.5 min-w-[130px]">
                     <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                    Total Tiket Aktif: {realEntries.filter(e => e.payment_status === 'Verified').length}
+                    {isLoading ? (
+                      <span className="inline-block w-8 h-3 bg-blue-200/50 rounded animate-pulse"></span>
+                    ) : (
+                      `Total Tiket Aktif: ${realEntries.filter(e => e.payment_status === 'Verified').length}`
+                    )}
                   </span>
-                  <span className="bg-sky-50 text-sky-700 px-3.5 py-1.5 rounded-xl text-xs font-black border border-sky-100 shadow-sm shrink-0 flex items-center gap-1.5">
+                  <span className="bg-sky-50 text-sky-700 px-3.5 py-1.5 rounded-xl text-xs font-black border border-sky-100 shadow-sm shrink-0 flex items-center gap-1.5 min-w-[120px]">
                     <span className="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
-                    {waves[0]?.name?.split(" (")[0] || "Gelombang 1"}: {
+                    {waves[0]?.name?.split(" (")[0] || "Gelombang 1"}: {isLoading ? (
+                      <span className="inline-block w-6 h-3 bg-sky-200/50 rounded animate-pulse"></span>
+                    ) : (
                       realEntries.filter(e => {
                         const wName = getParticipantWave(e.created_at);
                         return wName.toLowerCase().includes("gelombang 1") || wName.toLowerCase().includes("early bird");
                       }).length
-                    }
+                    )}
                   </span>
-                  <span className="bg-amber-50 text-amber-700 px-3.5 py-1.5 rounded-xl text-xs font-black border border-amber-100 shadow-sm shrink-0 flex items-center gap-1.5">
+                  <span className="bg-amber-50 text-amber-700 px-3.5 py-1.5 rounded-xl text-xs font-black border border-amber-100 shadow-sm shrink-0 flex items-center gap-1.5 min-w-[120px]">
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                    {waves[1]?.name?.split(" (")[0] || "Gelombang 2"}: {
+                    {waves[1]?.name?.split(" (")[0] || "Gelombang 2"}: {isLoading ? (
+                      <span className="inline-block w-6 h-3 bg-amber-200/50 rounded animate-pulse"></span>
+                    ) : (
                       realEntries.filter(e => {
                         const wName = getParticipantWave(e.created_at);
                         return wName.toLowerCase().includes("gelombang 2") || wName.toLowerCase().includes("regular");
                       }).length
-                    }
+                    )}
                   </span>
-                  <span className="bg-slate-50 text-slate-600 px-3.5 py-1.5 rounded-xl text-xs font-black border border-slate-200 shadow-sm shrink-0 flex items-center gap-1.5">
+                  <span className="bg-slate-50 text-slate-600 px-3.5 py-1.5 rounded-xl text-xs font-black border border-slate-200 shadow-sm shrink-0 flex items-center gap-1.5 min-w-[100px]">
                     <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-                    Total Semua: {realEntries.length}
+                    Total Semua: {isLoading ? (
+                      <span className="inline-block w-6 h-3 bg-slate-200/50 rounded animate-pulse"></span>
+                    ) : (
+                      realEntries.length
+                    )}
                   </span>
                 </div>
               </div>
@@ -2040,7 +2140,9 @@ function ModernHQDashboardContent() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                {realEntries
+                {isLoading ? (
+                  Array.from({ length: 5 }).map((_, i) => <ParticipantSkeletonRow key={i} />)
+                ) : realEntries
                     .filter(e => {
                       // Filter status: All shows everyone, or filter by specific payment_status
                       if (filterProgress === "All") return true;
@@ -2140,19 +2242,23 @@ function ModernHQDashboardContent() {
                 
                 <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-start lg:justify-end">
                   {/* Total Karya */}
-                  <span className="bg-emerald-50 text-emerald-700 px-3.5 py-1.5 rounded-xl text-xs font-black border border-emerald-100 shadow-sm shrink-0 flex items-center gap-1.5">
+                  <span className="bg-emerald-50 text-emerald-700 px-3.5 py-1.5 rounded-xl text-xs font-black border border-emerald-100 shadow-sm shrink-0 flex items-center gap-1.5 min-w-[110px]">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                    Total Karya: {
+                    Total Karya: {isLoading ? (
+                      <span className="inline-block w-6 h-3 bg-emerald-200/50 rounded animate-pulse"></span>
+                    ) : (
                       realEntries.filter(e => {
                         if (!e.notes) return false;
                         try { return !!JSON.parse(e.notes).submission_url; } catch (err) { return false; }
                       }).length
-                    }
+                    )}
                   </span>
                   {/* Gelombang 1 */}
-                  <span className="bg-sky-50 text-sky-700 px-3.5 py-1.5 rounded-xl text-xs font-black border border-sky-100 shadow-sm shrink-0 flex items-center gap-1.5">
+                  <span className="bg-sky-50 text-sky-700 px-3.5 py-1.5 rounded-xl text-xs font-black border border-sky-100 shadow-sm shrink-0 flex items-center gap-1.5 min-w-[120px]">
                     <span className="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
-                    {waves[0]?.name?.split(" (")[0] || "Gelombang 1"}: {
+                    {waves[0]?.name?.split(" (")[0] || "Gelombang 1"}: {isLoading ? (
+                      <span className="inline-block w-6 h-3 bg-sky-200/50 rounded animate-pulse"></span>
+                    ) : (
                       realEntries.filter(e => {
                         if (!e.notes) return false;
                         try {
@@ -2161,12 +2267,14 @@ function ModernHQDashboardContent() {
                           return wName.toLowerCase().includes("gelombang 1") || wName.toLowerCase().includes("early bird");
                         } catch (err) { return false; }
                       }).length
-                    }
+                    )}
                   </span>
                   {/* Gelombang 2 */}
-                  <span className="bg-amber-50 text-amber-700 px-3.5 py-1.5 rounded-xl text-xs font-black border border-amber-100 shadow-sm shrink-0 flex items-center gap-1.5">
+                  <span className="bg-amber-50 text-amber-700 px-3.5 py-1.5 rounded-xl text-xs font-black border border-amber-100 shadow-sm shrink-0 flex items-center gap-1.5 min-w-[120px]">
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                    {waves[1]?.name?.split(" (")[0] || "Gelombang 2"}: {
+                    {waves[1]?.name?.split(" (")[0] || "Gelombang 2"}: {isLoading ? (
+                      <span className="inline-block w-6 h-3 bg-amber-200/50 rounded animate-pulse"></span>
+                    ) : (
                       realEntries.filter(e => {
                         if (!e.notes) return false;
                         try {
@@ -2175,7 +2283,7 @@ function ModernHQDashboardContent() {
                           return wName.toLowerCase().includes("gelombang 2") || wName.toLowerCase().includes("regular");
                         } catch (err) { return false; }
                       }).length
-                    }
+                    )}
                   </span>
                   {/* Ekspor CSV Karya Button */}
                   <button
@@ -2267,7 +2375,9 @@ function ModernHQDashboardContent() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {(() => {
+                  {isLoading ? (
+                    Array.from({ length: 5 }).map((_, i) => <KaryaSkeletonRow key={i} />)
+                  ) : (() => {
                     const filtered = realEntries
                       .filter(e => {
                         // Hanya tampilkan yang sudah memiliki submission_url di notes
@@ -4050,18 +4160,26 @@ function NavItem({ icon, text, active = false, badge, onClick }: { icon: React.R
   );
 }
 
-function StatCard({ title, value, trend, isUp }: { title: string, value: string, trend: string, isUp: boolean }) {
+function StatCard({ title, value, trend, isUp, isLoading = false }: { title: string, value: string, trend: string, isUp: boolean, isLoading?: boolean }) {
   return (
-    <div className="bg-white/50 backdrop-blur-xl backdrop-saturate-150 p-6 rounded-2xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col justify-between hover:bg-white/70 transition-all">
+    <div className="bg-white/50 backdrop-blur-xl backdrop-saturate-150 p-6 rounded-2xl border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex flex-col justify-between hover:bg-white/70 transition-all duration-300">
       <h4 className="text-slate-500 font-medium text-sm mb-4">{title}</h4>
       <div className="flex items-end justify-between">
-        <h2 className="text-3xl font-bold text-slate-800 tracking-tight">{value}</h2>
-        <span className={`flex items-center text-xs font-bold px-2 py-1 rounded-md border
-          ${isUp ? 'text-green-700 bg-green-500/10 border-green-500/20' : 'text-red-700 bg-red-500/10 border-red-500/20'}
-        `}>
-          {isUp ? <ArrowUpRight size={14} className="mr-1"/> : <ArrowDownRight size={14} className="mr-1"/>}
-          {trend}
-        </span>
+        {isLoading ? (
+          <div className="h-9 w-24 bg-slate-200/80 rounded-lg animate-pulse"></div>
+        ) : (
+          <h2 className="text-3xl font-bold text-slate-800 tracking-tight">{value}</h2>
+        )}
+        {isLoading ? (
+          <div className="h-6 w-16 bg-slate-200/60 rounded-md animate-pulse"></div>
+        ) : (
+          <span className={`flex items-center text-xs font-bold px-2 py-1 rounded-md border
+            ${isUp ? 'text-green-700 bg-green-500/10 border-green-500/20' : 'text-red-700 bg-red-500/10 border-red-500/20'}
+          `}>
+            {isUp ? <ArrowUpRight size={14} className="mr-1"/> : <ArrowDownRight size={14} className="mr-1"/>}
+            {trend}
+          </span>
+        )}
       </div>
     </div>
   );
