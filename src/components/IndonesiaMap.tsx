@@ -238,6 +238,21 @@ export default function IndonesiaMap() {
 
     particles.current = p;
 
+    if (window.innerWidth <= 768) {
+      // Mobile: Draw static particles once to completely eliminate CPU/GPU rendering overhead
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.globalCompositeOperation = "source-over";
+      particles.current.forEach(p => {
+        p.x = p.baseX;
+        p.y = p.baseY;
+        p.size = p.baseSize;
+        p.opacity = p.baseOpacity;
+        p.color = p.baseColor;
+        p.draw(ctx);
+      });
+      return;
+    }
+
     let animationFrameId: number;
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);

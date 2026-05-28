@@ -10,6 +10,9 @@ export default function useMagnetic() {
     const element = ref.current;
     if (!element) return;
 
+    // Skip magnetic effect on mobile devices for stable tap interactions
+    if (window.innerWidth <= 768) return;
+
     const xTo = gsap.quickTo(element, "x", {
       duration: 1,
       ease: "elastic.out(1, 0.3)",

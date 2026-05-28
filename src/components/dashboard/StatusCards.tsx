@@ -34,6 +34,17 @@ export default function StatusCards({
   const [isUploadingFiles, setIsUploadingFiles] = useState(false);
   const [isSavingUrl, setIsSavingUrl] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  const [isEditingSubmission, setIsEditingSubmission] = useState(false);
+  
+  // Ambil submission_url yang sudah tersimpan di database
+  const savedSubmissionUrl = (() => {
+    let parsedNotes: any = {};
+    if (userEntry?.notes) {
+      try { parsedNotes = JSON.parse(userEntry?.notes); } catch (e) {}
+    }
+    return parsedNotes.submission_url || "";
+  })();
+  
   const [submissionUrl, setSubmissionUrl] = useState(() => {
     let parsedNotes: any = {};
     if (userEntry?.notes) {
@@ -620,16 +631,83 @@ export default function StatusCards({
       {userEntry?.payment_status === 'Verified' && isSubmissionOpen && (
         <div className="bg-white border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl p-6">
           <h3 className="font-bold text-slate-800 mb-2 flex items-center gap-2">
-            <FolderOpen size={18} className="text-blue-500" />
+            <FolderOpen size={18} className={savedSubmissionUrl && !isEditingSubmission ? "text-emerald-500" : "text-blue-500"} />
             Pengumpulan Karya
           </h3>
-          <p className="text-[11px] text-slate-500 font-medium mb-4">Kumpulkan link Google Drive karya Anda di sini.</p>
-          <div className="space-y-3">
-            <input type="url" placeholder="https://drive.google.com/..." className="w-full p-3 bg-slate-50 border rounded-xl text-xs" value={submissionUrl} onChange={(e) => setSubmissionUrl(e.target.value)} />
-            <button onClick={handleSaveSubmissionUrl} disabled={isSavingUrl} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl text-xs">
-              {isSavingUrl ? "Menyimpan..." : "Simpan Link Karya"}
-            </button>
-          </div>
+
+          {/* ✅ SUDAH SUBMIT STATE */}
+          {savedSubmissionUrl && !isEditingSubmission ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
+                <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
+                <p className="text-xs font-bold text-emerald-700">Karya Berhasil Dikumpulkan!</p>
+              </div>
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Link yang Dikumpulkan</p>
+                <a 
+                  href={savedSubmissionUrl} 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  className="text-xs text-blue-600 font-semibold break-all hover:underline line-clamp-2"
+                >
+                  {savedSubmissionUrl}
+                </a>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <button 
+                  onClick={() => setIsEditingSubmission(true)} 
+                  className="w-full border border-slate-200 text-slate-600 font-bold py-2.5 rounded-xl text-xs hover:bg-slate-50 transition-colors"
+                >
+                  Ubah Link
+                </button>
+                <button 
+                  disabled 
+                  className="w-full bg-emerald-500 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-default"
+                >
+                  <CheckCircle2 size={13} /> Sudah Submit
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* 📝 FORM INPUT STATE */
+            <div className="space-y-3">
+              {!savedSubmissionUrl && (
+                <p className="text-[11px] text-slate-500 font-medium">Kumpulkan link Google Drive karya Anda di sini.</p>
+              )}
+              {isEditingSubmission && (
+                <div className="flex items-center gap-2 p-2.5 bg-amber-50 border border-amber-200 rounded-xl">
+                  <AlertCircle size={13} className="text-amber-500 shrink-0" />
+                  <p className="text-[10px] font-bold text-amber-700">Mengubah link akan mengganti karya sebelumnya.</p>
+                </div>
+              )}
+              <input 
+                type="url" 
+                placeholder="https://drive.google.com/..." 
+                className="w-full p-3 bg-slate-50 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all" 
+                value={submissionUrl} 
+                onChange={(e) => setSubmissionUrl(e.target.value)} 
+              />
+              <div className="grid grid-cols-2 gap-2">
+                {isEditingSubmission && (
+                  <button 
+                    onClick={() => { setIsEditingSubmission(false); setSubmissionUrl(savedSubmissionUrl); }} 
+                    className="w-full border border-slate-200 text-slate-600 font-bold py-2.5 rounded-xl text-xs hover:bg-slate-50 transition-colors"
+                  >
+                    Batal
+                  </button>
+                )}
+                <button 
+                  onClick={async () => { await handleSaveSubmissionUrl(); setIsEditingSubmission(false); }} 
+                  disabled={isSavingUrl || !submissionUrl} 
+                  className={`w-full bg-blue-600 text-white font-bold py-3 rounded-xl text-xs disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors ${
+                    isEditingSubmission ? '' : 'col-span-2'
+                  }`}
+                >
+                  {isSavingUrl ? "Menyimpan..." : isEditingSubmission ? "Simpan Perubahan" : "Simpan Link Karya"}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

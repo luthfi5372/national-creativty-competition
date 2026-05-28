@@ -16,6 +16,9 @@ import RegistrationModal from "@/components/dashboard/RegistrationModal";
 import IdCardModal from "@/components/dashboard/IdCardModal";
 import WelcomeOverlay from "@/components/dashboard/WelcomeOverlay";
 import SchoolHub from "@/components/dashboard/SchoolHub";
+import NextDynamic from 'next/dynamic';
+
+const GallerySection = NextDynamic(() => import("@/components/GallerySection"), { ssr: false });
 
 export default function UserDashboard() {
   const [announcements, setAnnouncements] = useState<any[]>([]);
@@ -458,6 +461,11 @@ export default function UserDashboard() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* Gallery / Dokumentasi Section */}
+        <div className="mt-12 pt-12 border-t border-slate-200/60 w-full">
+          <GallerySection />
         </div>
       </div>
 

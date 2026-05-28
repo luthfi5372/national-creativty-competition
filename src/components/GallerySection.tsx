@@ -19,10 +19,17 @@ export default function GallerySection() {
   const [galleryTitle, setGalleryTitle] = useState("Moments of Excellence");
   const [gallerySubtitle, setGallerySubtitle] = useState("A glimpse into the spirit, competition, and victory at NCC. Capturing the journey of future leaders across diverse categories.");
   const [hovered, setHovered] = useState<number | string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
   const containerRef = useRef<HTMLElement>(null);
   const supabase = createClient();
 
   useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+
     const fetchGallery = async () => {
       try {
         console.log("GallerySection: Fetching SYS_PORTAL_SETTINGS...");
@@ -58,6 +65,8 @@ export default function GallerySection() {
       }
     };
     fetchGallery();
+
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   const dynamicItems = adminMedia.map((item, index) => {
@@ -153,7 +162,7 @@ export default function GallerySection() {
                 className={cn(
                   "relative rounded-[2rem] overflow-hidden group cursor-pointer shadow-lg transition-all duration-500 ease-out",
                   item.span,
-                  hovered !== null && hovered !== item.id && allGalleryItems.some(g => g.id === hovered) && "blur-sm scale-[0.98] opacity-60"
+                  hovered !== null && hovered !== item.id && !isMobile && allGalleryItems.some(g => g.id === hovered) && "blur-sm scale-[0.98] opacity-60"
                 )}
               >
                 {/* Image Rendering */}

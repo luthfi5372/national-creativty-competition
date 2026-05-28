@@ -93,13 +93,21 @@ export default function TimelineSection() {
   // State for the traveling object
   const [point, setPoint] = useState({ x: 200, y: 50, angle: 0 });
   const [isMounted, setIsMounted] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   // Update traveler position based on smoothProgress
   useMotionValueEvent(smoothProgress, "change", (latest) => {
+    if (isMobile) return; // Completely skip heavy SVG calculations on mobile devices!
     if (isMounted && pathRef.current) {
       const path = pathRef.current;
       try {
@@ -158,64 +166,66 @@ export default function TimelineSection() {
       </div>
 
       {/* DESKTOP TIMELINE (SVG MOTION PATH) */}
-      <div className="relative w-full max-w-5xl h-[700px] shrink-0 hidden md:block">
-        <div className="absolute inset-0 flex justify-center pointer-events-none">
-          <svg viewBox="0 0 800 700" className="w-full h-full overflow-visible" fill="none">
-            {/* Background Track */}
-            <path
-              d="M 200 50 C 200 150, 600 150, 600 250 C 600 350, 200 350, 200 450 C 200 550, 600 550, 600 650"
-              stroke="#e2e8f0"
-              strokeWidth="15"
-              strokeLinecap="round"
-              style={{ opacity: 0.3 }}
-            />
-            
-            {/* Glowing Secondary Path */}
-            <motion.path
-              d="M 200 50 C 200 150, 600 150, 600 250 C 600 350, 200 350, 200 450 C 200 550, 600 550, 600 650"
-              stroke="url(#gradient-path)"
-              strokeWidth="15"
-              strokeLinecap="round"
-              style={{ pathLength: smoothProgress, opacity: 0.2, filter: "blur(8px)" }}
-            />
+      {!isMobile && (
+        <div className="relative w-full max-w-5xl h-[700px] shrink-0 hidden md:block">
+          <div className="absolute inset-0 flex justify-center pointer-events-none">
+            <svg viewBox="0 0 800 700" className="w-full h-full overflow-visible" fill="none">
+              {/* Background Track */}
+              <path
+                d="M 200 50 C 200 150, 600 150, 600 250 C 600 350, 200 350, 200 450 C 200 550, 600 550, 600 650"
+                stroke="#e2e8f0"
+                strokeWidth="15"
+                strokeLinecap="round"
+                style={{ opacity: 0.3 }}
+              />
+              
+              {/* Glowing Secondary Path */}
+              <motion.path
+                d="M 200 50 C 200 150, 600 150, 600 250 C 600 350, 200 350, 200 450 C 200 550, 600 550, 600 650"
+                stroke="url(#gradient-path)"
+                strokeWidth="15"
+                strokeLinecap="round"
+                style={{ pathLength: smoothProgress, opacity: 0.2, filter: "blur(8px)" }}
+              />
 
-            {/* Main Animated Path */}
-            <motion.path
-              ref={pathRef}
-              d="M 200 50 C 200 150, 600 150, 600 250 C 600 350, 200 350, 200 450 C 200 550, 600 550, 600 650"
-              stroke="url(#gradient-path)"
-              strokeWidth="8"
-              strokeLinecap="round"
-              style={{ pathLength: smoothProgress }}
-            />
+              {/* Main Animated Path */}
+              <motion.path
+                ref={pathRef}
+                d="M 200 50 C 200 150, 600 150, 600 250 C 600 350, 200 350, 200 450 C 200 550, 600 550, 600 650"
+                stroke="url(#gradient-path)"
+                strokeWidth="8"
+                strokeLinecap="round"
+                style={{ pathLength: smoothProgress }}
+              />
 
-            {/* THE TRAVELER (Pulsating Glow Object) */}
-            <motion.g
-              style={{ x: point.x, y: point.y, rotate: point.angle }}
-              initial={false}
-            >
-              <circle r="18" fill="#4f46e5" className="opacity-20 animate-pulse" />
-              <circle r="8" fill="white" className="filter drop-shadow-[0_0_10px_rgba(79,70,229,1)]" />
-              <circle r="4" fill="#4f46e5" />
-              <path d="M -10 -4 L 0 0 L -10 4 Z" fill="#4f46e5" className="opacity-60" />
-            </motion.g>
-            
-            <defs>
-               <linearGradient id="gradient-path" x1="0" y1="0" x2="1" y2="1">
-                 <stop offset="0%" stopColor="#6366f1" />
-                 <stop offset="50%" stopColor="#8b5cf6" />
-                 <stop offset="100%" stopColor="#ec4899" />
-               </linearGradient>
-            </defs>
-          </svg>
+              {/* THE TRAVELER (Pulsating Glow Object) */}
+              <motion.g
+                style={{ x: point.x, y: point.y, rotate: point.angle }}
+                initial={false}
+              >
+                <circle r="18" fill="#4f46e5" className="opacity-20 animate-pulse" />
+                <circle r="8" fill="white" className="filter drop-shadow-[0_0_10px_rgba(79,70,229,1)]" />
+                <circle r="4" fill="#4f46e5" />
+                <path d="M -10 -4 L 0 0 L -10 4 Z" fill="#4f46e5" className="opacity-60" />
+              </motion.g>
+              
+              <defs>
+                 <linearGradient id="gradient-path" x1="0" y1="0" x2="1" y2="1">
+                   <stop offset="0%" stopColor="#6366f1" />
+                   <stop offset="50%" stopColor="#8b5cf6" />
+                   <stop offset="100%" stopColor="#ec4899" />
+                 </linearGradient>
+              </defs>
+            </svg>
+          </div>
+
+          {/* Nodes */}
+          <TimelineNode index={0} top="9.09%" left="25%" align="left" progress={smoothProgress} trigger={0.15} activeCategory={activeCategory} />
+          <TimelineNode index={1} top="36.36%" left="75%" align="right" progress={smoothProgress} trigger={0.4} activeCategory={activeCategory} />
+          <TimelineNode index={2} top="63.63%" left="25%" align="left" progress={smoothProgress} trigger={0.7} activeCategory={activeCategory} />
+          <TimelineNode index={3} top="90.9%" left="75%" align="right" progress={smoothProgress} trigger={0.9} activeCategory={activeCategory} />
         </div>
-
-        {/* Nodes */}
-        <TimelineNode index={0} top="9.09%" left="25%" align="left" progress={smoothProgress} trigger={0.15} activeCategory={activeCategory} />
-        <TimelineNode index={1} top="36.36%" left="75%" align="right" progress={smoothProgress} trigger={0.4} activeCategory={activeCategory} />
-        <TimelineNode index={2} top="63.63%" left="25%" align="left" progress={smoothProgress} trigger={0.7} activeCategory={activeCategory} />
-        <TimelineNode index={3} top="90.9%" left="75%" align="right" progress={smoothProgress} trigger={0.9} activeCategory={activeCategory} />
-      </div>
+      )}
 
       {/* MOBILE TIMELINE FALLBACK */}
       <div className="md:hidden w-full max-w-sm mx-auto relative px-4">
@@ -227,7 +237,7 @@ export default function TimelineSection() {
         
         <div className="space-y-12">
           {currentTimeline.map((item, i) => (
-            <MobileTimelineNode key={`${activeCategory}-${i}`} index={i} progress={smoothProgress} trigger={(i + 1) * 0.2} activeCategory={activeCategory} />
+            <MobileTimelineNode key={`${activeCategory}-${i}`} index={i} activeCategory={activeCategory} />
           ))}
         </div>
       </div>
@@ -304,34 +314,32 @@ function TimelineNode({ index, top, left, align, progress, trigger, activeCatego
 
 interface MobileTimelineNodeProps {
   index: number;
-  progress: MotionValue<number>;
-  trigger: number;
   activeCategory: keyof typeof categoryTimelines;
 }
 
-function MobileTimelineNode({ index, progress, trigger, activeCategory }: MobileTimelineNodeProps) {
+function MobileTimelineNode({ index, activeCategory }: MobileTimelineNodeProps) {
   const item = categoryTimelines[activeCategory][index];
   const Icon = item.icon;
   const [active, setActive] = useState(false);
-  
-  const opacity = useTransform(progress, [trigger - 0.1, trigger], [0.3, 1]);
-  const scale = useTransform(progress, [trigger - 0.1, trigger], [0.8, 1]);
-  
-  useMotionValueEvent(progress, "change", (latest: number) => {
-    const isNowActive = latest >= trigger - 0.05;
-    if (isNowActive !== active) setActive(isNowActive);
-  });
 
   return (
-    <motion.div style={{ opacity, scale }} className="relative flex gap-6 pl-12 items-start py-2">
-      <motion.div 
+    <motion.div 
+      initial={{ opacity: 0.5, scale: 0.95, y: 15 }}
+      whileInView={{ opacity: 1, scale: 1, y: 0 }}
+      viewport={{ once: false, margin: "-50px" }}
+      onViewportEnter={() => setActive(true)}
+      onViewportLeave={() => setActive(false)}
+      transition={{ type: "spring", stiffness: 100, damping: 15 }}
+      className="relative flex gap-6 pl-12 items-start py-2"
+    >
+      <div 
         className="absolute left-8 -translate-x-1/2 w-10 h-10 rounded-full border-4 border-white flex items-center justify-center z-20 shadow-md transition-colors duration-500"
         style={{ background: active ? 'linear-gradient(to bottom right, #6366f1, #ec4899)' : '#f8fafc' }}
       >
          <Icon size={16} className={active ? 'text-white' : 'text-slate-400'} />
-      </motion.div>
+      </div>
 
-      <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm w-full">
+      <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm w-full transition-all duration-300 hover:shadow-md">
         <div className={`flex items-center gap-2 mb-2 ${item.color}`}>
           <Calendar size={12} />
           <span className="text-xs font-bold uppercase">{item.date}</span>

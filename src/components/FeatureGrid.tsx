@@ -29,14 +29,14 @@ export default function FeatureGrid() {
         {/* LEFT COLUMN: Competition Imagery */}
         <div className="order-2 md:order-1 relative aspect-[4/3] flex items-center justify-center mt-10 md:mt-0">
           
-          <div className="relative w-full max-w-sm">
+          <div className="relative w-full max-w-sm scale-[0.88] sm:scale-100 origin-center">
             {/* Base Certificate Mockup */}
             <motion.div 
                initial={{ rotate: -5, y: 20, opacity: 0 }}
                whileInView={{ rotate: -5, y: 0, opacity: 1 }}
                viewport={{ once: true }}
                transition={{ duration: 0.6 }}
-               className="w-full aspect-[4/3] bg-white border border-slate-200 shadow-xl rounded-2xl p-6 flex flex-col justify-between absolute top-0 -left-6 z-10"
+               className="w-full aspect-[4/3] bg-white border border-slate-200 shadow-xl rounded-2xl p-6 flex flex-col justify-between absolute top-0 -left-4 sm:-left-6 z-10"
             >
               <div className="flex justify-between items-start">
                 <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center border border-slate-100"><Award className="text-slate-400" /></div>
@@ -67,7 +67,7 @@ export default function FeatureGrid() {
              <motion.div 
                animate={{ y: [-10, 10, -10] }}
                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-               className="absolute -right-6 lg:-right-12 -bottom-8 z-30 bg-white px-5 sm:px-6 py-4 rounded-2xl shadow-xl flex items-center gap-3 sm:gap-4 border border-slate-100"
+               className="absolute -right-4 sm:-right-6 lg:-right-12 -bottom-6 sm:-bottom-8 z-30 bg-white px-5 sm:px-6 py-4 rounded-2xl shadow-xl flex items-center gap-3 sm:gap-4 border border-slate-100"
              >
                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-emerald-100 rounded-full flex shrink-0 items-center justify-center">
                  <Users size={20} className="text-emerald-600" />
@@ -114,18 +114,19 @@ export default function FeatureGrid() {
           Benefits Of Participating NCC
         </h3>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full text-left cursor-default">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 w-full text-left cursor-default">
           {[
             { title: "Trophies Of Award", icon: Trophy, color: "text-amber-500", bg: "bg-amber-50", borderColor: "hover:border-amber-200" },
             { title: "Counseling Money", icon: Banknote, color: "text-emerald-500", bg: "bg-emerald-50", borderColor: "hover:border-emerald-200" },
             { title: "Certificate Of Award", icon: ScrollText, color: "text-indigo-500", bg: "bg-indigo-50", borderColor: "hover:border-indigo-200" },
             { title: "Get 25% Scholarship Senior High School", icon: GraduationCap, color: "text-blue-500", bg: "bg-blue-50", borderColor: "hover:border-blue-200" },
           ].map((feat, i) => (
-            <motion.div key={i} variants={itemVariants} className={`glass-panel p-6 sm:p-8 rounded-3xl flex items-center gap-6 hover:shadow-xl hover:shadow-slate-200/50 transition-all bg-white group border border-slate-100 ${feat.borderColor}`}>
-              <div className={`w-16 h-16 rounded-2xl ${feat.bg} flex items-center justify-center shrink-0 ${feat.color} group-hover:scale-110 transition-transform duration-300 shadow-inner`}>
-                <feat.icon size={32} strokeWidth={1.5} />
+            <motion.div key={i} variants={itemVariants} className={`glass-panel p-4 sm:p-8 rounded-3xl flex items-center gap-4 sm:gap-6 hover:shadow-xl hover:shadow-slate-200/50 transition-all bg-white group border border-slate-100 ${feat.borderColor}`}>
+              <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-2xl ${feat.bg} flex items-center justify-center shrink-0 ${feat.color} group-hover:scale-110 transition-transform duration-300 shadow-inner`}>
+                <feat.icon size={24} className="sm:hidden" strokeWidth={1.5} />
+                <feat.icon size={32} className="hidden sm:block" strokeWidth={1.5} />
               </div>
-               <h4 className="text-lg sm:text-xl font-bold text-slate-700 leading-snug">{feat.title}</h4>
+               <h4 className="text-base sm:text-xl font-bold text-slate-700 leading-snug">{feat.title}</h4>
             </motion.div>
           ))}
         </div>

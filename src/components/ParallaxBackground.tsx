@@ -72,14 +72,20 @@ const items = generateElements();
 export default function ParallaxBackground() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   useGSAP(() => {
-    if (!mounted) return;
+    if (!mounted || isMobile) return; // Completely skip heavy scroll triggers on mobile
     gsap.registerPlugin(ScrollTrigger);
 
     const parallaxItems = gsap.utils.toArray<HTMLElement>(".parallax-item");
@@ -113,10 +119,13 @@ export default function ParallaxBackground() {
       });
     });
     
-  }, { scope: containerRef, dependencies: [mounted] });
+  }, { scope: containerRef, dependencies: [mounted, isMobile] });
 
   // Hide before mounted to prevent hydration errors or flashes
   if (!mounted) return null;
+
+  // Reduce background clutter and nodes on mobile to keep scrolling silky-smooth
+  const displayedItems = isMobile ? items.slice(0, 25) : items;
 
   return (
     <div 
@@ -126,7 +135,7 @@ export default function ParallaxBackground() {
     >
       <div className="absolute inset-0 bg-slate-50" /> {/* Solid background at the very back */}
       
-      {items.map((item) => (
+      {displayedItems.map((item) => (
         <div
           key={item.id}
           className={`parallax-item absolute ${item.color}`}
@@ -134,13 +143,13 @@ export default function ParallaxBackground() {
           style={{
             left: `${item.x}vw`,
             top: `${item.y}vh`,
-            opacity: item.opacity,
+            opacity: isMobile ? item.opacity * 0.6 : item.opacity, // Fader on mobile for high readability
             transform: `rotate(${item.rotate}deg)`,
-            filter: item.blur, 
+            filter: isMobile ? "blur(3px)" : item.blur, // Soft blur on mobile to avoid clashing with text
             willChange: "transform",
           }}
         >
-          <item.Icon size={item.size} strokeWidth={1.5} />
+          <item.Icon size={isMobile ? item.size * 0.6 : item.size} strokeWidth={1.5} />
         </div>
       ))}
       

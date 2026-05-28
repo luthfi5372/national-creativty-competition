@@ -94,6 +94,62 @@ export async function loginLocalUser(formData: FormData): Promise<AuthResult> {
     const cookieStore = await cookies();
     cookieStore.set("ncc_hint", "1", { path: "/", maxAge: 604800, sameSite: "lax" });
     cookieStore.set("ncc_admin_hint", "1", { path: "/", maxAge: 604800, sameSite: "lax" });
+
+    // 🚀 BRIDGE TO SUPABASE AUTH: Auto-register and login the admin to establish a valid Supabase Auth session
+    // This allows the admin client to bypass the Row Level Security (RLS) policies and see the participant list.
+    try {
+      const supabase = await createClient();
+      const authEmail = email === "admin" ? "admin@ncc.id" : email;
+      const authPassword = password;
+
+      console.log(`[Admin Bridge] Attempting to sign in admin to Supabase Auth: ${authEmail}...`);
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email: authEmail,
+        password: authPassword
+      });
+
+      if (signInError) {
+        console.warn(`[Admin Bridge] Admin sign-in failed: ${signInError.message}. Attempting auto-registration...`);
+        
+        // Register the admin account on the fly
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email: authEmail,
+          password: authPassword,
+          options: {
+            data: {
+              full_name: "NCC Admin Command",
+              username: authEmail.split('@')[0],
+            }
+          }
+        });
+
+        if (!signUpError && signUpData.user) {
+          console.log(`[Admin Bridge] Successfully registered admin on-the-fly. Syncing profile...`);
+          // Sync profile to profiles table
+          await supabase
+            .from('profiles')
+            .insert({
+              id: signUpData.user.id,
+              username: authEmail.split('@')[0],
+              full_name: "NCC Admin Command",
+            });
+
+          // Log in again to establish session cookies
+          await supabase.auth.signInWithPassword({
+            email: authEmail,
+            password: authPassword
+          });
+          console.log(`[Admin Bridge] Admin successfully logged in after auto-registration!`);
+        } else {
+          console.error(`[Admin Bridge] Auto-registration failed:`, signUpError);
+        }
+      } else {
+        console.log(`[Admin Bridge] Admin logged in successfully!`);
+      }
+    } catch (e) {
+      console.error(`[Admin Bridge] Error bridging admin bypass to Supabase Auth:`, e);
+    }
+
     return { success: true, isAdmin: true };
   }
 

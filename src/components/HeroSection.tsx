@@ -134,19 +134,20 @@ export default function HeroSection() {
           <motion.div 
             animate={{ y: [-10, 10, -10] }}
             transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute z-20 w-40 h-40 bg-white/70 backdrop-blur-xl border border-white/60 shadow-2xl rounded-full flex flex-col items-center justify-center p-6"
+            className="absolute z-20 w-32 h-32 md:w-40 md:h-40 bg-white/70 backdrop-blur-xl border border-white/60 shadow-2xl rounded-full flex flex-col items-center justify-center p-4 md:p-6"
           >
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center mb-2 shadow-lg shadow-indigo-200">
-              <LineDrawIcon icon={Trophy} size={32} className="text-white" delay={1.2} />
+            <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center mb-1 md:mb-2 shadow-lg shadow-indigo-200">
+              <LineDrawIcon icon={Trophy} size={24} className="text-white md:hidden" delay={1.2} />
+              <LineDrawIcon icon={Trophy} size={32} className="text-white hidden md:inline-flex" delay={1.2} />
             </div>
-            <span className="font-bold text-slate-800 text-sm tracking-widest text-center">NCC 13TH</span>
+            <span className="font-bold text-slate-800 text-xs md:text-sm tracking-widest text-center">NCC 13TH</span>
           </motion.div>
 
           {/* Orbiting / Floating Category Cards */}
           <motion.div 
             animate={{ y: [-15, 15, -15], rotate: [-2, 2, -2] }}
             transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-            className="absolute top-10 right-4 lg:-right-4 z-10 w-52 bg-white/90 backdrop-blur-md border border-slate-100 shadow-xl rounded-2xl p-4 flex items-center gap-3"
+            className="absolute top-4 right-2 md:top-10 md:right-4 lg:-right-4 scale-75 md:scale-100 origin-top-right z-10 w-52 bg-white/90 backdrop-blur-md border border-slate-100 shadow-xl rounded-2xl p-4 flex items-center gap-3"
           >
             <div className="w-10 h-10 rounded-xl bg-blue-100 flex py-2 shrink-0 items-center justify-center text-blue-600">
               <LineDrawIcon icon={BookOpen} size={20} delay={1.4} />
@@ -160,7 +161,7 @@ export default function HeroSection() {
           <motion.div 
             animate={{ y: [15, -15, 15], rotate: [2, -2, 2] }}
             transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-            className="absolute bottom-20 left-0 lg:-left-12 z-30 w-56 bg-white/90 backdrop-blur-md border border-slate-100 shadow-xl rounded-2xl p-4 flex items-center gap-3"
+            className="absolute bottom-2 left-2 md:bottom-20 md:left-0 lg:-left-12 scale-75 md:scale-100 origin-bottom-left z-30 w-56 bg-white/90 backdrop-blur-md border border-slate-100 shadow-xl rounded-2xl p-4 flex items-center gap-3"
           >
             <div className="w-10 h-10 rounded-xl bg-emerald-100 flex py-2 shrink-0 items-center justify-center text-emerald-600">
               <LineDrawIcon icon={Mic} size={20} delay={1.6} />
@@ -174,7 +175,7 @@ export default function HeroSection() {
           <motion.div 
             animate={{ y: [-10, 10, -10], x: [-5, 5, -5] }}
             transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
-            className="absolute top-1/2 -translate-y-1/2 -left-4 lg:-left-16 z-10 w-48 bg-white/90 backdrop-blur-md border border-slate-100 shadow-xl rounded-2xl p-4 flex items-center gap-3"
+            className="absolute hidden md:flex top-1/2 -translate-y-1/2 -left-4 lg:-left-16 z-10 w-48 bg-white/90 backdrop-blur-md border border-slate-100 shadow-xl rounded-2xl p-4 items-center gap-3"
           >
             <div className="w-10 h-10 rounded-xl bg-purple-100 flex shrink-0 items-center justify-center text-purple-600">
               <LineDrawIcon icon={Microscope} size={20} delay={1.8} />
@@ -189,7 +190,7 @@ export default function HeroSection() {
           <motion.div 
              animate={{ y: [10, -10, 10] }}
              transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-             className="absolute bottom-10 -right-4 lg:-right-12 z-20 bg-indigo-600 text-white px-5 py-3 rounded-2xl shadow-lg shadow-indigo-600/30 flex items-center gap-3"
+             className="absolute bottom-2 right-2 md:bottom-10 md:right-4 lg:-right-12 scale-75 md:scale-100 origin-bottom-right z-20 bg-indigo-600 text-white px-5 py-3 rounded-2xl shadow-lg shadow-indigo-600/30 flex items-center gap-3"
           >
              <GraduationCap size={24} className="text-indigo-200" />
              <div className="text-left">

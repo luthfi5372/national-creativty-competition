@@ -119,10 +119,10 @@ export default function LiveLeaderboard() {
     const channel = supabase
       .channel(`live-cbt-scores-${examId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'cbt_attempts' }, (payload) => {
-        if (payload.new && payload.new.exam_id === examId) {
+        if (payload.new && (payload.new as any).exam_id === examId) {
           setAttempts((prev) => {
             let nextList = [...prev];
-            const updated = payload.new;
+            const updated = payload.new as any;
             
             const idx = nextList.findIndex(p => p.user_id === updated.user_id);
             if (idx !== -1) {

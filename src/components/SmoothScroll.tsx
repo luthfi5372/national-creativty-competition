@@ -10,6 +10,10 @@ export default function SmoothScroll({ children }: { children: React.ReactNode }
     let rafId: number;
 
     const initLenis = async () => {
+      if (window.innerWidth <= 768) {
+        // Skip Lenis on mobile devices for smooth native GPU scrolling
+        return;
+      }
       const { default: Lenis } = await import("lenis");
       lenis = new Lenis({
         lerp: 0.05,

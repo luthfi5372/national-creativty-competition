@@ -68,10 +68,10 @@ export default function LiveMonitor() {
     // 📡 ANTENA RADAR REAL-TIME SUPABASE (Optimasi Bebas Lag & Tanpa Loop Query)
     const channel = supabase.channel('live-cctv')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'cbt_attempts' }, (payload) => {
-        if (payload.new && payload.new.exam_id === examId) {
+        if (payload.new && (payload.new as any).exam_id === examId) {
           setParticipants((prev) => {
             let nextList = [...prev];
-            const updated = payload.new;
+            const updated = payload.new as any;
             
             const idx = nextList.findIndex(p => p.user_id === updated.user_id);
             if (idx !== -1) {

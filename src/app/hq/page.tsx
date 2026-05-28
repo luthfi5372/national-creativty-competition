@@ -58,10 +58,12 @@ const ParticipantRow = memo(({ entry, onRowClick, onIdCardClick, onDeleteClick }
   const timeStr = dateObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 
   let photoUrl = "";
+  let hasSubmissionUrl = false;
   if (entry.notes) {
     try {
       const pObj = JSON.parse(entry.notes);
       photoUrl = pObj.profile_photo_url;
+      hasSubmissionUrl = !!pObj.submission_url;
     } catch (e) {}
   }
 
@@ -98,12 +100,11 @@ const ParticipantRow = memo(({ entry, onRowClick, onIdCardClick, onDeleteClick }
            <div className="text-[11px] text-slate-500 mt-0.5">
              {entry.email || "Email tidak ada"} <span className="mx-1 text-slate-300">|</span> NISN: <span className="font-medium text-slate-600">{entry.nisn || "-"}</span>
            </div>
-           <div className="text-[10px] bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded border border-indigo-100 w-max mt-1.5 flex items-center gap-1">
-             <span>Login CBT &rarr;</span>
-             <span>ID Tiket: <span className="font-mono select-all tracking-widest">NCC-{generateTicketCode(entry.id)}</span></span>
-             <span className="text-indigo-300">|</span>
-             <span>Token: <span className="text-indigo-400 font-medium">Live (10 mnt)</span></span>
-           </div>
+           {hasSubmissionUrl && (
+             <div className="text-[10px] bg-emerald-50 text-emerald-700 font-bold px-2 py-0.5 rounded border border-emerald-100 w-max mt-1.5 flex items-center gap-1">
+               <FolderOpen size={10} /> Link Karya Tersedia
+             </div>
+           )}
          </div>
       </td>
       <td className="py-4 px-6">
@@ -1011,7 +1012,8 @@ function ModernHQDashboardContent() {
       try { adminNotes = JSON.parse(p.notes); } catch (e) {}
     }
     
-    if (!adminNotes.profile_photo_url && !adminNotes.student_card_url) return null;
+    const hasFiles = adminNotes.profile_photo_url || adminNotes.student_card_url || adminNotes.submission_url;
+    if (!hasFiles) return null;
 
     return (
       <div className="p-4 bg-white/60 border border-slate-100 rounded-xl shadow-sm space-y-3">
@@ -1036,7 +1038,7 @@ function ModernHQDashboardContent() {
         )}
 
         {adminNotes.student_card_url && (
-          <div className="flex items-center justify-between py-2 text-sm">
+          <div className={`flex items-center justify-between py-2 text-sm ${adminNotes.submission_url ? 'border-b border-slate-100/60' : ''}`}>
             <span className="text-xs font-semibold text-slate-600 flex items-center gap-1.5">
               <IdCard size={13} className="text-amber-500" /> Kartu Pelajar
             </span>
@@ -1047,6 +1049,22 @@ function ModernHQDashboardContent() {
               className="text-xs font-bold text-indigo-600 hover:underline bg-indigo-50 px-2.5 py-1 rounded-lg"
             >
               Buka
+            </a>
+          </div>
+        )}
+
+        {adminNotes.submission_url && (
+          <div className="flex items-center justify-between py-2 text-sm">
+            <span className="text-xs font-semibold text-slate-600 flex items-center gap-1.5">
+              <FolderOpen size={13} className="text-emerald-500" /> Link Karya / Submission
+            </span>
+            <a 
+              href={adminNotes.submission_url} 
+              target="_blank" 
+              rel="noreferrer" 
+              className="text-xs font-bold text-emerald-700 hover:underline bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-lg flex items-center gap-1"
+            >
+              Buka Karya
             </a>
           </div>
         )}
@@ -1799,6 +1817,9 @@ function ModernHQDashboardContent() {
                   <span className="bg-blue-100 text-blue-700 px-4 py-1.5 rounded-full text-xs font-bold border border-blue-200 shadow-sm shrink-0">
                     Total Tiket Aktif: {realEntries.filter(e => e.payment_status === 'Verified').length}
                   </span>
+                  <span className="bg-slate-100 text-slate-600 px-4 py-1.5 rounded-full text-xs font-bold border border-slate-200 shadow-sm shrink-0">
+                    Total Semua: {realEntries.length}
+                  </span>
                 </div>
               </div>
 
@@ -1819,7 +1840,7 @@ function ModernHQDashboardContent() {
                 </div>
                 
                 {/* Dropdown Kategori Lomba */}
-                <div className="relative w-full md:w-52">
+                <div className="relative w-full md:w-44">
                   <select
                     value={filterCategory}
                     onChange={(e) => setFilterCategory(e.target.value)}
@@ -1836,19 +1857,18 @@ function ModernHQDashboardContent() {
                   </div>
                 </div>
 
-                {/* Dropdown Status Progres */}
-                <div className="relative w-full md:w-52">
+                {/* Dropdown Status Pembayaran */}
+                <div className="relative w-full md:w-44">
                   <select
                     value={filterProgress}
                     onChange={(e) => setFilterProgress(e.target.value)}
                     className="w-full pl-4 pr-10 py-2.5 bg-white/90 backdrop-blur-md border border-white/60 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 appearance-none text-slate-700 font-medium shadow-sm"
                   >
-                    <option value="All">Semua Progres</option>
-                    <option value="tahap1">Lolos / Aktif Tahap 1</option>
-                    <option value="gagal1">Gagal Tahap 1</option>
-                    <option value="tahap2">Lolos / Aktif Tahap 2</option>
-                    <option value="gagal2">Gagal Tahap 2</option>
-                    <option value="final">Final (Tahap 3)</option>
+                    <option value="All">Semua Status</option>
+                    <option value="Verified">✅ Verified</option>
+                    <option value="Pending">⏳ Pending</option>
+                    <option value="Unpaid">❌ Belum Bayar</option>
+                    <option value="Rejected">🚫 Ditolak</option>
                   </select>
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                     <Filter size={14} className="text-slate-400" />
@@ -1872,8 +1892,12 @@ function ModernHQDashboardContent() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {realEntries
-                    .filter(e => e.payment_status === 'Verified')
+                {realEntries
+                    .filter(e => {
+                      // Filter status: All shows everyone, or filter by specific payment_status
+                      if (filterProgress === "All") return true;
+                      return e.payment_status === filterProgress;
+                    })
                     .filter(e => {
                       if (!searchQuery) return true;
                       const query = searchQuery.toLowerCase();
@@ -1882,33 +1906,33 @@ function ModernHQDashboardContent() {
                              `ncc-${generateTicketCode(e.id)}`.toLowerCase().includes(query);
                     })
                     .filter(e => filterCategory === "All" || (e.competition_type || e.category) === filterCategory)
-                    .filter(e => {
-                      if (filterProgress === "All") return true;
-                      let stage = 1;
-                      let isFailed = false;
-                      if (e.notes) {
-                        try {
-                          const n = JSON.parse(e.notes);
-                          if (n.current_stage) stage = n.current_stage;
-                          if (n.is_failed) isFailed = n.is_failed;
-                        } catch (err) {}
-                      }
-                      const status = stage === 1 
-                        ? (isFailed ? "gagal1" : "tahap1")
-                        : stage === 2
-                          ? (isFailed ? "gagal2" : "tahap2")
-                          : "final";
-                      return status === filterProgress;
-                    })
                     .length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="py-12 text-center text-slate-400 font-medium">
-                          Tidak ada peserta yang cocok dengan radar pencarian Anda.
+                        <td colSpan={7} className="py-16 text-center">
+                          <div className="flex flex-col items-center gap-3">
+                            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center">
+                              <Users size={28} className="text-slate-300" />
+                            </div>
+                            <p className="text-slate-500 font-semibold text-sm">
+                              {realEntries.length === 0 
+                                ? "Belum ada peserta yang mendaftar."
+                                : "Tidak ada peserta yang cocok dengan filter Anda."
+                              }
+                            </p>
+                            {realEntries.length === 0 && (
+                              <p className="text-slate-400 text-xs max-w-xs text-center">
+                                Data akan muncul setelah peserta mengisi formulir pendaftaran kompetisi di halaman dashboard mereka.
+                              </p>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ) : (
                     realEntries
-                      .filter(e => e.payment_status === 'Verified')
+                      .filter(e => {
+                        if (filterProgress === "All") return true;
+                        return e.payment_status === filterProgress;
+                      })
                       .filter(e => {
                         if (!searchQuery) return true;
                         const query = searchQuery.toLowerCase();
@@ -1917,24 +1941,6 @@ function ModernHQDashboardContent() {
                                `ncc-${generateTicketCode(e.id)}`.toLowerCase().includes(query);
                       })
                       .filter(e => filterCategory === "All" || (e.competition_type || e.category) === filterCategory)
-                      .filter(e => {
-                        if (filterProgress === "All") return true;
-                        let stage = 1;
-                        let isFailed = false;
-                        if (e.notes) {
-                          try {
-                            const n = JSON.parse(e.notes);
-                            if (n.current_stage) stage = n.current_stage;
-                            if (n.is_failed) isFailed = n.is_failed;
-                          } catch (err) {}
-                        }
-                        const status = stage === 1 
-                          ? (isFailed ? "gagal1" : "tahap1")
-                          : stage === 2
-                            ? (isFailed ? "gagal2" : "tahap2")
-                            : "final";
-                        return status === filterProgress;
-                      })
                       .map((entry: any) => (
                         <ParticipantRow 
                           key={entry.id} 
