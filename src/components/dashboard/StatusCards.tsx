@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { AlertCircle, CheckCircle2, Clock, User, IdCard, ImageIcon, FolderOpen, BookOpen, MessageCircle, Target, Sparkles, ChevronRight, Ticket, Copy, Check, Loader2, Upload } from "lucide-react";
+import { AlertCircle, CheckCircle2, Clock, User, IdCard, ImageIcon, FolderOpen, BookOpen, MessageCircle, Target, Sparkles, ChevronRight, Ticket, Copy, Check, Loader2, Upload, Lock } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
 import { generateTicketCode } from "@/lib/utils";
@@ -9,6 +9,7 @@ interface StatusCardsProps {
   setUserEntry: React.Dispatch<React.SetStateAction<any>>;
   currentUser: any;
   isSubmissionOpen: boolean;
+  activeSubmissionWave?: string;
   setShowForm: (val: boolean) => void;
   setShowIdCard: (val: boolean) => void;
   showToast: (msg: string, type: "success" | "error") => void;
@@ -23,6 +24,7 @@ export default function StatusCards({
   setUserEntry,
   currentUser,
   isSubmissionOpen,
+  activeSubmissionWave = "",
   setShowForm,
   setShowIdCard,
   showToast,
@@ -749,15 +751,28 @@ export default function StatusCards({
         </div>
       )}
 
-      {userEntry?.payment_status === 'Verified' && isSubmissionOpen && (
+      {userEntry?.payment_status === 'Verified' && (
         <div className="bg-white border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl p-6">
           <h3 className="font-bold text-slate-800 mb-2 flex items-center gap-2">
-            <FolderOpen size={18} className={savedSubmissionUrl && !isEditingSubmission ? "text-emerald-500" : "text-blue-500"} />
-            Pengumpulan Karya
+            <FolderOpen size={18} className={!isSubmissionOpen ? "text-slate-400" : (savedSubmissionUrl && !isEditingSubmission ? "text-emerald-500" : "text-blue-500")} />
+            Pengumpulan Karya {activeSubmissionWave ? `(${activeSubmissionWave})` : ""}
           </h3>
 
-          {/* ✅ SUDAH SUBMIT STATE */}
-          {savedSubmissionUrl && !isEditingSubmission ? (
+          {!isSubmissionOpen ? (
+            <div className="space-y-3 pt-2">
+              <div className="flex flex-col items-center gap-3 p-5 bg-slate-50 border border-slate-200/60 rounded-2xl">
+                <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 border border-slate-200">
+                  <Lock size={20} />
+                </div>
+                <div className="text-center">
+                  <p className="text-xs font-black text-slate-700">Akses Pengumpulan Ditutup</p>
+                  <p className="text-[10px] text-slate-500 font-medium mt-1 leading-relaxed max-w-[220px] mx-auto">
+                    Portal pengumpulan karya Gelombang I & II untuk kategori <span className="font-bold text-indigo-600">{userEntry.competition_type}</span> saat ini sedang ditutup.
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : savedSubmissionUrl && !isEditingSubmission ? (
             <div className="space-y-3">
               <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
                 <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
@@ -804,7 +819,7 @@ export default function StatusCards({
               <input 
                 type="url" 
                 placeholder="https://drive.google.com/..." 
-                className="w-full p-3 bg-slate-50 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all" 
+                className="w-full p-3 bg-slate-50 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all font-semibold text-slate-700" 
                 value={submissionUrl} 
                 onChange={(e) => setSubmissionUrl(e.target.value)} 
               />

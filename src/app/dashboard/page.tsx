@@ -40,6 +40,7 @@ export default function UserDashboard() {
   const [showForm, setShowForm] = useState(false);
   const [showIdCard, setShowIdCard] = useState(false);
   const [isSubmissionOpen, setIsSubmissionOpen] = useState(false);
+  const [activeSubmissionWave, setActiveSubmissionWave] = useState<string>("");
   
   // Registration Form Local State mapped here so it doesn't drill too hard,
   // but keeping it here causes modal to rerender, not the whole dashboard IF extracted, 
@@ -156,8 +157,13 @@ export default function UserDashboard() {
               const isGel1Open = parsed.submissionStatus.find((item: any) => item.id === `${matchingKeyPrefix}_g1`)?.isOpen;
               const isGel2Open = parsed.submissionStatus.find((item: any) => item.id === `${matchingKeyPrefix}_g2`)?.isOpen;
               setIsSubmissionOpen(!!(isGel1Open || isGel2Open));
+              if (isGel1Open && isGel2Open) setActiveSubmissionWave("Gelombang I & II");
+              else if (isGel1Open) setActiveSubmissionWave("Gelombang I");
+              else if (isGel2Open) setActiveSubmissionWave("Gelombang II");
+              else setActiveSubmissionWave("");
             } else {
               setIsSubmissionOpen(true);
+              setActiveSubmissionWave("");
             }
           } catch (e) {
             setIsSubmissionOpen(true);
@@ -267,6 +273,10 @@ export default function UserDashboard() {
                 const isGel1Open = parsed.submissionStatus.find((item: any) => item.id === `${matchingKeyPrefix}_g1`)?.isOpen;
                 const isGel2Open = parsed.submissionStatus.find((item: any) => item.id === `${matchingKeyPrefix}_g2`)?.isOpen;
                 setIsSubmissionOpen(!!(isGel1Open || isGel2Open));
+                if (isGel1Open && isGel2Open) setActiveSubmissionWave("Gelombang I & II");
+                else if (isGel1Open) setActiveSubmissionWave("Gelombang I");
+                else if (isGel2Open) setActiveSubmissionWave("Gelombang II");
+                else setActiveSubmissionWave("");
               }
             } catch (e) {}
           }
@@ -405,6 +415,7 @@ export default function UserDashboard() {
             setUserEntry={setUserEntry}
             currentUser={currentUser}
             isSubmissionOpen={isSubmissionOpen}
+            activeSubmissionWave={activeSubmissionWave}
             setShowForm={setShowForm}
             setShowIdCard={setShowIdCard}
             showToast={showToast}
