@@ -24,6 +24,7 @@ export default function SchoolHub({ userEntry, currentUser }: SchoolHubProps) {
   const supabase = createClient();
 
   const activeSchool = userEntry?.school_name || userEntry?.school || currentUser?.user_metadata?.school || "";
+  const activeNpsn = userEntry?.npsn || currentUser?.user_metadata?.npsn || "";
 
   // Auto-scroll chat to bottom
   const scrollToBottom = () => {
@@ -38,16 +39,21 @@ export default function SchoolHub({ userEntry, currentUser }: SchoolHubProps) {
 
   // 1. Fetch & Subscribe to School Messages (Real-Time Group Chat)
   useEffect(() => {
-    if (!activeSchool) return;
+    if (!activeSchool && !activeNpsn) return;
 
     const fetchMessages = async () => {
       setIsLoadingChats(true);
       setChatError(null);
       try {
-        const { data, error } = await supabase
-          .from("school_messages")
-          .select("*")
-          .eq("school_name", activeSchool)
+        let query = supabase.from("school_messages").select("*");
+        
+        if (activeNpsn) {
+          query = query.eq("npsn", activeNpsn);
+        } else {
+          query = query.eq("school_name", activeSchool);
+        }
+
+        const { data, error } = await query
           .order("created_at", { ascending: true })
           .limit(100);
 
@@ -74,15 +80,18 @@ export default function SchoolHub({ userEntry, currentUser }: SchoolHubProps) {
     // Listen to real-time additions of messages for this school
     let channel: any;
     try {
+      const channelKey = activeNpsn ? `npsn_${activeNpsn}` : activeSchool.replace(/\s+/g, "_");
+      const filterExpr = activeNpsn ? `npsn=eq.${activeNpsn}` : `school_name=eq.${activeSchool}`;
+
       channel = supabase
-        .channel(`school_chat_${activeSchool.replace(/\s+/g, "_")}`)
+        .channel(`school_chat_${channelKey}`)
         .on(
           "postgres_changes",
           {
             event: "INSERT",
             schema: "public",
             table: "school_messages",
-            filter: `school_name=eq.${activeSchool}`,
+            filter: filterExpr,
           },
           (payload) => {
             setMessages((prev) => [...prev, payload.new]);
@@ -96,20 +105,27 @@ export default function SchoolHub({ userEntry, currentUser }: SchoolHubProps) {
     return () => {
       if (channel) supabase.removeChannel(channel);
     };
-  }, [activeSchool]);
+  }, [activeSchool, activeNpsn]);
 
   // 2. Fetch Schoolmates & Kelolosan statuses
   useEffect(() => {
-    if (!activeSchool) return;
+    if (!activeSchool && !activeNpsn) return;
 
     const fetchSchoolmates = async () => {
       setIsLoadingMates(true);
       try {
-        const { data, error } = await supabase
+        let query = supabase
           .from("competition_entries")
-          .select("id, full_name, email, competition_type, category, payment_status, notes")
+          .select("id, full_name, email, competition_type, category, payment_status, notes");
+
+        if (activeNpsn) {
+          query = query.eq("npsn", activeNpsn);
+        } else {
+          query = query.or(`school_name.eq."${activeSchool}",school.eq."${activeSchool}"`);
+        }
+
+        const { data, error } = await query
           .eq("payment_status", "Verified") // Only show verified participants
-          .or(`school_name.eq."${activeSchool}",school.eq."${activeSchool}"`)
           .order("full_name", { ascending: true });
 
         if (error) throw error;
@@ -122,12 +138,12 @@ export default function SchoolHub({ userEntry, currentUser }: SchoolHubProps) {
     };
 
     fetchSchoolmates();
-  }, [activeSchool]);
+  }, [activeSchool, activeNpsn]);
 
   // Handle send message
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputText.trim() || isSending || !activeSchool) return;
+    if (!inputText.trim() || isSending || (!activeSchool && !activeNpsn)) return;
 
     setIsSending(true);
     const messageText = inputText.trim();
@@ -140,6 +156,7 @@ export default function SchoolHub({ userEntry, currentUser }: SchoolHubProps) {
         .insert([
           {
             school_name: activeSchool,
+            npsn: activeNpsn || null,
             sender_id: currentUser.id,
             sender_name: senderName,
             message: messageText,
@@ -220,7 +237,14 @@ export default function SchoolHub({ userEntry, currentUser }: SchoolHubProps) {
           </div>
           <div>
             <h3 className="font-black text-slate-800 text-sm tracking-tight uppercase">Ruang Sekolah</h3>
-            <p className="font-semibold text-slate-500 text-xs tracking-wide">{activeSchool}</p>
+            <div className="flex flex-wrap items-center gap-2 mt-0.5">
+              <p className="font-semibold text-slate-500 text-xs tracking-wide">{activeSchool}</p>
+              {activeNpsn && (
+                <span className="bg-indigo-50 text-indigo-600 font-mono text-[9px] font-extrabold px-2 py-0.5 rounded-md border border-indigo-100 shadow-sm shrink-0">
+                  NPSN: {activeNpsn}
+                </span>
+              )}
+            </div>
           </div>
         </div>
 

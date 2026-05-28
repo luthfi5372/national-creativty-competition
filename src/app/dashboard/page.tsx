@@ -343,6 +343,7 @@ export default function UserDashboard() {
           full_name: currentUser?.user_metadata?.full_name || "Peserta",
           email: currentUser.email,
           school_name: localFormData.school_name,
+          npsn: currentUser?.user_metadata?.npsn || null, // Simpan NPSN dari user metadata
           nisn: localFormData.nisn,
           province: localFormData.province,
           competition_type: localFormData.competition_type,

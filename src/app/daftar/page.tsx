@@ -17,6 +17,7 @@ export default function DaftarPage() {
     npsn: "",
     school: ""
   });
+  const [isSchoolLocked, setIsSchoolLocked] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
@@ -31,6 +32,35 @@ export default function DaftarPage() {
       }
     }
   }, [router]);
+
+  // Efek Pencarian NPSN Sekolah (Auto-Lock & Sync)
+  useEffect(() => {
+    const lookupNpsn = async () => {
+      const code = formData.npsn;
+      if (code.length === 8) {
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('school')
+            .eq('npsn', code)
+            .not('school', 'is', null)
+            .neq('school', '')
+            .limit(1);
+
+          if (data && data.length > 0 && data[0].school) {
+            setFormData(prev => ({ ...prev, school: data[0].school }));
+            setIsSchoolLocked(true);
+            return;
+          }
+        } catch (e) {
+          console.error("Gagal mendeteksi sekolah berdasarkan NPSN:", e);
+        }
+      }
+      setIsSchoolLocked(false);
+    };
+
+    lookupNpsn();
+  }, [formData.npsn, supabase]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -215,15 +245,31 @@ export default function DaftarPage() {
 
           {/* Baris 2.5: Nama Sekolah */}
           <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-1">Nama Sekolah</label>
+            <div className="flex justify-between items-center pl-1">
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Nama Sekolah</label>
+              {isSchoolLocked && (
+                <span className="text-[9px] text-amber-600 font-extrabold flex items-center gap-1 uppercase tracking-wider bg-amber-500/10 px-2.5 py-0.5 rounded-full animate-pulse border border-amber-500/20">
+                  <Lock size={10} /> Terkunci (Registrasi NPSN Pertama)
+                </span>
+              )}
+            </div>
             <div className="relative group">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                <Building2 size={16} className="text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                {isSchoolLocked ? (
+                  <Lock size={16} className="text-amber-500 transition-colors" />
+                ) : (
+                  <Building2 size={16} className="text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                )}
               </div>
               <input 
                 type="text" 
+                readOnly={isSchoolLocked}
                 placeholder="Nama Sekolah Anda (misal: SMA Negeri 1 Jakarta)" 
-                className="w-full pl-10 pr-4 py-3 bg-white/60 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-slate-700 placeholder:text-slate-400 shadow-sm"
+                className={`w-full pl-10 pr-4 py-3 border rounded-xl text-sm focus:outline-none focus:ring-2 transition-all shadow-sm ${
+                  isSchoolLocked 
+                    ? "bg-slate-100/80 border-slate-300/80 text-slate-500 font-semibold cursor-not-allowed select-none focus:ring-amber-500/20 focus:border-amber-500" 
+                    : "bg-white/60 border-slate-200 text-slate-700 placeholder:text-slate-400 focus:ring-blue-500/50 focus:border-blue-500"
+                }`}
                 value={formData.school}
                 onChange={(e) => setFormData({...formData, school: e.target.value})}
               />

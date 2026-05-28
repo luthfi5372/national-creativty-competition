@@ -10,7 +10,7 @@ import { generateTicketCode } from "@/lib/utils";
 import { 
   LayoutDashboard, Users, FileCheck, Settings, 
   ArrowUpRight, ArrowDownRight, Download, Calendar, 
-  Bell, MoreHorizontal, Sparkles, Search, Filter, Printer, X, IdCard, Megaphone, Send, ArrowRight, Save,
+  Bell, MoreHorizontal, Sparkles, Search, Filter, Printer, X, IdCard, Megaphone, Send, ArrowRight, Save, MessageSquare,
   CheckCircle2, AlertCircle, LogOut, Trash2, MapPin, School, Target, XCircle, Power, Shield, Clock, CalendarDays, FolderOpen, ShieldCheck, CheckCircle, Eye, EyeOff, FileText, ImageIcon, Camera, Trophy, Medal, GraduationCap, Building2, ClipboardCheck, Pencil, History, MegaphoneOff
 } from "lucide-react";
 import { 
@@ -410,6 +410,101 @@ function ModernHQDashboardContent() {
   const [dynamicChartData, setDynamicChartData] = useState<any[]>([]);
   const [dynamicBarData, setDynamicBarData] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('Dashboard');
+  const [selectedSchoolGroup, setSelectedSchoolGroup] = useState<any>(null);
+  const [groupMessages, setGroupMessages] = useState<any[]>([]);
+  const [isLoadingGroupMessages, setIsLoadingGroupMessages] = useState(false);
+  const [groupMsgText, setGroupMsgText] = useState("");
+  const [isSendingGroupMsg, setIsSendingGroupMsg] = useState(false);
+  const [searchSchoolQuery, setSearchSchoolQuery] = useState("");
+
+  // Efek memuat obrolan untuk Forum Sekolah terpilih
+  useEffect(() => {
+    if (activeTab !== "ForumSekolah" || !selectedSchoolGroup) return;
+
+    const fetchGroupMessages = async () => {
+      setIsLoadingGroupMessages(true);
+      try {
+        let query = supabase.from("school_messages").select("*");
+        
+        if (selectedSchoolGroup.npsn) {
+          query = query.eq("npsn", selectedSchoolGroup.npsn);
+        } else {
+          query = query.eq("school_name", selectedSchoolGroup.schoolName);
+        }
+
+        const { data, error } = await query
+          .order("created_at", { ascending: true })
+          .limit(150);
+
+        if (!error) {
+          setGroupMessages(data || []);
+        }
+      } catch (err) {
+        console.error("Gagal memuat pesan obrolan kelompok:", err);
+      } finally {
+        setIsLoadingGroupMessages(false);
+      }
+    };
+
+    fetchGroupMessages();
+
+    // Subscribe real-time
+    const channelKey = selectedSchoolGroup.npsn 
+      ? `npsn_${selectedSchoolGroup.npsn}` 
+      : selectedSchoolGroup.schoolName.replace(/\s+/g, "_");
+    const filterExpr = selectedSchoolGroup.npsn 
+      ? `npsn=eq.${selectedSchoolGroup.npsn}` 
+      : `school_name=eq.${selectedSchoolGroup.schoolName}`;
+
+    const channel = supabase
+      .channel(`hq_school_chat_${channelKey}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "school_messages",
+          filter: filterExpr,
+        },
+        (payload) => {
+          setGroupMessages((prev) => [...prev, payload.new]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [activeTab, selectedSchoolGroup, supabase]);
+
+  const handleSendGroupMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!groupMsgText.trim() || isSendingGroupMsg || !selectedSchoolGroup) return;
+
+    setIsSendingGroupMsg(true);
+    const textToSend = groupMsgText.trim();
+    setGroupMsgText("");
+
+    try {
+      const { error } = await supabase
+        .from("school_messages")
+        .insert([
+          {
+            school_name: selectedSchoolGroup.schoolName,
+            npsn: selectedSchoolGroup.npsn || null,
+            sender_id: "hq-admin",
+            sender_name: "Markas Besar (Admin)",
+            message: textToSend,
+          }
+        ]);
+      if (error) throw error;
+    } catch (err) {
+      console.error("Gagal mengirim pesan ke forum:", err);
+      alert("Gagal mengirim pesan: " + (err as Error).message);
+    } finally {
+      setIsSendingGroupMsg(false);
+    }
+  };
   const [activeToken, setActiveToken] = useState("------");
   const [showToken, setShowToken] = useState(false);
 
@@ -1738,12 +1833,26 @@ function ModernHQDashboardContent() {
     document.body.removeChild(link);
   };
 
-  // --- 🖨️ FITUR 2: MESIN CETAK FISIK ---
-  const handlePrintCard = () => {
-    window.print(); // Cara termudah & paling stabil untuk browser
-  };
-
-
+  // --- 🏫 KELOMPOK SEKOLAH BERDASARKAN NPSN ---
+  const schoolGroups = React.useMemo(() => {
+    const groups: Record<string, { schoolName: string; npsn: string; students: any[] }> = {};
+    
+    realEntries.forEach((entry: any) => {
+      const schoolName = entry.school_name || entry.school || "Sekolah Tanpa Nama";
+      const key = entry.npsn || schoolName;
+      
+      if (!groups[key]) {
+        groups[key] = {
+          schoolName,
+          npsn: entry.npsn || "",
+          students: []
+        };
+      }
+      groups[key].students.push(entry);
+    });
+    
+    return Object.values(groups);
+  }, [realEntries]);
 
   return (
     <div className="flex h-screen bg-slate-50 text-slate-800 font-sans overflow-hidden relative">
@@ -1794,6 +1903,7 @@ function ModernHQDashboardContent() {
               }
             }).length },
             { id: "Pengumuman", icon: <Megaphone size={18} />, label: "Siaran Info" },
+            { id: "ForumSekolah", icon: <MessageSquare size={18} />, label: "Forum Sekolah" },
             { id: "Kegiatan", icon: <CalendarDays size={18} />, label: "Kegiatan" },
             { id: "Schedule", icon: <Calendar size={18} />, label: "Schedule Lomba" },
             { id: "Media", icon: <ImageIcon size={18} />, label: "Kelola Media" },
@@ -1851,12 +1961,15 @@ function ModernHQDashboardContent() {
         
         <header className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">{activeTab}</h1>
+            <h1 className="text-2xl font-bold text-slate-900">
+              {activeTab === "ForumSekolah" ? "Forum Sekolah (NPSN)" : activeTab}
+            </h1>
             <p className="text-slate-500 text-sm mt-1">
               {activeTab === "Dashboard" && "Pantau pergerakan data pendaftaran NCC 13th."}
               {activeTab === "Peserta" && "Manajemen seluruh data peserta kompetisi."}
               {activeTab === "Verifikasi" && "Pusat verifikasi pembayaran dan dokumen."}
               {activeTab === "Karya" && "Manajemen dan direktori pengumpulan karya tulis, video, dan naskah peserta."}
+              {activeTab === "ForumSekolah" && "Pantau dan interaksi langsung pada obrolan forum Ruang Sekolah secara real-time."}
               {activeTab === "Kegiatan" && "Kawal gerbang pendaftaran dan fail karya."}
               {activeTab === "Pengaturan" && "Konfigurasi sistem Markas Besar."}
             </p>
@@ -3511,6 +3624,210 @@ function ModernHQDashboardContent() {
                 )}
               </div>
             </div>
+          </div>
+        )}
+
+
+
+        {/* 💬 KONTEN TAB: FORUM SEKOLAH (NPSN CHAT HUB) */}
+        {activeTab === "ForumSekolah" && (
+          <div className="flex gap-6 h-[calc(100vh-210px)] overflow-hidden">
+            
+            {/* PANEL KIRI: Daftar Sekolah (NPSN) */}
+            <div className="w-80 bg-white border border-slate-100 shadow-sm rounded-3xl p-5 flex flex-col h-full overflow-hidden">
+              <div className="relative mb-4 shrink-0">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search size={14} className="text-slate-400" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Cari sekolah atau NPSN..."
+                  value={searchSchoolQuery}
+                  onChange={(e) => setSearchSchoolQuery(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 focus:bg-white rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-700 placeholder:text-slate-400 shadow-inner"
+                />
+              </div>
+
+              {/* Scrollable School List */}
+              <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                {schoolGroups
+                  .filter(group => 
+                    group.schoolName.toLowerCase().includes(searchSchoolQuery.toLowerCase()) ||
+                    group.npsn.includes(searchSchoolQuery)
+                  )
+                  .map((group, idx) => {
+                    const isSelected = selectedSchoolGroup && (
+                      (selectedSchoolGroup.npsn && selectedSchoolGroup.npsn === group.npsn) ||
+                      (!selectedSchoolGroup.npsn && selectedSchoolGroup.schoolName === group.schoolName)
+                    );
+
+                    return (
+                      <button
+                        key={group.npsn || group.schoolName || idx}
+                        onClick={() => setSelectedSchoolGroup(group)}
+                        className={`w-full text-left p-3.5 border rounded-2xl transition-all flex items-center gap-3 active:scale-[0.98] ${
+                          isSelected
+                            ? "bg-indigo-600 text-white border-indigo-700 shadow-md shadow-indigo-100"
+                            : "bg-white border-slate-100 hover:bg-slate-50 text-slate-700 hover:shadow-sm"
+                        }`}
+                      >
+                        <div className={`w-9 h-9 rounded-xl font-extrabold text-xs flex items-center justify-center shrink-0 border uppercase tracking-wider ${
+                          isSelected
+                            ? "bg-white/20 text-white border-white/20"
+                            : "bg-indigo-50 text-indigo-600 border-indigo-100 shadow-sm"
+                        }`}>
+                          {group.schoolName.charAt(0)}
+                        </div>
+                        <div className="overflow-hidden min-w-0">
+                          <h4 className={`font-bold text-xs truncate uppercase tracking-tight ${isSelected ? "text-white" : "text-slate-800"}`}>
+                            {group.schoolName}
+                          </h4>
+                          <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
+                            {group.npsn ? (
+                              <span className={`font-mono text-[9px] font-bold px-1.5 py-0.2 rounded ${
+                                isSelected ? "bg-white/10 text-white border border-white/10" : "bg-slate-100 text-slate-400 border border-slate-200"
+                              }`}>
+                                NPSN: {group.npsn}
+                              </span>
+                            ) : (
+                              <span className={`text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded border ${
+                                isSelected ? "bg-white/10 text-white border-white/10" : "bg-amber-50 text-amber-600 border-amber-100 animate-pulse"
+                              }`}>
+                                Tanpa NPSN
+                              </span>
+                            )}
+                            <span className={`text-[9px] font-bold ${isSelected ? "text-white/80" : "text-slate-400"}`}>
+                              • {group.students.length} Siswa
+                            </span>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+              </div>
+            </div>
+
+            {/* PANEL KANAN: Chat Space */}
+            <div className="flex-1 bg-white border border-slate-100 shadow-sm rounded-3xl overflow-hidden flex flex-col h-full relative">
+              
+              {!selectedSchoolGroup ? (
+                /* EMPTY STATE */
+                <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-gradient-to-br from-indigo-50/10 via-transparent to-transparent">
+                  <div className="w-16 h-16 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-500 mb-4 shadow-sm animate-bounce">
+                    <MessageSquare size={28} />
+                  </div>
+                  <h3 className="font-black text-slate-800 text-sm uppercase tracking-wider">Pilih Forum Sekolah</h3>
+                  <p className="text-xs text-slate-400 mt-1.5 max-w-[280px] leading-relaxed mx-auto">
+                    Silakan pilih salah satu sekolah di panel kiri untuk membuka obrolan kelompok peserta, memantau forum, dan mengirim pesan moderasi.
+                  </p>
+                </div>
+              ) : (
+                /* CHAT BOX */
+                <div className="flex-1 flex flex-col h-full overflow-hidden">
+                  
+                  {/* Chat Header */}
+                  <div className="p-5 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between gap-4 shrink-0">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0 shadow-sm">
+                        <School size={20} />
+                      </div>
+                      <div>
+                        <h3 className="font-black text-slate-800 text-sm tracking-tight uppercase">{selectedSchoolGroup.schoolName}</h3>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          {selectedSchoolGroup.npsn && (
+                            <span className="bg-indigo-100 text-indigo-700 font-mono text-[9px] font-extrabold px-1.5 py-0.5 rounded border border-indigo-200/50">
+                              NPSN: {selectedSchoolGroup.npsn}
+                            </span>
+                          )}
+                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                            {selectedSchoolGroup.students.length} Peserta Resmi Terdaftar
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Message Thread Scroll Area */}
+                  <div className="flex-1 overflow-y-auto p-5 space-y-4 custom-scrollbar bg-slate-50/20 flex flex-col">
+                    {isLoadingGroupMessages ? (
+                      <div className="h-full flex flex-col items-center justify-center">
+                        <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mb-2"></div>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Memuat percakapan...</p>
+                      </div>
+                    ) : groupMessages.length === 0 ? (
+                      <div className="h-full flex flex-col items-center justify-center text-center py-10 opacity-60">
+                        <MessageSquare size={36} className="text-slate-200 mb-3" />
+                        <h4 className="font-bold text-slate-600 text-xs">Belum Ada Percakapan</h4>
+                        <p className="text-[11px] text-slate-400 mt-1 max-w-[240px]">
+                          Belum ada peserta yang memulai diskusi di forum sekolah ini.
+                        </p>
+                      </div>
+                    ) : (
+                      groupMessages.map((msg, index) => {
+                        const isAdmin = msg.sender_id === "hq-admin" || msg.sender_id === "admin1" || msg.sender_id === "admin2";
+                        const dateObj = new Date(msg.created_at);
+                        const timeStr = dateObj.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+
+                        return (
+                          <div
+                            key={msg.id || index}
+                            className={`flex flex-col max-w-[80%] ${isAdmin ? "self-end items-end" : "self-start items-start"}`}
+                          >
+                            <span className="text-[10px] text-slate-400 font-bold mb-1 ml-1.5 uppercase tracking-wider flex items-center gap-1.5">
+                              {msg.sender_name}
+                              {isAdmin && (
+                                <span className="bg-amber-100 text-amber-700 border border-amber-200/50 font-black text-[8px] uppercase px-1.5 rounded-md shadow-sm">
+                                  HQ STAFF
+                                </span>
+                              )}
+                            </span>
+                            <div
+                              className={`px-4 py-2.5 rounded-2xl text-xs leading-relaxed shadow-sm border ${
+                                isAdmin
+                                  ? "bg-slate-900 text-white border-slate-950 rounded-tr-none shadow-slate-200"
+                                  : "bg-white text-slate-700 border-slate-100 rounded-tl-none"
+                              }`}
+                            >
+                              {msg.message}
+                            </div>
+                            <span className="text-[9px] text-slate-400 font-medium mt-1 mx-1.5">
+                              {timeStr} WIB
+                            </span>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+
+                  {/* Input form */}
+                  <form onSubmit={handleSendGroupMessage} className="p-4 border-t border-slate-100 bg-slate-50/50 flex gap-3 items-center shrink-0">
+                    <input
+                      type="text"
+                      required
+                      placeholder={`Ketik pengumuman atau balasan resmi untuk forum ${selectedSchoolGroup.schoolName}...`}
+                      value={groupMsgText}
+                      onChange={(e) => setGroupMsgText(e.target.value)}
+                      disabled={isSendingGroupMsg || isLoadingGroupMessages}
+                      className="flex-1 pl-4 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-700 placeholder:text-slate-400 shadow-sm disabled:opacity-50"
+                    />
+                    <button
+                      type="submit"
+                      disabled={!groupMsgText.trim() || isSendingGroupMsg}
+                      className="px-5 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all font-bold text-xs flex items-center gap-1.5 shrink-0"
+                    >
+                      {isSendingGroupMsg ? (
+                        <div className="w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                      ) : (
+                        <><Send size={12} /> KIRIM</>
+                      )}
+                    </button>
+                  </form>
+
+                </div>
+              )}
+
+            </div>
+
           </div>
         )}
 
