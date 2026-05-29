@@ -200,7 +200,6 @@ export default function SchoolHub({ userEntry, currentUser }: SchoolHubProps) {
         }
 
         const { data, error } = await query
-          .eq("payment_status", "Verified") // Only show verified participants
           .order("full_name", { ascending: true });
 
         if (error) throw error;
