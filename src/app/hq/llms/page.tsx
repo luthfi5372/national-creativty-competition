@@ -239,7 +239,7 @@ export default function IntegratedLLMSDashboard() {
   };
 
   const downloadSecurityReport = () => {
-    const headers = ['Waktu', 'ID Peserta', 'Jumlah Pelanggaran Keluar Layar'];
+    const headers = ['Waktu', 'ID Peserta', 'Jumlah Pelanggaran'];
     const csvRows = securityLogs.map(log => `${log.time},${log.userId},${log.count}`);
     const csvContent = "data:text/csv;charset=utf-8," + headers.join(',') + "\n" + csvRows.join('\n');
     const encodedUri = encodeURI(csvContent);
@@ -253,10 +253,10 @@ export default function IntegratedLLMSDashboard() {
 
   if (loading && sessions.length === 0) {
     return (
-      <div className="min-h-screen bg-[#0f1117] flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center">
-            <Loader2 className="w-8 h-8 text-indigo-400 animate-spin" />
+          <div className="w-16 h-16 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center shadow-sm">
+            <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
           </div>
           <p className="text-slate-400 text-sm font-semibold tracking-wider uppercase">Memuat Pusat Komando...</p>
         </div>
@@ -276,68 +276,59 @@ export default function IntegratedLLMSDashboard() {
   ];
 
   return (
-    <div className="flex min-h-screen bg-[#0f1117] font-sans">
+    <div className="flex min-h-screen bg-slate-50 font-sans">
 
-      {/* ─── SIDEBAR (Dark Premium) ─── */}
-      <aside className="hidden lg:flex w-64 bg-[#13151f] border-r border-white/5 flex-col fixed h-full z-20">
+      {/* ─── SIDEBAR (Clean White) ─── */}
+      <aside className="hidden lg:flex w-60 bg-white border-r border-slate-100 flex-col fixed h-full z-20 shadow-sm">
         {/* Logo */}
-        <div className="p-6 mt-2">
+        <div className="px-5 py-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/30">
-              <ShieldCheck className="w-5 h-5 text-white" />
+            <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-xl flex items-center justify-center shadow-md shadow-indigo-200">
+              <ShieldCheck className="w-4.5 h-4.5 text-white" style={{width:'18px',height:'18px'}} />
             </div>
             <div>
-              <h1 className="text-base font-black text-white leading-none tracking-tight">NCC HQ.</h1>
-              <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">Command Center</p>
+              <h1 className="text-sm font-black text-slate-800 leading-none tracking-tight">NCC HQ.</h1>
+              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Command Center</p>
             </div>
           </div>
         </div>
 
-        {/* Status pill */}
-        <div className="px-6 mb-4">
-          <div className="flex items-center gap-2 px-3 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
-            <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></span>
-            <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Sistem Online</span>
-          </div>
-        </div>
-
-        <nav className="flex-1 px-4 space-y-1 overflow-y-auto pb-4">
+        <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto pb-4">
           {navItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="flex items-center justify-between px-3 py-2.5 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all group text-sm font-medium"
+              className="flex items-center justify-between px-3 py-2.5 text-slate-500 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-all group text-sm font-medium"
             >
               <div className="flex items-center gap-3">
-                <item.icon className="w-4 h-4 group-hover:text-indigo-400 transition-colors" />
+                <item.icon className="w-4 h-4 group-hover:text-indigo-500 transition-colors" />
                 <span>{item.label}</span>
               </div>
               {item.badge && (
-                <span className="text-[9px] font-black bg-white/10 text-slate-400 px-1.5 py-0.5 rounded-md">{item.badge}</span>
+                <span className="text-[9px] font-black bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded-md">{item.badge}</span>
               )}
             </Link>
           ))}
 
           {/* Active: Manajemen LLMS */}
-          <div className="relative">
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-indigo-500 rounded-full"></div>
+          <div className="relative pt-1">
             <Link
               href="/hq/llms"
-              className="flex items-center justify-between pl-5 pr-3 py-2.5 bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 rounded-xl font-semibold text-sm"
+              className="flex items-center justify-between px-3 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold text-sm shadow-md shadow-indigo-200/60"
             >
               <div className="flex items-center gap-3">
-                <Server className="w-4 h-4 text-indigo-400" />
+                <Server className="w-4 h-4 text-indigo-200" />
                 <span>Manajemen LLMS</span>
               </div>
-              <span className="text-[8px] font-black bg-indigo-500 text-white px-1.5 py-0.5 rounded-md uppercase tracking-wider">NEW</span>
+              <span className="text-[8px] font-black bg-white/20 text-white px-1.5 py-0.5 rounded-md uppercase tracking-wider">NEW</span>
             </Link>
           </div>
         </nav>
 
-        <div className="p-4 border-t border-white/5">
+        <div className="p-3 border-t border-slate-100">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3 py-2.5 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-all text-sm font-medium"
+            className="w-full flex items-center gap-3 px-3 py-2.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all text-sm font-medium"
           >
             <LogOut className="w-4 h-4" />
             <span>Keluar Sesi</span>
@@ -346,31 +337,31 @@ export default function IntegratedLLMSDashboard() {
       </aside>
 
       {/* ─── MAIN CONTENT ─── */}
-      <main className="flex-1 lg:ml-64 flex flex-col min-h-screen">
+      <main className="flex-1 lg:ml-60 flex flex-col min-h-screen">
 
         {/* TOP HEADER */}
-        <header className="sticky top-0 z-10 bg-[#0f1117]/80 backdrop-blur-xl border-b border-white/5 px-6 md:px-8 py-4 flex justify-between items-center">
+        <header className="sticky top-0 z-10 bg-white/90 backdrop-blur-xl border-b border-slate-100 px-6 md:px-8 py-4 flex justify-between items-center shadow-sm">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-pulse"></div>
-              <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Live Dashboard</span>
+            <div className="flex items-center gap-2 mb-0.5">
+              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+              <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Sistem Online</span>
             </div>
-            <h2 className="text-xl md:text-2xl font-black text-white tracking-tight">Pusat Komando LLMS</h2>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">Administrasi CBT Terpusat · NCC 13th</p>
+            <h2 className="text-xl font-black text-slate-900 tracking-tight">Pusat Komando LLMS</h2>
+            <p className="text-xs text-slate-400 font-medium mt-0.5">Administrasi CBT Terpusat · NCC 13th</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <button
               onClick={fetchTelemetryData}
-              className="p-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all text-slate-400 hover:text-white"
+              className="p-2.5 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all text-slate-500 hover:text-slate-800"
               title="Sinkron Data"
             >
-              <RotateCcw className={`w-4 h-4 ${refreshing ? 'animate-spin text-indigo-400' : ''}`} />
+              <RotateCcw className={`w-4 h-4 ${refreshing ? 'animate-spin text-indigo-500' : ''}`} />
             </button>
             <button
               onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-indigo-500/25"
+              className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md shadow-indigo-200"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-3.5 h-3.5" />
               Sesi Baru
             </button>
           </div>
@@ -380,63 +371,78 @@ export default function IntegratedLLMSDashboard() {
 
           {/* ─── STAT CARDS ─── */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+
             {/* Peserta Online */}
-            <div className="bg-gradient-to-br from-blue-600/20 to-blue-800/10 border border-blue-500/20 rounded-2xl p-5 relative overflow-hidden group hover:border-blue-500/40 transition-all">
-              <div className="absolute top-3 right-3 w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center group-hover:bg-blue-500/20 transition-all">
-                <Users className="w-5 h-5 text-blue-400" />
-              </div>
-              <p className="text-[10px] font-bold text-blue-400/70 uppercase tracking-widest mb-2">Peserta Online</p>
-              <p className="text-4xl font-black text-blue-300">{stats.onlineParticipants}</p>
-              <div className="flex items-center gap-1 mt-2">
-                <Activity className="w-3 h-3 text-blue-500" />
-                <span className="text-[10px] text-blue-500/70 font-medium">Real-time</span>
+            <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-all group relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-blue-600 rounded-t-2xl"></div>
+              <div className="flex items-start justify-between mt-1">
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Peserta Online</p>
+                  <p className="text-4xl font-black text-blue-600">{stats.onlineParticipants}</p>
+                  <div className="flex items-center gap-1 mt-2">
+                    <Activity className="w-3 h-3 text-blue-400" />
+                    <span className="text-[10px] text-blue-400 font-medium">Real-time</span>
+                  </div>
+                </div>
+                <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center group-hover:bg-blue-100 transition-all">
+                  <Users className="w-5 h-5 text-blue-500" />
+                </div>
               </div>
             </div>
 
             {/* Sesi Aktif */}
-            <div className="bg-gradient-to-br from-violet-600/20 to-violet-800/10 border border-violet-500/20 rounded-2xl p-5 relative overflow-hidden group hover:border-violet-500/40 transition-all">
-              <div className="absolute top-3 right-3 w-10 h-10 bg-violet-500/10 rounded-xl flex items-center justify-center group-hover:bg-violet-500/20 transition-all">
-                <Radio className="w-5 h-5 text-violet-400" />
-              </div>
-              <p className="text-[10px] font-bold text-violet-400/70 uppercase tracking-widest mb-2">Sesi Aktif</p>
-              <p className="text-4xl font-black text-violet-300">{stats.activeSessions}</p>
-              <div className="flex items-center gap-1 mt-2">
-                <span className="w-1.5 h-1.5 bg-violet-400 rounded-full animate-pulse"></span>
-                <span className="text-[10px] text-violet-500/70 font-medium">Running</span>
+            <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-all group relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-violet-400 to-indigo-600 rounded-t-2xl"></div>
+              <div className="flex items-start justify-between mt-1">
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Sesi Aktif</p>
+                  <p className="text-4xl font-black text-indigo-600">{stats.activeSessions}</p>
+                  <div className="flex items-center gap-1 mt-2">
+                    <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-pulse"></span>
+                    <span className="text-[10px] text-indigo-400 font-medium">Running</span>
+                  </div>
+                </div>
+                <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center group-hover:bg-indigo-100 transition-all">
+                  <Radio className="w-5 h-5 text-indigo-500" />
+                </div>
               </div>
             </div>
 
             {/* Bank Soal */}
-            <div className="bg-gradient-to-br from-teal-600/20 to-teal-800/10 border border-teal-500/20 rounded-2xl p-5 relative overflow-hidden group hover:border-teal-500/40 transition-all">
-              <div className="absolute top-3 right-3 w-10 h-10 bg-teal-500/10 rounded-xl flex items-center justify-center group-hover:bg-teal-500/20 transition-all">
-                <FileText className="w-5 h-5 text-teal-400" />
-              </div>
-              <p className="text-[10px] font-bold text-teal-400/70 uppercase tracking-widest mb-2">Bank Soal</p>
-              <p className="text-4xl font-black text-teal-300">{stats.totalQuestions}</p>
-              <div className="flex items-center gap-1 mt-2">
-                <Zap className="w-3 h-3 text-teal-500" />
-                <span className="text-[10px] text-teal-500/70 font-medium">Total soal</span>
+            <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-all group relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-teal-400 to-emerald-500 rounded-t-2xl"></div>
+              <div className="flex items-start justify-between mt-1">
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Bank Soal</p>
+                  <p className="text-4xl font-black text-teal-600">{stats.totalQuestions}</p>
+                  <div className="flex items-center gap-1 mt-2">
+                    <Zap className="w-3 h-3 text-teal-400" />
+                    <span className="text-[10px] text-teal-400 font-medium">Total soal</span>
+                  </div>
+                </div>
+                <div className="w-10 h-10 bg-teal-50 rounded-xl flex items-center justify-center group-hover:bg-teal-100 transition-all">
+                  <FileText className="w-5 h-5 text-teal-500" />
+                </div>
               </div>
             </div>
 
             {/* Kecurangan */}
-            <div className={`bg-gradient-to-br rounded-2xl p-5 relative overflow-hidden group transition-all ${
-              stats.totalViolations > 0
-                ? 'from-rose-600/25 to-rose-800/15 border border-rose-500/30 hover:border-rose-500/50'
-                : 'from-slate-600/10 to-slate-800/5 border border-slate-700/30 hover:border-slate-600/40'
-            }`}>
-              <div className={`absolute top-3 right-3 w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
-                stats.totalViolations > 0 ? 'bg-rose-500/20 group-hover:bg-rose-500/30' : 'bg-slate-700/30'
-              }`}>
-                <ShieldAlert className={`w-5 h-5 ${stats.totalViolations > 0 ? 'text-rose-400' : 'text-slate-500'}`} />
-              </div>
-              <p className={`text-[10px] font-bold uppercase tracking-widest mb-2 ${stats.totalViolations > 0 ? 'text-rose-400/70' : 'text-slate-500'}`}>Kecurangan</p>
-              <p className={`text-4xl font-black ${stats.totalViolations > 0 ? 'text-rose-300' : 'text-slate-400'}`}>{stats.totalViolations}</p>
-              <div className="flex items-center gap-1 mt-2">
-                {stats.totalViolations > 0
-                  ? <><span className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse"></span><span className="text-[10px] text-rose-500/70 font-medium">Terdeteksi</span></>
-                  : <><ShieldCheck className="w-3 h-3 text-slate-500" /><span className="text-[10px] text-slate-500 font-medium">Aman</span></>
-                }
+            <div className={`bg-white rounded-2xl p-5 border shadow-sm hover:shadow-md transition-all group relative overflow-hidden ${stats.totalViolations > 0 ? 'border-rose-100' : 'border-slate-100'}`}>
+              <div className={`absolute top-0 left-0 w-full h-1 rounded-t-2xl ${stats.totalViolations > 0 ? 'bg-gradient-to-r from-rose-400 to-red-500 animate-pulse' : 'bg-gradient-to-r from-slate-200 to-slate-300'}`}></div>
+              <div className="flex items-start justify-between mt-1">
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Kecurangan</p>
+                  <p className={`text-4xl font-black ${stats.totalViolations > 0 ? 'text-rose-600' : 'text-slate-400'}`}>{stats.totalViolations}</p>
+                  <div className="flex items-center gap-1 mt-2">
+                    {stats.totalViolations > 0
+                      ? <><span className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse"></span><span className="text-[10px] text-rose-400 font-medium">Terdeteksi</span></>
+                      : <><ShieldCheck className="w-3 h-3 text-slate-300" /><span className="text-[10px] text-slate-400 font-medium">Aman</span></>
+                    }
+                  </div>
+                </div>
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${stats.totalViolations > 0 ? 'bg-rose-50 group-hover:bg-rose-100' : 'bg-slate-50 group-hover:bg-slate-100'}`}>
+                  <ShieldAlert className={`w-5 h-5 ${stats.totalViolations > 0 ? 'text-rose-500' : 'text-slate-400'}`} />
+                </div>
               </div>
             </div>
           </div>
@@ -445,60 +451,56 @@ export default function IntegratedLLMSDashboard() {
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
             {/* SESSION TABLE */}
-            <div className="xl:col-span-2 bg-[#13151f] border border-white/5 rounded-2xl overflow-hidden">
-              <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between">
+            <div className="xl:col-span-2 bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
+              <div className="px-6 py-4 border-b border-slate-50 bg-slate-50/60 flex items-center justify-between">
                 <div>
-                  <h3 className="text-base font-bold text-white tracking-tight">Daftar Sesi & Monitoring</h3>
-                  <p className="text-xs text-slate-500 mt-0.5">{sessions.length} sesi terdaftar</p>
+                  <h3 className="text-sm font-bold text-slate-800 tracking-tight">Daftar Sesi & Live Monitoring</h3>
+                  <p className="text-xs text-slate-400 mt-0.5">{sessions.length} sesi terdaftar</p>
                 </div>
               </div>
 
               {sessions.length === 0 ? (
                 <div className="py-16 flex flex-col items-center justify-center text-center">
-                  <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mb-4">
-                    <Server className="w-8 h-8 text-slate-600" />
+                  <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mb-4">
+                    <Server className="w-8 h-8 text-slate-300" />
                   </div>
-                  <p className="text-slate-400 font-semibold">Belum ada sesi ujian</p>
-                  <p className="text-slate-600 text-sm mt-1">Klik &quot;Sesi Baru&quot; untuk memulai</p>
+                  <p className="text-slate-500 font-semibold">Belum ada sesi ujian</p>
+                  <p className="text-slate-400 text-sm mt-1">Klik &quot;Sesi Baru&quot; untuk memulai</p>
                   <button
                     onClick={() => setShowAddModal(true)}
-                    className="mt-4 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all"
+                    className="mt-5 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md shadow-indigo-100"
                   >
                     <Plus className="w-3.5 h-3.5 inline mr-1.5" />Buat Sesi Pertama
                   </button>
                 </div>
               ) : (
-                <div className="divide-y divide-white/5">
+                <div className="divide-y divide-slate-50">
                   {sessions.map((session) => (
-                    <div key={session.id} className="px-6 py-5 hover:bg-white/[0.02] transition-all group">
+                    <div key={session.id} className="px-6 py-4 hover:bg-slate-50/60 transition-all">
                       <div className="flex items-center justify-between gap-4">
 
                         {/* Session info */}
-                        <div className="flex items-center gap-4 min-w-0">
-                          {/* Status indicator */}
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                            session.is_active
-                              ? 'bg-emerald-500/15 border border-emerald-500/30'
-                              : 'bg-white/5 border border-white/10'
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                            session.is_active ? 'bg-emerald-100' : 'bg-slate-100'
                           }`}>
-                            <span className={`w-2.5 h-2.5 rounded-full ${session.is_active ? 'bg-emerald-400 animate-pulse' : 'bg-slate-600'}`}></span>
+                            <span className={`w-2.5 h-2.5 rounded-full ${session.is_active ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`}></span>
                           </div>
-
                           <div className="min-w-0">
-                            <p className="font-bold text-white text-sm truncate">{session.title || 'Ujian Tanpa Judul'}</p>
-                            <div className="flex items-center gap-2 mt-1.5">
-                              <span className="text-[10px] font-mono bg-white/5 text-slate-500 px-2 py-0.5 rounded-md">{session.id.substring(0,8)}</span>
-                              <span className="text-[10px] font-semibold text-slate-500">{session.duration_minutes || 90} mnt</span>
+                            <p className="font-bold text-slate-800 text-sm truncate">{session.title || 'Ujian Tanpa Judul'}</p>
+                            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                              <span className="text-[10px] font-mono bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md">{session.id.substring(0,8)}</span>
+                              <span className="text-[10px] font-semibold text-slate-400">{session.duration_minutes || 90} mnt</span>
                               {/* Toggle */}
                               <button
                                 onClick={() => handleToggleActive(session.id, session.is_active)}
                                 className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-200 ${
-                                  session.is_active ? 'bg-emerald-500' : 'bg-white/10'
+                                  session.is_active ? 'bg-emerald-500' : 'bg-slate-200'
                                 }`}
                               >
                                 <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition duration-200 ${session.is_active ? 'translate-x-4' : 'translate-x-0.5'}`} />
                               </button>
-                              <span className={`text-[9px] font-black uppercase tracking-wider ${session.is_active ? 'text-emerald-400' : 'text-slate-600'}`}>
+                              <span className={`text-[9px] font-black uppercase tracking-wider ${session.is_active ? 'text-emerald-600' : 'text-slate-400'}`}>
                                 {session.is_active ? 'ON' : 'OFF'}
                               </span>
                             </div>
@@ -506,62 +508,42 @@ export default function IntegratedLLMSDashboard() {
                         </div>
 
                         {/* Live Token */}
-                        <div className="hidden sm:flex flex-col items-center bg-indigo-500/10 border border-indigo-500/20 rounded-xl px-4 py-2.5 shrink-0">
-                          <div className="flex items-center gap-1.5 text-indigo-300">
+                        <div className="hidden md:flex flex-col items-center bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-2 shrink-0">
+                          <div className="flex items-center gap-1.5 text-indigo-600">
                             <Key className="w-3 h-3" />
-                            <span className="font-mono font-black text-sm tracking-[0.25em]">{liveTokens[session.id] || '------'}</span>
+                            <span className="font-mono font-black text-sm tracking-[0.2em]">{liveTokens[session.id] || '------'}</span>
                           </div>
                           <div className="flex items-center gap-1 mt-1">
-                            <Clock className="w-2.5 h-2.5 text-indigo-500" />
-                            <span className="text-[9px] text-indigo-500 font-bold">{Math.floor(countdown/60)}:{(countdown%60).toString().padStart(2,'0')}</span>
+                            <Clock className="w-2.5 h-2.5 text-indigo-400" />
+                            <span className="text-[9px] text-indigo-400 font-bold">{Math.floor(countdown/60)}:{(countdown%60).toString().padStart(2,'0')}</span>
                           </div>
                         </div>
 
                         {/* Actions */}
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <button
-                            onClick={() => openEditModal(session)}
-                            className="p-2 bg-white/5 hover:bg-indigo-500/20 hover:text-indigo-300 text-slate-500 rounded-lg transition-all"
-                            title="Edit"
-                          >
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button onClick={() => openEditModal(session)} className="p-2 hover:bg-indigo-50 hover:text-indigo-600 text-slate-400 rounded-lg transition-all" title="Edit">
                             <Pencil className="w-3.5 h-3.5" />
                           </button>
-                          <Link
-                            href={`/hq/llms/${session.id}/questions`}
-                            className="p-2 bg-white/5 hover:bg-slate-500/20 hover:text-slate-300 text-slate-500 rounded-lg transition-all"
-                            title="Soal"
-                          >
+                          <Link href={`/hq/llms/${session.id}/questions`} className="p-2 hover:bg-slate-100 hover:text-slate-700 text-slate-400 rounded-lg transition-all" title="Soal">
                             <FileText className="w-3.5 h-3.5" />
                           </Link>
-                          <Link
-                            href={`/hq/llms/${session.id}/monitor`}
-                            className="p-2 bg-white/5 hover:bg-blue-500/20 hover:text-blue-300 text-slate-500 rounded-lg transition-all relative"
-                            title="Pantau"
-                          >
-                            <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-rose-500 rounded-full"></span>
+                          <Link href={`/hq/llms/${session.id}/monitor`} className="p-2 hover:bg-blue-50 hover:text-blue-600 text-slate-400 rounded-lg transition-all relative" title="Pantau">
+                            <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-rose-500 rounded-full"></span>
                             <Monitor className="w-3.5 h-3.5" />
                           </Link>
-                          <Link
-                            href={`/hq/llms/${session.id}/leaderboard`}
-                            className="p-2 bg-white/5 hover:bg-amber-500/20 hover:text-amber-300 text-slate-500 rounded-lg transition-all"
-                            title="Skor"
-                          >
+                          <Link href={`/hq/llms/${session.id}/leaderboard`} className="p-2 hover:bg-amber-50 hover:text-amber-600 text-slate-400 rounded-lg transition-all" title="Skor">
                             <Trophy className="w-3.5 h-3.5" />
                           </Link>
-                          <button
-                            onClick={() => openDeleteModal(session)}
-                            className="p-2 bg-white/5 hover:bg-rose-500/20 hover:text-rose-300 text-slate-500 rounded-lg transition-all"
-                            title="Hapus"
-                          >
+                          <button onClick={() => openDeleteModal(session)} className="p-2 hover:bg-rose-50 hover:text-rose-500 text-slate-400 rounded-lg transition-all" title="Hapus">
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </div>
 
-                      {/* Action labels (small text below icons) */}
-                      <div className="hidden sm:flex items-center justify-end gap-1.5 mt-1.5 pr-0.5">
+                      {/* Action labels */}
+                      <div className="hidden sm:flex items-center justify-end gap-1 mt-1.5">
                         {['Edit', 'Soal', 'Pantau', 'Skor', 'Hapus'].map(label => (
-                          <span key={label} className="text-[8px] text-slate-700 font-bold uppercase tracking-wider w-[34px] text-center">{label}</span>
+                          <span key={label} className="text-[8px] text-slate-300 font-bold uppercase tracking-wider w-[34px] text-center">{label}</span>
                         ))}
                       </div>
                     </div>
@@ -574,17 +556,19 @@ export default function IntegratedLLMSDashboard() {
             <div className="space-y-5">
 
               {/* Quick Actions */}
-              <div className="bg-[#13151f] border border-white/5 rounded-2xl p-5">
+              <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm">
                 <div className="flex items-center gap-2 mb-4">
-                  <Zap className="w-4 h-4 text-indigo-400" />
-                  <h3 className="text-xs font-bold text-slate-300 uppercase tracking-widest">Aksi Cepat</h3>
+                  <div className="w-6 h-6 bg-indigo-100 rounded-lg flex items-center justify-center">
+                    <Zap className="w-3.5 h-3.5 text-indigo-600" />
+                  </div>
+                  <h3 className="text-xs font-bold text-slate-600 uppercase tracking-widest">Aksi Cepat</h3>
                 </div>
                 <div className="space-y-2.5">
                   <Link
                     href="/hq/llms/broadcast"
-                    className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl hover:from-indigo-500 hover:to-violet-500 transition-all group shadow-lg shadow-indigo-500/20"
+                    className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl hover:from-indigo-700 hover:to-violet-700 transition-all group shadow-md shadow-indigo-100"
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2.5">
                       <Radio className="w-4 h-4" />
                       <span className="text-xs font-bold uppercase tracking-wider">Kirim Siaran</span>
                     </div>
@@ -592,52 +576,54 @@ export default function IntegratedLLMSDashboard() {
                   </Link>
                   <button
                     onClick={fetchTelemetryData}
-                    className="w-full flex items-center justify-center gap-2 p-3.5 bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:bg-white/10 rounded-xl transition-all text-xs font-bold uppercase tracking-wider"
+                    className="w-full flex items-center justify-center gap-2 p-3.5 bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100 hover:border-slate-300 rounded-xl transition-all text-xs font-bold uppercase tracking-wider"
                   >
-                    <RotateCcw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-indigo-400' : ''}`} />
+                    <RotateCcw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-indigo-500' : ''}`} />
                     Sinkron Data
                   </button>
                 </div>
               </div>
 
               {/* Security Log */}
-              <div className="bg-[#13151f] border border-white/5 rounded-2xl p-5">
+              <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
-                    <ShieldAlert className="w-4 h-4 text-rose-400" />
-                    <h3 className="text-xs font-bold text-slate-300 uppercase tracking-widest">Security Log</h3>
+                    <div className="w-6 h-6 bg-rose-50 rounded-lg flex items-center justify-center">
+                      <ShieldAlert className="w-3.5 h-3.5 text-rose-500" />
+                    </div>
+                    <h3 className="text-xs font-bold text-slate-600 uppercase tracking-widest">Security Log</h3>
                   </div>
-                  <div className="flex items-center gap-1.5 px-2 py-1 bg-rose-500/15 border border-rose-500/20 rounded-lg">
-                    <span className="w-1.5 h-1.5 bg-rose-400 rounded-full animate-pulse"></span>
-                    <span className="text-[9px] text-rose-400 font-bold uppercase">Live</span>
+                  <div className="flex items-center gap-1.5 px-2 py-1 bg-rose-50 border border-rose-100 rounded-lg">
+                    <span className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse"></span>
+                    <span className="text-[9px] text-rose-500 font-bold uppercase">Live</span>
                   </div>
                 </div>
 
                 {securityLogs.length === 0 ? (
-                  <div className="py-8 flex flex-col items-center justify-center text-center bg-emerald-500/5 border border-emerald-500/10 rounded-xl">
-                    <div className="w-12 h-12 bg-emerald-500/10 rounded-full flex items-center justify-center mb-3">
-                      <ShieldCheck className="w-6 h-6 text-emerald-400" />
+                  <div className="py-7 flex flex-col items-center justify-center text-center bg-emerald-50/60 border border-emerald-100 rounded-xl">
+                    <div className="w-11 h-11 bg-emerald-100 rounded-full flex items-center justify-center mb-3">
+                      <ShieldCheck className="w-6 h-6 text-emerald-500" />
                     </div>
-                    <p className="text-xs font-bold text-emerald-400 uppercase tracking-wider">Aman Terkendali</p>
-                    <p className="text-[10px] text-emerald-600 mt-1">100% Integritas Terjaga</p>
+                    <p className="text-xs font-bold text-emerald-600 uppercase tracking-wider">Aman Terkendali</p>
+                    <p className="text-[10px] text-emerald-500/70 mt-1">100% Integritas Terjaga</p>
                   </div>
                 ) : (
                   <div className="space-y-2">
                     {securityLogs.map(log => (
-                      <div key={log.id} className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl flex justify-between items-center">
+                      <div key={log.id} className="p-3 bg-rose-50 border border-rose-100 rounded-xl flex justify-between items-center">
                         <div className="flex items-center gap-2">
-                          <AlertTriangle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                          <AlertTriangle className="w-3.5 h-3.5 text-rose-500 shrink-0" />
                           <div>
-                            <p className="text-[10px] font-bold text-white truncate max-w-[100px]">{log.userId.substring(0,8)}...</p>
-                            <p className="text-[9px] text-rose-400 font-medium">{log.count}x pelanggaran</p>
+                            <p className="text-[10px] font-bold text-slate-800 truncate max-w-[100px]">{log.userId.substring(0,8)}...</p>
+                            <p className="text-[9px] text-rose-500 font-medium">{log.count}x pelanggaran</p>
                           </div>
                         </div>
-                        <span className="text-[9px] font-mono text-slate-500">{log.time}</span>
+                        <span className="text-[9px] font-mono text-slate-400">{log.time}</span>
                       </div>
                     ))}
                     <button
                       onClick={downloadSecurityReport}
-                      className="w-full mt-2 py-3 bg-white/5 border border-white/10 hover:bg-rose-500/10 hover:border-rose-500/20 text-slate-500 hover:text-rose-400 text-[9px] font-bold uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-1.5"
+                      className="w-full mt-1 py-3 bg-slate-50 border border-slate-200 hover:bg-rose-50 hover:border-rose-200 text-slate-500 hover:text-rose-500 text-[9px] font-bold uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-1.5"
                     >
                       <FileDown className="w-3.5 h-3.5" />Laporan .CSV
                     </button>
@@ -645,18 +631,20 @@ export default function IntegratedLLMSDashboard() {
                 )}
               </div>
 
-              {/* Token Info Card */}
-              <div className="bg-gradient-to-br from-indigo-600/10 to-violet-600/10 border border-indigo-500/20 rounded-2xl p-5">
+              {/* Token Info */}
+              <div className="bg-gradient-to-br from-indigo-50 to-violet-50 border border-indigo-100 rounded-2xl p-5">
                 <div className="flex items-center gap-2 mb-3">
-                  <Lock className="w-4 h-4 text-indigo-400" />
-                  <h3 className="text-xs font-bold text-slate-300 uppercase tracking-widest">Info Token</h3>
+                  <div className="w-6 h-6 bg-indigo-100 rounded-lg flex items-center justify-center">
+                    <Lock className="w-3.5 h-3.5 text-indigo-600" />
+                  </div>
+                  <h3 className="text-xs font-bold text-slate-600 uppercase tracking-widest">Info Token</h3>
                 </div>
-                <p className="text-[11px] text-slate-400 leading-relaxed">
-                  Token berubah otomatis setiap <span className="font-bold text-indigo-300">10 menit</span>. Bagikan ke peserta sebelum ujian dimulai.
+                <p className="text-[11px] text-slate-500 leading-relaxed">
+                  Token berubah otomatis setiap <span className="font-bold text-indigo-600">10 menit</span>. Bagikan ke peserta sebelum ujian dimulai.
                 </p>
-                <div className="mt-3 flex items-center gap-2 p-2.5 bg-indigo-500/10 rounded-lg">
+                <div className="mt-3 flex items-center gap-2 p-2.5 bg-white border border-indigo-100 rounded-xl shadow-sm">
                   <Clock className="w-3.5 h-3.5 text-indigo-400" />
-                  <span className="text-xs font-mono text-indigo-300 font-bold">
+                  <span className="text-xs font-mono text-indigo-700 font-black">
                     Rotasi dalam: {Math.floor(countdown/60)}:{(countdown%60).toString().padStart(2,'0')}
                   </span>
                 </div>
@@ -668,58 +656,63 @@ export default function IntegratedLLMSDashboard() {
 
       {/* ─── MODAL EDIT ─── */}
       {showEditModal && editingSession && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-md">
-          <div className="bg-[#13151f] border border-white/10 w-full max-w-xl rounded-3xl p-8 shadow-2xl relative">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/30 backdrop-blur-md">
+          <div className="bg-white border border-slate-200 w-full max-w-xl rounded-3xl p-8 shadow-2xl shadow-slate-200/80 relative">
             <div className="flex justify-between items-center mb-6">
               <div>
-                <h2 className="text-lg font-black text-white">Edit Sesi Ujian</h2>
-                <p className="text-xs text-slate-500 font-medium mt-0.5">ID: {editingSession.id?.substring(0,8)}...</p>
+                <h2 className="text-lg font-black text-slate-900">Edit Sesi Ujian</h2>
+                <p className="text-xs text-slate-400 font-medium mt-0.5">ID: {editingSession.id?.substring(0,8)}...</p>
               </div>
-              <button onClick={() => setShowEditModal(false)} className="p-2 hover:bg-white/10 rounded-xl text-slate-500 hover:text-white transition-all">
+              <button onClick={() => setShowEditModal(false)} className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 hover:text-slate-600 transition-all">
                 <X size={20} />
               </button>
             </div>
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Judul Sesi</label>
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Judul Sesi</label>
                 <input type="text" value={editingSession.title || ''} onChange={e => setEditingSession({...editingSession, title: e.target.value})}
-                  className="w-full bg-white/5 border border-white/10 focus:border-indigo-500/50 rounded-xl px-4 py-3 text-sm font-medium text-white outline-none transition-all placeholder-slate-600" />
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 rounded-xl px-4 py-3 text-sm font-medium text-slate-800 outline-none transition-all" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Durasi (Menit)</label>
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Durasi (Menit)</label>
                   <input type="number" value={editingSession.duration_minutes || 90} onChange={e => setEditingSession({...editingSession, duration_minutes: parseInt(e.target.value)||90})}
-                    className="w-full bg-white/5 border border-white/10 focus:border-indigo-500/50 rounded-xl px-4 py-3 text-sm font-medium text-white outline-none transition-all" />
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 rounded-xl px-4 py-3 text-sm font-medium text-slate-800 outline-none transition-all" />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Status Sesi</label>
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Status Sesi</label>
                   <button onClick={() => setEditingSession({...editingSession, is_active: !editingSession.is_active})}
-                    className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all border ${
-                      editingSession.is_active ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400' : 'bg-white/5 border-white/10 text-slate-500'
+                    className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all border-2 ${
+                      editingSession.is_active ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-slate-50 border-slate-200 text-slate-500'
                     }`}>
                     {editingSession.is_active ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
                     {editingSession.is_active ? 'Aktif' : 'Nonaktif'}
                   </button>
                 </div>
               </div>
-              <div className="p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-xl">
-                <p className="text-[10px] font-black uppercase text-indigo-400 tracking-widest mb-3">⚙️ Konfigurasi Poin</p>
+              <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-xl">
+                <p className="text-[10px] font-black uppercase text-indigo-500 tracking-widest mb-3">⚙️ Konfigurasi Poin</p>
                 <div className="grid grid-cols-3 gap-3">
-                  {[
-                    { label: '✓ Benar', key: 'correct_point', color: 'emerald' },
-                    { label: '✗ Salah', key: 'penalty_point', color: 'rose' },
-                    { label: '— Kosong', key: 'empty_point', color: 'slate' },
-                  ].map(({ label, key, color }) => (
-                    <div key={key} className="space-y-1.5">
-                      <label className={`text-[9px] font-black uppercase tracking-widest text-${color}-400`}>{label}</label>
-                      <input type="number" value={editingSession[key] ?? 0} onChange={e => setEditingSession({...editingSession, [key]: parseInt(e.target.value)||0})}
-                        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm font-black text-white outline-none text-center" />
-                    </div>
-                  ))}
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black uppercase tracking-widest text-emerald-600">✓ Benar</label>
+                    <input type="number" value={editingSession.correct_point ?? 4} onChange={e => setEditingSession({...editingSession, correct_point: parseInt(e.target.value)||0})}
+                      className="w-full bg-white border border-emerald-200 rounded-lg px-3 py-2 text-sm font-black text-slate-700 outline-none text-center focus:ring-2 focus:ring-emerald-100" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black uppercase tracking-widest text-rose-500">✗ Salah</label>
+                    <input type="number" value={editingSession.penalty_point ?? 0} onChange={e => setEditingSession({...editingSession, penalty_point: parseInt(e.target.value)||0})}
+                      className="w-full bg-white border border-rose-200 rounded-lg px-3 py-2 text-sm font-black text-slate-700 outline-none text-center focus:ring-2 focus:ring-rose-100" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">— Kosong</label>
+                    <input type="number" value={editingSession.empty_point ?? 0} onChange={e => setEditingSession({...editingSession, empty_point: parseInt(e.target.value)||0})}
+                      className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-black text-slate-700 outline-none text-center focus:ring-2 focus:ring-slate-100" />
+                  </div>
                 </div>
+                <p className="text-[9px] text-indigo-400 font-medium mt-2 text-center">Contoh UTBK: Benar=4, Salah=1 (penalti), Kosong=0</p>
               </div>
               <button onClick={handleUpdateSession} disabled={isSavingEdit}
-                className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2">
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3.5 rounded-xl font-bold text-xs uppercase tracking-widest shadow-md shadow-indigo-100 transition-all flex items-center justify-center gap-2 disabled:opacity-50">
                 {isSavingEdit ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save size={16} /> Simpan Perubahan</>}
               </button>
             </div>
@@ -729,20 +722,20 @@ export default function IntegratedLLMSDashboard() {
 
       {/* ─── MODAL DELETE ─── */}
       {showDeleteModal && deletingSession && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/70 backdrop-blur-md">
-          <div className="bg-[#13151f] border border-rose-500/20 w-full max-w-md rounded-3xl p-8 shadow-2xl relative">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/30 backdrop-blur-md">
+          <div className="bg-white border border-rose-100 w-full max-w-md rounded-3xl p-8 shadow-2xl shadow-rose-100/60 relative">
             <div className="flex flex-col items-center text-center">
-              <div className="w-16 h-16 bg-rose-500/15 border border-rose-500/30 text-rose-400 rounded-2xl flex items-center justify-center mb-5">
+              <div className="w-16 h-16 bg-rose-50 border border-rose-100 text-rose-500 rounded-2xl flex items-center justify-center mb-5">
                 <Trash2 className="w-8 h-8" />
               </div>
-              <h2 className="text-xl font-black text-white">Hapus Sesi Permanen</h2>
-              <p className="text-sm text-slate-400 font-medium mt-2 leading-relaxed">
-                Sesi <span className="font-black text-white">&ldquo;{deletingSession.title}&rdquo;</span> beserta{' '}
-                <span className="text-rose-400 font-bold">semua soal & data peserta</span> akan dihapus selamanya.
+              <h2 className="text-xl font-black text-slate-900">Hapus Sesi Permanen</h2>
+              <p className="text-sm text-slate-500 font-medium mt-2 leading-relaxed">
+                Sesi <span className="font-black text-slate-800">&ldquo;{deletingSession.title}&rdquo;</span> beserta{' '}
+                <span className="text-rose-500 font-bold">semua soal & data peserta</span> akan dihapus selamanya.
               </p>
-              <div className="w-full mt-5 p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl text-left">
-                <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-2">⚠️ Tidak dapat dibatalkan!</p>
-                <ul className="text-xs text-rose-400/80 font-medium space-y-1 list-disc list-inside">
+              <div className="w-full mt-5 p-4 bg-rose-50 border border-rose-100 rounded-xl text-left">
+                <p className="text-[10px] font-black text-rose-600 uppercase tracking-widest mb-2">⚠️ Tidak dapat dibatalkan!</p>
+                <ul className="text-xs text-rose-400 font-medium space-y-1 list-disc list-inside">
                   <li>Semua soal (cbt_questions)</li>
                   <li>Semua data & skor peserta (cbt_attempts)</li>
                   <li>Sesi ujian itu sendiri (cbt_exams)</li>
@@ -750,11 +743,11 @@ export default function IntegratedLLMSDashboard() {
               </div>
               <div className="flex gap-3 w-full mt-5">
                 <button onClick={() => { setShowDeleteModal(false); setDeletingSession(null); }} disabled={isDeleting}
-                  className="flex-1 py-3 bg-white/5 border border-white/10 text-slate-400 hover:text-white font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-white/10 transition-all">
+                  className="flex-1 py-3 bg-slate-100 text-slate-600 font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-slate-200 transition-all">
                   Batal
                 </button>
                 <button onClick={handleDeleteSession} disabled={isDeleting}
-                  className="flex-1 py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50">
+                  className="flex-1 py-3 bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs uppercase tracking-widest rounded-xl transition-all shadow-md shadow-rose-100 flex items-center justify-center gap-2 disabled:opacity-50">
                   {isDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                   {isDeleting ? 'Menghapus...' : 'Hapus Permanen'}
                 </button>
@@ -766,39 +759,39 @@ export default function IntegratedLLMSDashboard() {
 
       {/* ─── MODAL ADD ─── */}
       {showAddModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-md">
-          <div className="bg-[#13151f] border border-white/10 w-full max-w-xl rounded-3xl p-8 shadow-2xl relative">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/30 backdrop-blur-md">
+          <div className="bg-white border border-slate-200 w-full max-w-xl rounded-3xl p-8 shadow-2xl shadow-slate-200/80 relative">
             <div className="flex justify-between items-center mb-6">
               <div>
-                <h2 className="text-lg font-black text-white">Buat Sesi Ujian Baru</h2>
-                <p className="text-xs text-slate-500 mt-0.5">Isi detail sesi ujian yang akan dibuka</p>
+                <h2 className="text-lg font-black text-slate-900">Buat Sesi Ujian Baru</h2>
+                <p className="text-xs text-slate-400 mt-0.5">Isi detail sesi ujian yang akan dibuka</p>
               </div>
-              <button onClick={() => setShowAddModal(false)} className="p-2 hover:bg-white/10 rounded-xl text-slate-500 hover:text-white transition-all">
+              <button onClick={() => setShowAddModal(false)} className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 hover:text-slate-600 transition-all">
                 <X size={20} />
               </button>
             </div>
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Judul Sesi</label>
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Judul Sesi</label>
                 <input type="text" value={newSession.title} onChange={(e) => setNewSession({...newSession, title: e.target.value})}
-                  className="w-full bg-white/5 border border-white/10 focus:border-indigo-500/50 rounded-xl px-4 py-3 text-sm font-medium text-white outline-none transition-all placeholder-slate-600"
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 rounded-xl px-4 py-3 text-sm font-medium text-slate-800 outline-none transition-all placeholder-slate-300"
                   placeholder="Contoh: Matematika Dasar – Sesi 1" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Token Akses (opsional)</label>
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Token Akses (opsional)</label>
                   <input type="text" value={newSession.token} onChange={(e) => setNewSession({...newSession, token: e.target.value})}
-                    className="w-full bg-white/5 border border-white/10 focus:border-indigo-500/50 rounded-xl px-4 py-3 text-sm font-bold text-white outline-none transition-all placeholder-slate-600 uppercase"
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 outline-none transition-all placeholder-slate-300 uppercase"
                     placeholder="AUTO" />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Durasi (Menit)</label>
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Durasi (Menit)</label>
                   <input type="number" value={newSession.duration_minutes} onChange={(e) => setNewSession({...newSession, duration_minutes: parseInt(e.target.value) || 0})}
-                    className="w-full bg-white/5 border border-white/10 focus:border-indigo-500/50 rounded-xl px-4 py-3 text-sm font-medium text-white outline-none transition-all" />
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 rounded-xl px-4 py-3 text-sm font-medium text-slate-800 outline-none transition-all" />
                 </div>
               </div>
               <button onClick={handleAddSession} disabled={isSaving}
-                className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white py-4 rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-indigo-500/20 transition-all flex items-center justify-center gap-2">
+                className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white py-4 rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-indigo-200 transition-all flex items-center justify-center gap-2 disabled:opacity-50">
                 {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Plus size={16} /> Buat Sesi Sekarang</>}
               </button>
             </div>
@@ -808,13 +801,16 @@ export default function IntegratedLLMSDashboard() {
 
       {/* ─── TOAST ─── */}
       <div className={`fixed bottom-6 right-6 z-[99999] transition-all duration-500 transform ${toast.visible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0 pointer-events-none'}`}>
-        <div className={`flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl border backdrop-blur-md ${
-          toast.type === 'success' ? 'bg-emerald-950/90 border-emerald-500/30 text-emerald-300' : 'bg-rose-950/90 border-rose-500/30 text-rose-300'
+        <div className={`flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border ${
+          toast.type === 'success' ? 'bg-white border-emerald-100 shadow-emerald-100' : 'bg-white border-rose-100 shadow-rose-100'
         }`}>
-          <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-white text-xs font-black ${toast.type === 'success' ? 'bg-emerald-500' : 'bg-rose-500'}`}>
+          <div className={`w-7 h-7 rounded-xl flex items-center justify-center text-white text-xs font-black ${toast.type === 'success' ? 'bg-emerald-500' : 'bg-rose-500'}`}>
             {toast.type === 'success' ? '✓' : '✕'}
           </div>
-          <p className="text-sm font-semibold">{toast.message}</p>
+          <div>
+            <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Notifikasi</p>
+            <p className="text-sm font-semibold text-slate-800">{toast.message}</p>
+          </div>
         </div>
       </div>
     </div>
