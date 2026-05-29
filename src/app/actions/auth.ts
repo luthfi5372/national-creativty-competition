@@ -223,6 +223,14 @@ export async function loginLocalUser(formData: FormData): Promise<AuthResult> {
             throw retryResult.error;
           }
         } else {
+          const isAlreadyRegistered = 
+            signUpError?.message?.toLowerCase().includes("already registered") || 
+            signUpError?.message?.toLowerCase().includes("already exists") ||
+            signUpError?.status === 422;
+
+          if (isAlreadyRegistered) {
+            throw new Error("Email ini sudah terdaftar dengan kata sandi kustom. Silakan masuk menggunakan kata sandi yang Anda buat saat pendaftaran pertama kali di portal ini (bukan NISN Anda), atau gunakan fitur Lupa Sandi.");
+          }
           throw signUpError || new Error("Failed to register participant on-the-fly.");
         }
       } else {
