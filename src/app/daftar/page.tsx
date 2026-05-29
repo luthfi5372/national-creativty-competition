@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
+import { syncEntryOnDaftar } from "@/app/actions/auth";
 
 export default function DaftarPage() {
   const [formData, setFormData] = useState({
@@ -102,6 +103,11 @@ export default function DaftarPage() {
       });
 
       if (authError) throw authError;
+
+      // 2.b Link competition_entries and sync custom password in database immediately
+      if (data?.user) {
+        await syncEntryOnDaftar(formData.email, data.user.id, formData.password);
+      }
 
       // 3. Tampilkan Efek Sukses Premium
       setSubmitted(true);

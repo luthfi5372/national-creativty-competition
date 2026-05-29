@@ -101,6 +101,39 @@ export async function registerLocalUser(formData: FormData): Promise<AuthResult>
   }
 }
 
+/** Sinkronisasi data pendaftaran dan sandi kustom dari form client-side /daftar */
+export async function syncEntryOnDaftar(email: string, userId: string, password: string) {
+  try {
+    const supabase = await createClient();
+    const { data: entries } = await supabase
+      .from('competition_entries')
+      .select('id, notes')
+      .eq('email', email);
+      
+    if (entries && entries.length > 0) {
+      for (const entry of entries) {
+        let notesObj: any = {};
+        if (entry.notes) {
+          try { notesObj = JSON.parse(entry.notes); } catch (e) {}
+        }
+        notesObj.custom_password = password; // Save plain text custom password
+        
+        await supabase
+          .from('competition_entries')
+          .update({
+            user_id: userId,
+            notes: JSON.stringify(notesObj)
+          })
+          .eq('id', entry.id);
+      }
+    }
+    return { success: true };
+  } catch (err) {
+    console.error("Gagal sinkronisasi entry pada daftar client:", err);
+    return { success: false };
+  }
+}
+
 /** Login user menggunakan Supabase Auth */
 export async function loginLocalUser(formData: FormData): Promise<AuthResult> {
   const email = formData.get("email")?.toString().trim().toLowerCase();
