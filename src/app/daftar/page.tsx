@@ -190,6 +190,7 @@ export default function DaftarPage() {
                 <input 
                   type="text" 
                   placeholder="username_peserta" 
+                  autoComplete="new-username"
                   className="w-full pl-10 pr-4 py-3 bg-white/60 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-slate-700 placeholder:text-slate-400 shadow-sm"
                   value={formData.username}
                   onChange={(e) => setFormData({...formData, username: e.target.value})}
@@ -206,6 +207,7 @@ export default function DaftarPage() {
                 <input 
                   type="text" 
                   placeholder="Nama Lengkap Anda" 
+                  autoComplete="off"
                   className="w-full pl-10 pr-4 py-3 bg-white/60 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-slate-700 placeholder:text-slate-400 shadow-sm"
                   value={formData.fullName}
                   onChange={(e) => setFormData({...formData, fullName: e.target.value})}
@@ -224,7 +226,8 @@ export default function DaftarPage() {
                 </div>
                 <input 
                   type="email" 
-                  placeholder="admin1@ncc.id" 
+                  placeholder="nama@email.com" 
+                  autoComplete="new-email"
                   className="w-full pl-10 pr-4 py-3 bg-white/60 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-slate-700 placeholder:text-slate-400 shadow-sm"
                   value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
@@ -240,8 +243,9 @@ export default function DaftarPage() {
                 </div>
                 <input 
                   type="text" 
-                  placeholder="12345678" 
+                  placeholder="NPSN Sekolah (8 digit)" 
                   maxLength={8}
+                  autoComplete="off"
                   className="w-full pl-10 pr-4 py-3 bg-white/60 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-slate-700 placeholder:text-slate-400 shadow-sm"
                   value={formData.npsn}
                   onChange={(e) => setFormData({...formData, npsn: e.target.value.replace(/\D/g, "")})}
@@ -272,6 +276,7 @@ export default function DaftarPage() {
                 type="text" 
                 readOnly={isSchoolLocked}
                 placeholder="Nama Sekolah Anda (misal: SMA Negeri 1 Jakarta)" 
+                autoComplete="off"
                 className={`w-full pl-10 pr-4 py-3 border rounded-xl text-sm focus:outline-none focus:ring-2 transition-all shadow-sm ${
                   isSchoolLocked 
                     ? "bg-slate-100/80 border-slate-300/80 text-slate-500 font-semibold cursor-not-allowed select-none focus:ring-amber-500/20 focus:border-amber-500" 
@@ -294,6 +299,7 @@ export default function DaftarPage() {
                 <input 
                   type="password" 
                   placeholder="••••••••" 
+                  autoComplete="new-password"
                   className="w-full pl-10 pr-4 py-3 bg-white/60 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-slate-700 placeholder:text-slate-400 shadow-sm"
                   value={formData.password}
                   onChange={(e) => setFormData({...formData, password: e.target.value})}
@@ -310,6 +316,7 @@ export default function DaftarPage() {
                 <input 
                   type="password" 
                   placeholder="••••••••" 
+                  autoComplete="new-password"
                   className="w-full pl-10 pr-4 py-3 bg-white/60 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-slate-700 placeholder:text-slate-400 shadow-sm"
                   value={formData.confirmPassword}
                   onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
