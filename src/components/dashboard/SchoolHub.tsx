@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { MessageSquare, Users, Send, Building2, ShieldAlert, Award, Loader2, CheckCircle2, ChevronRight } from "lucide-react";
+import { MessageSquare, Users, Send, Building2, ShieldAlert, Award, Loader2, CheckCircle2, ChevronRight, Camera, ImageIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 
@@ -20,11 +20,86 @@ export default function SchoolHub({ userEntry, currentUser }: SchoolHubProps) {
   const [isLoadingMates, setIsLoadingMates] = useState(true);
   const [chatError, setChatError] = useState<string | null>(null);
 
+  const [schoolLogo, setSchoolLogo] = useState<string | null>(null);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
 
   const activeSchool = userEntry?.school_name || userEntry?.school || currentUser?.user_metadata?.school || "";
   const activeNpsn = userEntry?.npsn || currentUser?.user_metadata?.npsn || "";
+
+  useEffect(() => {
+    if (schoolmates.length > 0) {
+      let foundLogo = null;
+      for (const mate of schoolmates) {
+        if (mate.notes) {
+          try {
+            const parsed = JSON.parse(mate.notes);
+            if (parsed.school_logo_url) {
+              foundLogo = parsed.school_logo_url;
+              break;
+            }
+          } catch (e) {}
+        }
+      }
+      setSchoolLogo(foundLogo);
+    }
+  }, [schoolmates]);
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      alert("Ukuran logo maksimal 2MB!");
+      return;
+    }
+
+    setIsUploadingLogo(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `school-logo-${activeNpsn || 'general'}-${Math.random()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage.from('payment-proofs').upload(fileName, file);
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage.from('payment-proofs').getPublicUrl(fileName);
+      const logoUrl = urlData.publicUrl;
+
+      // Update current user's competition entry notes
+      let notesObj: any = {};
+      if (userEntry?.notes) {
+        try { notesObj = JSON.parse(userEntry.notes); } catch (err) {}
+      }
+      notesObj.school_logo_url = logoUrl;
+      const updatedNotes = JSON.stringify(notesObj);
+
+      const { error: dbError } = await supabase
+        .from('competition_entries')
+        .update({ notes: updatedNotes })
+        .eq('id', userEntry?.id);
+
+      if (dbError) throw dbError;
+
+      setSchoolLogo(logoUrl);
+      
+      // Dynamically update schoolmates for local instantaneous rendering
+      setSchoolmates(prev => 
+        prev.map(mate => 
+          mate.email === currentUser?.email 
+            ? { ...mate, notes: updatedNotes } 
+            : mate
+        )
+      );
+
+      alert("Logo sekolah berhasil diunggah!");
+    } catch (err: any) {
+      console.error("Gagal mengunggah logo sekolah:", err);
+      alert(`Gagal mengunggah logo: ${err.message}`);
+    } finally {
+      setIsUploadingLogo(false);
+    }
+  };
 
   // Auto-scroll chat to bottom
   const scrollToBottom = () => {
@@ -232,8 +307,27 @@ export default function SchoolHub({ userEntry, currentUser }: SchoolHubProps) {
       {/* ─── HEADER: School Information & Stats ─── */}
       <div className="p-6 bg-gradient-to-br from-indigo-50/40 via-purple-50/20 to-transparent border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100/70 flex items-center justify-center text-indigo-600 shrink-0 shadow-sm">
-            <Building2 size={20} />
+          <div className="relative group/logo w-10 h-10 rounded-xl overflow-hidden bg-indigo-50 border border-indigo-100/70 flex items-center justify-center text-indigo-600 shrink-0 shadow-sm transition-all duration-300 hover:border-indigo-300">
+            {isUploadingLogo ? (
+              <Loader2 size={16} className="animate-spin text-indigo-600" />
+            ) : schoolLogo ? (
+              <img src={schoolLogo} alt="Logo Sekolah" className="w-full h-full object-cover" />
+            ) : (
+              <Building2 size={20} />
+            )}
+            
+            {/* Elegant Hover Overlay to Upload custom logo */}
+            <label htmlFor="school-logo-input" className="absolute inset-0 bg-black/40 text-white flex items-center justify-center opacity-0 group-hover/logo:opacity-100 cursor-pointer transition-opacity duration-300">
+              <Camera size={14} className="text-white" />
+            </label>
+            <input 
+              type="file" 
+              id="school-logo-input" 
+              accept="image/*" 
+              className="hidden" 
+              onChange={handleLogoUpload} 
+              disabled={isUploadingLogo}
+            />
           </div>
           <div>
             <h3 className="font-black text-slate-800 text-sm tracking-tight uppercase">Ruang Sekolah</h3>
@@ -405,6 +499,14 @@ export default function SchoolHub({ userEntry, currentUser }: SchoolHubProps) {
                   const progress = getProgressDetails(mate);
                   const isMe = mate.email === currentUser?.email;
 
+                  let matePhoto = null;
+                  if (mate.notes) {
+                    try {
+                      const parsed = JSON.parse(mate.notes);
+                      matePhoto = parsed.profile_photo_url;
+                    } catch (e) {}
+                  }
+
                   return (
                     <div
                       key={mate.id}
@@ -415,13 +517,21 @@ export default function SchoolHub({ userEntry, currentUser }: SchoolHubProps) {
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-lg font-extrabold text-xs flex items-center justify-center shrink-0 border ${
-                          isMe
-                            ? "bg-indigo-600 text-white border-indigo-700 shadow-sm"
-                            : "bg-slate-50 text-slate-600 border-slate-100"
-                        }`}>
-                          {mate.full_name?.charAt(0).toUpperCase() || "P"}
-                        </div>
+                        {matePhoto ? (
+                          <img 
+                            src={matePhoto} 
+                            alt={mate.full_name} 
+                            className="w-8 h-8 rounded-lg object-cover border border-slate-200/80 shrink-0 shadow-sm"
+                          />
+                        ) : (
+                          <div className={`w-8 h-8 rounded-lg font-extrabold text-xs flex items-center justify-center shrink-0 border ${
+                            isMe
+                              ? "bg-indigo-600 text-white border-indigo-700 shadow-sm"
+                              : "bg-slate-50 text-slate-600 border-slate-100"
+                          }`}>
+                            {mate.full_name?.charAt(0).toUpperCase() || "P"}
+                          </div>
+                        )}
                         <div>
                           <div className="flex items-center gap-1.5">
                             <span className="font-bold text-slate-700 text-xs">
