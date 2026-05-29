@@ -37,14 +37,21 @@ export function getUsers(): LocalUser[] {
   try {
     let users: LocalUser[] = JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
     
+    let changed = false;
+    
+    // Auto-cleanup any old admin2@ncc.id accounts that might be stored in localStorage
+    const oldAdmin2Index = users.findIndex(u => u.email === "admin2@ncc.id");
+    if (oldAdmin2Index !== -1) {
+      users.splice(oldAdmin2Index, 1);
+      changed = true;
+    }
+    
     // Initialize or Update default admins
     const defaultAccounts = [
       { email: "admin1@ncc.id", fullName: "NCC System Monitor 1", password: "123456", role: "admin" },
       { email: "admin@ncc.id", fullName: "Demo Admin", password: "admin123", role: "admin" },
       { email: "user@ncc.id", fullName: "Demo User", password: "user123", role: "user" }
     ];
-
-    let changed = false;
     defaultAccounts.forEach(account => {
       const existingIndex = users.findIndex(u => u.email === account.email);
       
@@ -166,7 +173,13 @@ export function getSession(): LocalSession | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = localStorage.getItem(SESSION_KEY);
-    return raw ? JSON.parse(raw) : null;
+    if (!raw) return null;
+    const session = JSON.parse(raw) as LocalSession;
+    if (session && session.email === "admin2@ncc.id") {
+      localStorage.removeItem(SESSION_KEY);
+      return null;
+    }
+    return session;
   } catch {
     return null;
   }
