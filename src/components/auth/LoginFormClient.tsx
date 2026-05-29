@@ -75,7 +75,9 @@ export default function LoginFormClient({ initialStats }: LoginFormClientProps) 
       }, 1000);
     } else {
       let errorMessage = result.error ?? "Email atau kata sandi salah.";
-      if (errorMessage.includes("Invalid login credentials") || errorMessage.includes("Email atau kata sandi")) {
+      // Hanya override pesan mentah Supabase dengan bahasa Indonesia yang ramah.
+      // Jangan override pesan kustom dari server yang memberi arahan spesifik kepada user.
+      if (errorMessage === "Invalid login credentials" || errorMessage === "Invalid login credentials.") {
         errorMessage = "Email atau kata sandi tidak cocok. Silakan periksa kembali!";
       }
       
