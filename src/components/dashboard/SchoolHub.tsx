@@ -464,9 +464,27 @@ export default function SchoolHub({ userEntry, currentUser }: SchoolHubProps) {
             {/* Messages Scroll Area */}
             <div className="flex-1 overflow-y-auto max-h-[280px] space-y-3.5 pr-1 mb-4 flex flex-col scroll-smooth">
               {isLoadingChats ? (
-                <div className="flex-1 flex flex-col items-center justify-center py-12">
-                  <Loader2 size={24} className="text-indigo-600 animate-spin mb-2" />
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Menyinkronkan percakapan...</p>
+                <div className="flex-1 flex flex-col gap-3 py-4">
+                  {/* Skeleton loading - chat bubbles */}
+                  {[
+                    { side: "left", w: "55%" },
+                    { side: "right", w: "40%" },
+                    { side: "left", w: "65%" },
+                    { side: "right", w: "30%" },
+                    { side: "left", w: "50%" },
+                  ].map((s, i) => (
+                    <div key={i} className={`flex flex-col gap-1 ${s.side === "right" ? "items-end" : "items-start"}`}>
+                      {s.side === "left" && (
+                        <div className="h-2 w-16 bg-slate-100 rounded-full animate-pulse ml-1" style={{ animationDelay: `${i * 0.1}s` }} />
+                      )}
+                      <div
+                        className={`h-8 rounded-2xl animate-pulse ${s.side === "right" ? "bg-indigo-100 rounded-tr-none" : "bg-slate-100 rounded-tl-none"}`}
+                        style={{ width: s.w, animationDelay: `${i * 0.12}s` }}
+                      />
+                      <div className="h-1.5 w-8 bg-slate-100 rounded-full animate-pulse mx-1" style={{ animationDelay: `${i * 0.15}s` }} />
+                    </div>
+                  ))}
+                  <p className="text-center text-[10px] text-slate-300 font-bold uppercase tracking-wider mt-2 animate-pulse">Memuat percakapan...</p>
                 </div>
               ) : chatError === "TableNotCreated" ? (
                 /* Graceful Setup Prompt for SQL migration */
@@ -487,11 +505,31 @@ export default function SchoolHub({ userEntry, currentUser }: SchoolHubProps) {
                 </div>
               ) : messages.length === 0 ? (
                 <div className="flex-1 flex flex-col items-center justify-center text-center py-10">
-                  <MessageSquare size={36} className="text-slate-200 mb-3" />
-                  <h4 className="font-bold text-slate-600 text-xs">Belum Ada Percakapan</h4>
-                  <p className="text-[11px] text-slate-400 mt-1 max-w-[240px]">
-                    Jadilah yang pertama mengirim pesan dan memulai diskusi sekolah Anda!
+                  <div className="relative mb-4">
+                    <MessageSquare size={40} className="text-indigo-100" />
+                    {/* Pulsing ring around icon */}
+                    <span className="absolute inset-0 flex items-center justify-center">
+                      <span className="w-14 h-14 rounded-full bg-indigo-50 animate-ping opacity-60" />
+                    </span>
+                    {/* Floating dots */}
+                    <div className="absolute -top-1 -right-1 flex gap-0.5">
+                      {[0, 1, 2].map((i) => (
+                        <span
+                          key={i}
+                          className="w-1.5 h-1.5 rounded-full bg-indigo-300 animate-bounce"
+                          style={{ animationDelay: `${i * 0.15}s` }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <h4 className="font-black text-slate-600 text-xs tracking-tight">Belum Ada Percakapan</h4>
+                  <p className="text-[11px] text-slate-400 mt-1.5 max-w-[220px] leading-relaxed">
+                    Jadilah yang pertama memulai diskusi sekolah Anda! 🚀
                   </p>
+                  <div className="mt-4 flex items-center gap-1.5 text-[10px] text-indigo-400 font-bold bg-indigo-50/70 px-3 py-1.5 rounded-full border border-indigo-100/60">
+                    <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-pulse" />
+                    Ketik pesan di bawah untuk mulai
+                  </div>
                 </div>
               ) : (
                 messages.map((msg, index) => {
@@ -594,17 +632,62 @@ export default function SchoolHub({ userEntry, currentUser }: SchoolHubProps) {
           /* ─── TAB CONTENT: SCHOOLMATE DIRECTORY ─── */
           <div className="flex-1 flex flex-col justify-start min-h-[280px]">
             {isLoadingMates ? (
-              <div className="flex-1 flex flex-col items-center justify-center py-12">
-                <Loader2 size={24} className="text-indigo-600 animate-spin mb-2" />
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Menyinkronkan data rekan...</p>
+              <div className="flex-1 flex flex-col gap-2.5 py-2">
+                {/* Skeleton cards for schoolmates */}
+                {[...Array(4)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between p-3.5 border border-slate-100 rounded-xl animate-pulse bg-white"
+                    style={{ animationDelay: `${i * 0.1}s` }}
+                  >
+                    <div className="flex items-center gap-3">
+                      {/* Avatar skeleton */}
+                      <div className="w-8 h-8 rounded-lg bg-slate-100 shrink-0" />
+                      <div className="space-y-1.5">
+                        <div className="h-2.5 bg-slate-100 rounded-full" style={{ width: `${80 + i * 20}px` }} />
+                        <div className="h-2 bg-slate-50 rounded-full w-16" />
+                      </div>
+                    </div>
+                    <div className="h-5 w-14 bg-slate-100 rounded-md" />
+                  </div>
+                ))}
+                <p className="text-center text-[10px] text-slate-300 font-bold uppercase tracking-wider mt-1 animate-pulse">
+                  Memuat data rekan sekolah...
+                </p>
               </div>
             ) : schoolmates.length === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center text-center py-10">
-                <Users size={36} className="text-slate-200 mb-3" />
-                <h4 className="font-bold text-slate-600 text-xs">Pionir Pertama Sekolah Anda</h4>
-                <p className="text-[11px] text-slate-400 mt-1 max-w-[260px] mx-auto leading-relaxed">
-                  Anda adalah peserta pertama terverifikasi dari sekolah ini! Ajak siswa lain mendaftar untuk memantau status mereka di sini.
+                <div className="relative mb-4">
+                  <Users size={44} className="text-indigo-100" />
+                  {/* Pulsing ring */}
+                  <span className="absolute inset-0 flex items-center justify-center">
+                    <span className="w-16 h-16 rounded-full bg-indigo-50 animate-ping opacity-50" />
+                  </span>
+                  {/* Floating stars */}
+                  {["✨", "⭐", "🌟"].map((star, i) => (
+                    <span
+                      key={i}
+                      className="absolute text-[10px] animate-bounce"
+                      style={{
+                        top: i === 0 ? "-8px" : i === 1 ? "50%" : "auto",
+                        bottom: i === 2 ? "-8px" : "auto",
+                        left: i === 1 ? "-16px" : "auto",
+                        right: i === 0 ? "-12px" : i === 2 ? "-10px" : "auto",
+                        animationDelay: `${i * 0.2}s`,
+                      }}
+                    >
+                      {star}
+                    </span>
+                  ))}
+                </div>
+                <h4 className="font-black text-slate-700 text-xs tracking-tight">Pionir Pertama Sekolah Anda! 🎉</h4>
+                <p className="text-[11px] text-slate-400 mt-2 max-w-[240px] mx-auto leading-relaxed">
+                  Anda adalah peserta pertama dari sekolah ini. Ajak teman lainnya untuk mendaftar!
                 </p>
+                <div className="mt-4 flex items-center gap-1.5 text-[10px] text-emerald-500 font-bold bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100/60 animate-pulse">
+                  <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full" />
+                  Jadilah pelopor dari sekolahmu
+                </div>
               </div>
             ) : (
               <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
