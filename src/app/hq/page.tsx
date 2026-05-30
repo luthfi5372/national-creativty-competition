@@ -7,6 +7,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client"; 
 import { generateTicketCode } from "@/lib/utils"; 
+import { getAdminCompetitionEntries } from "@/app/actions/auth";
+
 import { 
   LayoutDashboard, Users, FileCheck, Settings, 
   ArrowUpRight, ArrowDownRight, Download, Calendar, 
@@ -1580,7 +1582,7 @@ function ModernHQDashboardContent() {
       setNewParticipant({full_name: "", email: "", nisn: "", school_name: "", province: "", city: "", category: "", mentor_name: "", mentor_email: "", mentor_phone: "", phone_number: ""});
       
       // Refresh Data
-      const { data } = await supabase.from('competition_entries').select('*').neq('email', 'admin1@ncc.id').order('created_at', { ascending: false });
+      const { data } = await getAdminCompetitionEntries();
       if (data) setRealEntries(data);
     } catch (err: any) {
       console.error(err);
@@ -1645,7 +1647,7 @@ function ModernHQDashboardContent() {
           setCsvFile(null);
           
           // Refresh Data
-          const { data } = await supabase.from('competition_entries').select('*').neq('email', 'admin1@ncc.id').order('created_at', { ascending: false });
+          const { data } = await getAdminCompetitionEntries();
           if (data) setRealEntries(data);
         } catch (err: any) {
           console.error(err);
@@ -1723,11 +1725,8 @@ function ModernHQDashboardContent() {
         // Selalu pastikan sesi valid sebelum fetch
         await ensureAdminSession();
 
-        const { data, error } = await supabase
-          .from('competition_entries')
-          .select('*')
-          .neq('email', 'admin1@ncc.id') 
-          .order('created_at', { ascending: false });
+        const { data, error } = await getAdminCompetitionEntries() as any;
+
 
         if (error) {
           console.error("Gagal menarik data:", error);

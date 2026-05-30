@@ -393,3 +393,36 @@ export async function getLocalSession() {
     return null;
   }
 }
+
+/** Mengambil semua pendaftaran kompetisi khusus untuk halaman Admin HQ (Bypass RLS via Server Session) */
+export async function getAdminCompetitionEntries() {
+  try {
+    const supabase = await createClient();
+    
+    // Pastikan user adalah admin di server-side sebelum query
+    const { data: { user } } = await supabase.auth.getUser();
+    const adminEmails = ["admin@ncc.id", "admin1@ncc.id", "halo.ncc@gmail.com"];
+    
+    if (!user || !adminEmails.includes(user.email?.toLowerCase() || "")) {
+      console.warn("[Server Action] Unauthorized access to getAdminCompetitionEntries");
+      return { data: null, error: "Akses ditolak. Anda bukan administrator." };
+    }
+
+    const { data, error } = await supabase
+      .from('competition_entries')
+      .select('*')
+      .neq('email', 'admin1@ncc.id')
+      .order('created_at', { ascending: false });
+      
+    if (error) {
+      console.error("[Server Action] Supabase error:", error);
+      return { data: null, error: error.message };
+    }
+    
+    return { data, error: null };
+  } catch (err: any) {
+    console.error("[Server Action] Exception:", err);
+    return { data: null, error: err.message || "Gagal mengambil data." };
+  }
+}
+
