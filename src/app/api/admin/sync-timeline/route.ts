@@ -4,8 +4,10 @@ import { revalidatePath } from 'next/cache';
 
 export async function POST(request: Request) {
   try {
-    const { cleanData } = await request.json();
+    const body = await request.json();
+    const cleanData = body.cleanData || body.timeline;
     const supabase = await createClient();
+
 
     // 1. Cari data lama
     const { data: existing } = await supabase

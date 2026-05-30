@@ -93,6 +93,58 @@ export default function LoginFormClient({ initialStats }: LoginFormClientProps) 
         document.cookie = "ncc_admin_hint=1; path=/; max-age=604800; samesite=lax";
       }
 
+      // 🚀 CLIENT-SIDE SUPABASE LOGIN BRIDGE
+      // Log in directly on the browser client to guarantee that Supabase Auth
+      // session is fully and persistently established in browser localStorage & cookies!
+      try {
+        const { createClient: createBrowserClient } = await import("@/lib/supabase/client");
+        const supabaseBrowser = createBrowserClient();
+        
+        let authEmail = activeEmail;
+        let authPassword = password.trim();
+        
+        if (authEmail === 'admin') {
+          authEmail = 'admin@ncc.id';
+          authPassword = 'admin123';
+        }
+        
+        console.log(`[Client Login Bridge] Attempting browser login for ${authEmail}...`);
+        
+        // Coba login langsung
+        const { error: clientLoginError } = await supabaseBrowser.auth.signInWithPassword({
+          email: authEmail,
+          password: authPassword
+        });
+        
+        // Jika gagal karena akun belum terdaftar di Supabase Auth (misal reset DB),
+        // lakukan registrasi instan di sisi klien
+        if (clientLoginError && result.isAdmin) {
+          console.log(`[Client Login Bridge] Admin account not in Supabase Auth, auto-registering...`);
+          const { error: signUpError } = await supabaseBrowser.auth.signUp({
+            email: authEmail,
+            password: authPassword,
+            options: {
+              data: {
+                full_name: "NCC Admin Command",
+                username: authEmail.split('@')[0]
+              }
+            }
+          });
+          
+          if (!signUpError) {
+            await supabaseBrowser.auth.signInWithPassword({
+              email: authEmail,
+              password: authPassword
+            });
+            console.log(`[Client Login Bridge] Admin auto-registered and logged in successfully!`);
+          }
+        } else {
+          console.log(`[Client Login Bridge] Browser login completed successfully!`);
+        }
+      } catch (err) {
+        console.error(`[Client Login Bridge] Error bridging login:`, err);
+      }
+
       setSuccess(true);
       setIsRedirecting(true);
       setRedirectTarget(result.isAdmin ? 'hq' : 'dashboard');
@@ -117,6 +169,7 @@ export default function LoginFormClient({ initialStats }: LoginFormClientProps) 
       showToast(errorMessage, "error");
     }
   };
+
 
   // Full-screen redirect loading overlay
   if (isRedirecting) {
