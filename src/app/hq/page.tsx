@@ -1118,10 +1118,26 @@ function ModernHQDashboardContent() {
   // --- 📅 CLOSE CALENDAR ON OUTSIDE CLICK ---
   useEffect(() => {
     if (!openCalendar) return;
-    const handler = () => setOpenCalendar(null);
-    document.addEventListener('click', handler);
-    return () => document.removeEventListener('click', handler);
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target) return;
+      
+      // Jika element sudah di-unmount dari DOM (karena re-render cepat), jangan close
+      if (!document.body.contains(target)) return;
+      
+      // Jika diklik di dalam popover atau tombol pemicu, jangan close
+      if (target.closest('.cal-picker-popover') || target.closest('.cal-picker-trigger')) {
+        return;
+      }
+      
+      setOpenCalendar(null);
+    };
+    
+    // Gunakan capture phase agar berjalan lebih dulu dan konsisten
+    document.addEventListener('click', handler, true);
+    return () => document.removeEventListener('click', handler, true);
   }, [openCalendar]);
+
 
   const saveTimeline = async () => {
     setIsSavingTimeline(true);
@@ -3352,7 +3368,7 @@ function ModernHQDashboardContent() {
                                               setOpenCalendar(calKey);
                                             }
                                           }}
-                                          className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-bold transition-all ${
+                                          className={`cal-picker-trigger w-full flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-bold transition-all ${
                                             currentVal
                                               ? 'bg-white border-indigo-200 text-indigo-700 hover:border-indigo-400 shadow-sm'
                                               : 'bg-white border-dashed border-slate-300 text-slate-400 hover:border-indigo-300 hover:text-indigo-500'
@@ -3374,7 +3390,7 @@ function ModernHQDashboardContent() {
                                         {/* Calendar Popover */}
                                         {isOpen && (
                                           <div
-                                            className="absolute z-50 top-full mt-2 left-0 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+                                            className="cal-picker-popover absolute z-50 top-full mt-2 left-0 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-150"
                                             style={{ width: '280px' }}
                                             onClick={(e) => e.stopPropagation()}
                                           >
