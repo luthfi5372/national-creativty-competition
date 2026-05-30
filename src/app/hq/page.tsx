@@ -434,7 +434,7 @@ function ModernHQDashboardContent() {
         let query = supabase.from("school_messages").select("*");
         
         if (selectedSchoolGroup.npsn) {
-          query = query.eq("npsn", selectedSchoolGroup.npsn);
+          query = query.or(`npsn.eq."${selectedSchoolGroup.npsn}",school_name.eq."${selectedSchoolGroup.schoolName}"`);
         } else {
           query = query.eq("school_name", selectedSchoolGroup.schoolName);
         }
@@ -459,9 +459,6 @@ function ModernHQDashboardContent() {
     const channelKey = selectedSchoolGroup.npsn 
       ? `npsn_${selectedSchoolGroup.npsn}` 
       : selectedSchoolGroup.schoolName.replace(/\s+/g, "_");
-    const filterExpr = selectedSchoolGroup.npsn 
-      ? `npsn=eq.${selectedSchoolGroup.npsn}` 
-      : `school_name=eq.${selectedSchoolGroup.schoolName}`;
 
     const channel = supabase
       .channel(`hq_school_chat_${channelKey}`)
@@ -471,15 +468,25 @@ function ModernHQDashboardContent() {
           event: "*", // Listen to all events!
           schema: "public",
           table: "school_messages",
-          filter: filterExpr,
         },
         (payload) => {
-          if (payload.eventType === "INSERT") {
-            setGroupMessages((prev) => [...prev, payload.new]);
-          } else if (payload.eventType === "UPDATE") {
-            setGroupMessages((prev) => prev.map(msg => msg.id === payload.new.id ? payload.new : msg));
-          } else if (payload.eventType === "DELETE") {
-            setGroupMessages((prev) => prev.filter(msg => msg.id !== payload.old.id));
+          const newOrOld = payload.new || payload.old;
+          if (!newOrOld) return;
+
+          const matchesNpsn = selectedSchoolGroup.npsn && newOrOld.npsn === selectedSchoolGroup.npsn;
+          const matchesSchool = selectedSchoolGroup.schoolName && newOrOld.school_name?.toLowerCase() === selectedSchoolGroup.schoolName.toLowerCase();
+
+          if (matchesNpsn || matchesSchool) {
+            if (payload.eventType === "INSERT") {
+              setGroupMessages((prev) => {
+                if (prev.some(m => m.id === payload.new.id)) return prev;
+                return [...prev, payload.new];
+              });
+            } else if (payload.eventType === "UPDATE") {
+              setGroupMessages((prev) => prev.map(msg => msg.id === payload.new.id ? payload.new : msg));
+            } else if (payload.eventType === "DELETE") {
+              setGroupMessages((prev) => prev.filter(msg => msg.id !== payload.old.id));
+            }
           }
         }
       )

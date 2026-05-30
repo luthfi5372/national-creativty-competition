@@ -128,7 +128,7 @@ export default function SchoolHub({ userEntry, currentUser }: SchoolHubProps) {
         let query = supabase.from("school_messages").select("*");
         
         if (activeNpsn) {
-          query = query.eq("npsn", activeNpsn);
+          query = query.or(`npsn.eq."${activeNpsn}",school_name.eq."${activeSchool}"`);
         } else {
           query = query.eq("school_name", activeSchool);
         }
@@ -161,7 +161,6 @@ export default function SchoolHub({ userEntry, currentUser }: SchoolHubProps) {
     let channel: any;
     try {
       const channelKey = activeNpsn ? `npsn_${activeNpsn}` : activeSchool.replace(/\s+/g, "_");
-      const filterExpr = activeNpsn ? `npsn=eq.${activeNpsn}` : `school_name=eq.${activeSchool}`;
 
       channel = supabase
         .channel(`school_chat_${channelKey}`)
@@ -171,15 +170,25 @@ export default function SchoolHub({ userEntry, currentUser }: SchoolHubProps) {
             event: "*", // Listen to all events!
             schema: "public",
             table: "school_messages",
-            filter: filterExpr,
           },
           (payload) => {
-            if (payload.eventType === "INSERT") {
-              setMessages((prev) => [...prev, payload.new]);
-            } else if (payload.eventType === "UPDATE") {
-              setMessages((prev) => prev.map(msg => msg.id === payload.new.id ? payload.new : msg));
-            } else if (payload.eventType === "DELETE") {
-              setMessages((prev) => prev.filter(msg => msg.id !== payload.old.id));
+            const newOrOld = payload.new || payload.old;
+            if (!newOrOld) return;
+
+            const matchesNpsn = activeNpsn && newOrOld.npsn === activeNpsn;
+            const matchesSchool = activeSchool && newOrOld.school_name?.toLowerCase() === activeSchool.toLowerCase();
+
+            if (matchesNpsn || matchesSchool) {
+              if (payload.eventType === "INSERT") {
+                setMessages((prev) => {
+                  if (prev.some(m => m.id === payload.new.id)) return prev;
+                  return [...prev, payload.new];
+                });
+              } else if (payload.eventType === "UPDATE") {
+                setMessages((prev) => prev.map(msg => msg.id === payload.new.id ? payload.new : msg));
+              } else if (payload.eventType === "DELETE") {
+                setMessages((prev) => prev.filter(msg => msg.id !== payload.old.id));
+              }
             }
           }
         )
@@ -205,7 +214,7 @@ export default function SchoolHub({ userEntry, currentUser }: SchoolHubProps) {
           .select("id, full_name, email, competition_type, category, payment_status, notes");
 
         if (activeNpsn) {
-          query = query.eq("npsn", activeNpsn);
+          query = query.or(`npsn.eq."${activeNpsn}",school_name.eq."${activeSchool}",school.eq."${activeSchool}"`);
         } else {
           query = query.or(`school_name.eq."${activeSchool}",school.eq."${activeSchool}"`);
         }
