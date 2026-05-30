@@ -3305,7 +3305,7 @@ function ModernHQDashboardContent() {
                                       const mm = String(viewMonth + 1).padStart(2, '0');
                                       const dd = String(d).padStart(2, '0');
                                       updateTimelineItem(cat.category, wave.label, item.label, type, `${viewYear}-${mm}-${dd}`);
-                                      setOpenCalendar(null);
+                                      // Tidak auto-close — user harus klik Selesai
                                     };
 
                                     const labelText = type === 'start' ? 'Mulai' : 'Selesai';
@@ -3489,7 +3489,7 @@ function ModernHQDashboardContent() {
                                                     onClick={() => {
                                                       const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
                                                       updateTimelineItem(cat.category, wave.label, item.label, type, todayStr);
-                                                      setOpenCalendar(null);
+                                                      // Tidak auto-close — user harus klik Selesai
                                                     }}
                                                     className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 transition-colors flex items-center gap-1"
                                                   >
@@ -3498,9 +3498,17 @@ function ModernHQDashboardContent() {
                                                   </button>
                                                   <button
                                                     type="button"
-                                                    onClick={() => setOpenCalendar(null)}
-                                                    className="text-[10px] font-bold text-slate-400 hover:text-slate-600 transition-colors"
-                                                  >Tutup</button>
+                                                    onClick={() => {
+                                                      setOpenCalendar(null);
+                                                      saveTimeline();
+                                                    }}
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-black rounded-lg transition-all shadow-sm shadow-emerald-100 active:scale-95"
+                                                  >
+                                                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                                                      <path d="M1.5 5L4 7.5L8.5 2.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                                    </svg>
+                                                    Selesai & Simpan
+                                                  </button>
                                                 </div>
                                               </div>
                                             )}
