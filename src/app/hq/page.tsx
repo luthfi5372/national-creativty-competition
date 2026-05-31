@@ -1797,6 +1797,13 @@ function ModernHQDashboardContent() {
       console.warn("Safety timeout triggered: forcing loader closure.");
     }, 5000);
 
+    // 🔄 POLLING BERKALA: Re-fetch data setiap 30 detik sebagai safety net
+    // Ini memastikan data peserta TIDAK PERNAH hilang meskipun WebSocket terputus
+    const pollingInterval = setInterval(async () => {
+      console.log("[Admin HQ] Polling: refreshing participant data...");
+      await fetchRealData(true); // isRetry=true agar tidak loop retry
+    }, 30000);
+
     // 2. 📡 AKTIFKAN SENSOR RADAR (Supabase WebSockets)
     const radarSubscription = supabase
       .channel('pantau_pendaftaran_ncc')
@@ -1815,6 +1822,7 @@ function ModernHQDashboardContent() {
     // 3. Matikan radar secara otomatis jika Presiden menutup halaman
     return () => {
       clearTimeout(safetyTimer);
+      clearInterval(pollingInterval);
       supabase.removeChannel(radarSubscription);
     };
   }, []);

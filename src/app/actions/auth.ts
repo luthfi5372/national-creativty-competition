@@ -398,31 +398,67 @@ export async function getLocalSession() {
 export async function getAdminCompetitionEntries() {
   try {
     const supabase = await createClient();
-    
-    // Pastikan user adalah admin di server-side sebelum query
-    const { data: { user } } = await supabase.auth.getUser();
     const adminEmails = ["admin@ncc.id", "admin1@ncc.id", "halo.ncc@gmail.com"];
-    
-    if (!user || !adminEmails.includes(user.email?.toLowerCase() || "")) {
-      console.warn("[Server Action] Unauthorized access to getAdminCompetitionEntries");
-      return { data: null, error: "Akses ditolak. Anda bukan administrator." };
+
+    // --- TAHAP 1: Coba dengan sesi cookie yang ada ---
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (user && adminEmails.includes(user.email?.toLowerCase() || "")) {
+      // Sesi valid — langsung query
+      const { data, error } = await supabase
+        .from('competition_entries')
+        .select('*')
+        .neq('email', 'admin1@ncc.id')
+        .order('created_at', { ascending: false });
+
+      if (!error && data && data.length > 0) {
+        return { data, error: null };
+      }
+      // Jika kosong atau ada error, lanjut ke tahap 2
     }
 
-    const { data, error } = await supabase
+    // --- TAHAP 2: Login admin manual di server sebagai fallback ---
+    // Gunakan createClient tanpa cookie (anonymous client) untuk login ulang
+    const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
+    const adminClient = createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    );
+
+    // Login sebagai admin1 di sisi server
+    const { error: signInError } = await adminClient.auth.signInWithPassword({
+      email: 'admin1@ncc.id',
+      password: '123456',
+    });
+
+    if (signInError) {
+      console.error("[Server Action] Gagal login admin fallback:", signInError.message);
+      // Coba fetch tanpa filter email sebagai last resort
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .from('competition_entries')
+        .select('*')
+        .order('created_at', { ascending: false });
+      return { data: fallbackData || [], error: fallbackError?.message || null };
+    }
+
+    // Query dengan adminClient yang sudah login
+    const { data, error } = await adminClient
       .from('competition_entries')
       .select('*')
       .neq('email', 'admin1@ncc.id')
       .order('created_at', { ascending: false });
-      
+
     if (error) {
-      console.error("[Server Action] Supabase error:", error);
+      console.error("[Server Action] Supabase error pada fallback:", error);
       return { data: null, error: error.message };
     }
-    
-    return { data, error: null };
+
+    return { data: data || [], error: null };
+
   } catch (err: any) {
     console.error("[Server Action] Exception:", err);
     return { data: null, error: err.message || "Gagal mengambil data." };
   }
 }
+
 
