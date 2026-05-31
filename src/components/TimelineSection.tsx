@@ -79,7 +79,7 @@ const categoryTimelines = {
 export default function TimelineSection() {
   const containerRef = useRef<HTMLElement>(null);
   const pathRef = useRef<SVGPathElement>(null);
-  const [activeCategory, setActiveCategory] = useState<"all" | "lkti" | "olimpiade" | "speech" | "mtq">("all");
+  const [activeCategory, setActiveCategory] = useState<"lkti" | "olimpiade" | "speech" | "mtq">("lkti");
   const [timelineDates, setTimelineDates] = useState<Record<string, string>>({});
   const [isMounted, setIsMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -277,10 +277,9 @@ export default function TimelineSection() {
 
       {/* Tab Switcher */}
       <div className="flex flex-wrap items-center justify-center gap-2 mb-12 bg-slate-100/80 backdrop-blur-sm p-1.5 rounded-2xl border border-slate-200/50 max-w-xl mx-auto z-30 pointer-events-auto">
-        {(["all", "lkti", "olimpiade", "speech", "mtq"] as const).map((cat) => {
-          const labels = { all: "Umum", lkti: "LKTI", olimpiade: "MIPA", speech: "Speech", mtq: "MTQ" };
+        {(["lkti", "olimpiade", "speech", "mtq"] as const).map((cat) => {
+          const labels = { lkti: "LKTI", olimpiade: "MIPA", speech: "Speech", mtq: "MTQ" };
           const activeStyles = {
-            all: "bg-blue-600 text-white shadow-md shadow-blue-100",
             lkti: "bg-blue-600 text-white shadow-md shadow-blue-100",
             olimpiade: "bg-amber-500 text-white shadow-md shadow-amber-100",
             speech: "bg-purple-600 text-white shadow-md shadow-purple-100",
@@ -305,7 +304,7 @@ export default function TimelineSection() {
             <svg viewBox="0 0 800 700" className="w-full h-full overflow-visible" fill="none">
               {/* Background Track */}
               <path
-                d="M 200 50 C 200 150, 600 150, 600 250 C 600 350, 200 350, 200 450 C 200 550, 600 550, 600 650"
+                d="M 280 50 C 280 150, 520 150, 520 250 C 520 350, 280 350, 280 450 C 280 550, 520 550, 520 650"
                 stroke="#e2e8f0"
                 strokeWidth="15"
                 strokeLinecap="round"
@@ -314,7 +313,7 @@ export default function TimelineSection() {
               
               {/* Glowing Secondary Path */}
               <motion.path
-                d="M 200 50 C 200 150, 600 150, 600 250 C 600 350, 200 350, 200 450 C 200 550, 600 550, 600 650"
+                d="M 280 50 C 280 150, 520 150, 520 250 C 520 350, 280 350, 280 450 C 280 550, 520 550, 520 650"
                 stroke="url(#gradient-path)"
                 strokeWidth="15"
                 strokeLinecap="round"
@@ -324,7 +323,7 @@ export default function TimelineSection() {
               {/* Main Animated Path */}
               <motion.path
                 ref={pathRef}
-                d="M 200 50 C 200 150, 600 150, 600 250 C 600 350, 200 350, 200 450 C 200 550, 600 550, 600 650"
+                d="M 280 50 C 280 150, 520 150, 520 250 C 520 350, 280 350, 280 450 C 280 550, 520 550, 520 650"
                 stroke="url(#gradient-path)"
                 strokeWidth="8"
                 strokeLinecap="round"
@@ -358,7 +357,7 @@ export default function TimelineSection() {
               item={currentTimeline[0]} 
               dateOverride={timelineDates[`${activeCategory}-0`]}
               top="9.09%" 
-              left="25%" 
+              left="35%" 
               align="left" 
               progress={smoothProgress} 
               trigger={0.15} 
@@ -369,7 +368,7 @@ export default function TimelineSection() {
               item={currentTimeline[1]} 
               dateOverride={timelineDates[`${activeCategory}-1`]}
               top="36.36%" 
-              left="75%" 
+              left="65%" 
               align="right" 
               progress={smoothProgress} 
               trigger={0.4} 
@@ -380,7 +379,7 @@ export default function TimelineSection() {
               item={currentTimeline[2]} 
               dateOverride={timelineDates[`${activeCategory}-2`]}
               top="63.63%" 
-              left="25%" 
+              left="35%" 
               align="left" 
               progress={smoothProgress} 
               trigger={0.7} 
@@ -391,7 +390,7 @@ export default function TimelineSection() {
               item={currentTimeline[3]} 
               dateOverride={timelineDates[`${activeCategory}-3`]}
               top="90.9%" 
-              left="75%" 
+              left="65%" 
               align="right" 
               progress={smoothProgress} 
               trigger={0.9} 
@@ -463,25 +462,46 @@ function TimelineNode({ item, dateOverride, top, left, align, progress, trigger 
 
   return (
     <motion.div 
-      className="absolute w-full px-8 pointer-events-auto group"
-      style={{ top, left, opacity, scale, transform: "translate(-50%, -50%)" }}
+      className="absolute pointer-events-none group z-20"
+      style={{ 
+        top, 
+        left, 
+        opacity, 
+        scale, 
+        width: 0, 
+        height: 0,
+      }}
     >
-      <div className={`relative flex items-center ${align === 'left' ? 'justify-end pr-14' : 'justify-start pl-14'}`}>
+      <div className="relative w-0 h-0 flex items-center justify-center">
+        {/* Node Circle */}
         <motion.div 
-          className={`absolute ${align === 'left' ? 'right-0 translate-x-1/2' : 'left-0 -translate-x-1/2'} w-12 h-12 rounded-full border-4 border-white flex items-center justify-center z-20 shadow-lg transition-colors duration-500`}
+          className="absolute w-12 h-12 rounded-full border-4 border-white flex items-center justify-center z-20 shadow-lg transition-colors duration-500 pointer-events-auto cursor-pointer"
           style={{ background: active ? 'linear-gradient(to bottom right, #6366f1, #ec4899)' : '#f8fafc' }}
         >
           <Icon size={20} className={active ? 'text-white' : 'text-slate-400'} />
         </motion.div>
 
-        <div className={`glass-panel w-72 lg:w-80 p-6 bg-white border border-slate-100 rounded-3xl shadow-lg transition-all hover:-translate-y-1 hover:shadow-xl ${align === 'left' ? 'text-right' : 'text-left'}`}>
-          <div className={`flex items-center gap-3 mb-3 ${align === 'left' ? 'justify-end' : 'justify-start'} ${item.color}`}>
-             {align !== 'left' && <Calendar size={14} />}
-             <span className="text-xs font-bold uppercase tracking-wider">{dateOverride || item.date}</span>
-             {align === 'left' && <Calendar size={14} />}
+        {/* Card */}
+        <div 
+          className={`absolute pointer-events-auto ${
+            align === 'left' 
+              ? 'right-8 text-right' 
+              : 'left-8 text-left'
+          }`}
+          style={{
+            transform: 'translateY(-50%)',
+            top: 0
+          }}
+        >
+          <div className="glass-panel w-[260px] sm:w-72 lg:w-80 p-6 bg-white border border-slate-100 rounded-3xl shadow-lg transition-all hover:-translate-y-1 hover:shadow-xl">
+            <div className={`flex items-center gap-3 mb-3 ${align === 'left' ? 'justify-end' : 'justify-start'} ${item.color}`}>
+               {align !== 'left' && <Calendar size={14} />}
+               <span className="text-xs font-bold uppercase tracking-wider">{dateOverride || item.date}</span>
+               {align === 'left' && <Calendar size={14} />}
+            </div>
+            <h3 className="text-xl font-bold mb-2 text-slate-900">{item.phase}</h3>
+            <p className="text-sm text-slate-600 leading-relaxed">{item.description}</p>
           </div>
-          <h3 className="text-xl font-bold mb-2 text-slate-900">{item.phase}</h3>
-          <p className="text-sm text-slate-600 leading-relaxed">{item.description}</p>
         </div>
       </div>
     </motion.div>
