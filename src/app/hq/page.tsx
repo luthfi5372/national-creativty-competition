@@ -1181,13 +1181,16 @@ function ModernHQDashboardContent() {
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
-      // Pastikan perubahan teranyar disimpan sebelum sesi dikeluarkan agar tidak hilang
-      await performSyncToDatabase();
+      // Batasi waktu sync maks 3 detik agar tidak stuck
+      const syncTimeout = new Promise<void>((resolve) => setTimeout(resolve, 3000));
+      await Promise.race([performSyncToDatabase(), syncTimeout]);
     } catch (err) {
       console.error("Gagal menyimpan sebelum logout:", err);
+    } finally {
+      // Selalu logout & redirect meskipun sync gagal
+      try { await supabase.auth.signOut(); } catch (_) {}
+      router.push('/login');
     }
-    await supabase.auth.signOut();
-    router.push('/login');
   };
 
   // --- 📸 REFERENSI AREA FOTO ID CARD (ADMIN) ---

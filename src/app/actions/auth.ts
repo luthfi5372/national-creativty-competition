@@ -397,68 +397,62 @@ export async function getLocalSession() {
 /** Mengambil semua pendaftaran kompetisi khusus untuk halaman Admin HQ (Bypass RLS via Server Session) */
 export async function getAdminCompetitionEntries() {
   try {
-    const supabase = await createClient();
     const adminEmails = ["admin@ncc.id", "admin1@ncc.id", "halo.ncc@gmail.com"];
 
     // --- TAHAP 1: Coba dengan sesi cookie yang ada ---
-    const { data: { user } } = await supabase.auth.getUser();
+    const supabase = await createClient();
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    console.log("[SA] User sesi saat ini:", user?.email || "tidak ada sesi");
 
     if (user && adminEmails.includes(user.email?.toLowerCase() || "")) {
-      // Sesi valid — langsung query
       const { data, error } = await supabase
         .from('competition_entries')
         .select('*')
         .neq('email', 'admin1@ncc.id')
         .order('created_at', { ascending: false });
 
+      console.log("[SA] Tahap 1 hasil:", data?.length ?? 0, "baris, error:", error?.message);
       if (!error && data && data.length > 0) {
         return { data, error: null };
       }
-      // Jika kosong atau ada error, lanjut ke tahap 2
     }
 
     // --- TAHAP 2: Login admin manual di server sebagai fallback ---
-    // Gunakan createClient tanpa cookie (anonymous client) untuk login ulang
     const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
     const adminClient = createSupabaseClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     );
 
-    // Login sebagai admin1 di sisi server
     const { error: signInError } = await adminClient.auth.signInWithPassword({
       email: 'admin1@ncc.id',
       password: '123456',
     });
+    console.log("[SA] Login admin1 fallback:", signInError ? `GAGAL - ${signInError.message}` : "BERHASIL");
 
-    if (signInError) {
-      console.error("[Server Action] Gagal login admin fallback:", signInError.message);
-      // Coba fetch tanpa filter email sebagai last resort
-      const { data: fallbackData, error: fallbackError } = await supabase
+    if (!signInError) {
+      const { data, error } = await adminClient
         .from('competition_entries')
         .select('*')
+        .neq('email', 'admin1@ncc.id')
         .order('created_at', { ascending: false });
-      return { data: fallbackData || [], error: fallbackError?.message || null };
+
+      console.log("[SA] Tahap 2 hasil:", data?.length ?? 0, "baris, error:", error?.message);
+      if (!error) return { data: data || [], error: null };
     }
 
-    // Query dengan adminClient yang sudah login
-    const { data, error } = await adminClient
+    // --- TAHAP 3: Coba query anonim (bekerja jika RLS dinonaktifkan di Supabase) ---
+    const { data: anonData, error: anonError } = await adminClient
       .from('competition_entries')
       .select('*')
-      .neq('email', 'admin1@ncc.id')
       .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error("[Server Action] Supabase error pada fallback:", error);
-      return { data: null, error: error.message };
-    }
-
-    return { data: data || [], error: null };
+    console.log("[SA] Tahap 3 (anon) hasil:", anonData?.length ?? 0, "baris, error:", anonError?.message);
+    return { data: anonData || [], error: anonError?.message || null };
 
   } catch (err: any) {
     console.error("[Server Action] Exception:", err);
     return { data: null, error: err.message || "Gagal mengambil data." };
   }
 }
-
 
