@@ -33,54 +33,49 @@ const allIconsMapped = categoryIcons.flatMap(cat =>
   cat.icons.map(Icon => ({ Icon, color: cat.color }))
 );
 
-// Pre-generated positions to avoid hydration mismatch
-const generateElements = () => {
-  const elements = [];
-  // Generate 150 elements to ensure the whole page is richly populated ("biar rame")
-  for (let i = 0; i < 150; i++) {
-    const itemConfig = allIconsMapped[i % allIconsMapped.length];
-    
-    // Spread vertically across 650vh (6.5 screen heights)
-    const factorLevel = (i * 23) % 650; // 0 to 650 vh
-    // Spread horizontally across 100vw
-    const factorX = (i * 7) % 100;
-    
-    const size = 32 + ((i * 9) % 68); // 32px to 100px for robust visibility ("lebih dijelasin")
-    const depth = 1 + ((i * 17) % 4); // 1 to 4 parallax speed
-    // Opacity boosted to 18% - 40% for rich presence ("lebih dijelasin")
-    const opacity = 0.18 + (((i * 13) % 23) / 100); 
-    const blur = depth > 3 ? "blur(2px)" : depth > 2 ? "blur(1px)" : "blur(0px)";
-    const animClass = `float-anim-${(i % 3) + 1}`;
-    const animDelay = ((i * 1.4) % 12).toFixed(1);
-    const animDuration = (18 + ((i * 4.3) % 20)).toFixed(1);
-
-    elements.push({
-      id: i,
-      Icon: itemConfig.Icon,
-      color: itemConfig.color,
-      x: factorX,        // vw
-      y: factorLevel,    // vh starting
-      size,
-      depth,             // parallax speed multiplier
-      opacity,
-      blur,
-      animClass,
-      animDelay,
-      animDuration
-    });
-  }
-  return elements;
-};
-
-const items = generateElements();
-
 export default function ParallaxBackground() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [items, setItems] = useState<any[]>([]);
 
   useEffect(() => {
     setMounted(true);
+    
+    // Generate truly randomized elements on the client to avoid hydration mismatch and avoid structured rows
+    const generated = [];
+    for (let i = 0; i < 150; i++) {
+      const itemConfig = allIconsMapped[i % allIconsMapped.length];
+      
+      // True random positioning for natural, scattered distribution
+      const x = Math.random() * 100; // 0 to 100 vw
+      const y = Math.random() * 650; // 0 to 650 vh
+      
+      const size = 32 + Math.floor(Math.random() * 68); // 32px to 100px
+      const depth = 1 + Math.floor(Math.random() * 4); // 1 to 4 depth
+      const opacity = 0.18 + (Math.random() * 0.22); // 18% to 40% opacity
+      const blur = depth > 3 ? "blur(2px)" : depth > 2 ? "blur(1px)" : "blur(0px)";
+      const animClass = `float-anim-${(i % 3) + 1}`;
+      const animDelay = (Math.random() * 12).toFixed(1);
+      const animDuration = (18 + (Math.random() * 20)).toFixed(1);
+
+      generated.push({
+        id: i,
+        Icon: itemConfig.Icon,
+        color: itemConfig.color,
+        x,
+        y,
+        size,
+        depth,
+        opacity,
+        blur,
+        animClass,
+        animDelay,
+        animDuration
+      });
+    }
+    setItems(generated);
+
     const checkMobile = () => {
       setIsMobile(window.innerWidth <= 768);
     };
@@ -90,7 +85,7 @@ export default function ParallaxBackground() {
   }, []);
 
   useGSAP(() => {
-    if (!mounted || isMobile) return; // Completely skip heavy scroll triggers on mobile
+    if (!mounted || isMobile || items.length === 0) return; // Completely skip heavy scroll triggers on mobile or before loaded
     gsap.registerPlugin(ScrollTrigger);
 
     // Group-based animation by depth levels (1 to 4)
@@ -107,10 +102,10 @@ export default function ParallaxBackground() {
       });
     }
     
-  }, { scope: containerRef, dependencies: [mounted, isMobile] });
+  }, { scope: containerRef, dependencies: [mounted, isMobile, items] });
 
   // Hide before mounted to prevent hydration errors or flashes
-  if (!mounted) return null;
+  if (!mounted || items.length === 0) return null;
 
   // Reduce background clutter on mobile but keep enough to feel rich ("biar rame")
   const displayedItems = isMobile ? items.slice(0, 45) : items;
