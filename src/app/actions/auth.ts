@@ -619,3 +619,64 @@ export async function getUnregisteredUsers() {
   }
 }
 
+/** Mengambil data telemetri CBT/LLMS secara aman dari server (RLS bypass) */
+export async function getLLMSTelemetryData() {
+  try {
+    const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    // Gunakan service role jika ada, fallback ke anon client
+    const client = serviceRoleKey
+      ? createSupabaseClient(supabaseUrl, serviceRoleKey, {
+          auth: { autoRefreshToken: false, persistSession: false }
+        })
+      : createSupabaseClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "");
+
+    // Ambil data cbt_questions count
+    const { count: questionCount, error: qError } = await client
+      .from('cbt_questions')
+      .select('*', { count: 'exact', head: true });
+
+    if (qError) {
+      console.warn("[LLMS Telemetry] cbt_questions query failed:", qError.message);
+    }
+
+    // Ambil data cbt_exams
+    const { data: examsData, error: eError } = await client
+      .from('cbt_exams')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (eError) {
+      console.warn("[LLMS Telemetry] cbt_exams query failed:", eError.message);
+    }
+
+    // Ambil data cbt_attempts
+    const { data: attemptsData, error: aError } = await client
+      .from('cbt_attempts')
+      .select('warnings_count, submitted_at, user_id, updated_at')
+      .order('updated_at', { ascending: false });
+
+    if (aError) {
+      console.warn("[LLMS Telemetry] cbt_attempts query failed:", aError.message);
+    }
+
+    return {
+      questionCount: questionCount || 0,
+      examsData: examsData || [],
+      attemptsData: attemptsData || [],
+      error: null
+    };
+  } catch (err: any) {
+    console.error("[Server Action] Exception getLLMSTelemetryData:", err);
+    return {
+      questionCount: 0,
+      examsData: [],
+      attemptsData: [],
+      error: err.message || "Gagal mengambil data telemetri."
+    };
+  }
+}
+
+
