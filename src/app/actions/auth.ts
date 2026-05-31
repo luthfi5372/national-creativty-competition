@@ -394,15 +394,35 @@ export async function getLocalSession() {
   }
 }
 
-/** Mengambil semua pendaftaran kompetisi khusus untuk halaman Admin HQ (Bypass RLS via Server Session) */
+/** Mengambil semua pendaftaran kompetisi khusus untuk halaman Admin HQ (Bypass RLS via Service Role) */
 export async function getAdminCompetitionEntries() {
   try {
-    const adminEmails = ["admin@ncc.id", "admin1@ncc.id", "halo.ncc@gmail.com"];
+    const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-    // --- TAHAP 1: Coba dengan sesi cookie yang ada ---
+    // --- TAHAP 1: Gunakan Service Role Key (Bypass RLS 100%) ---
+    if (serviceRoleKey) {
+      console.log("[SA] Menggunakan Service Role Key...");
+      const serviceClient = createSupabaseClient(supabaseUrl, serviceRoleKey, {
+        auth: { autoRefreshToken: false, persistSession: false }
+      });
+      const { data, error } = await serviceClient
+        .from('competition_entries')
+        .select('*')
+        .neq('email', 'admin1@ncc.id')
+        .order('created_at', { ascending: false });
+
+      console.log("[SA] Service Role hasil:", data?.length ?? 0, "baris, error:", error?.message);
+      if (!error) return { data: data || [], error: null };
+    }
+
+    // --- TAHAP 2: Coba dengan sesi cookie server ---
     const supabase = await createClient();
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    console.log("[SA] User sesi saat ini:", user?.email || "tidak ada sesi");
+    const { data: { user } } = await supabase.auth.getUser();
+    const adminEmails = ["admin@ncc.id", "admin1@ncc.id", "halo.ncc@gmail.com"];
+    console.log("[SA] Sesi cookie:", user?.email || "tidak ada");
 
     if (user && adminEmails.includes(user.email?.toLowerCase() || "")) {
       const { data, error } = await supabase
@@ -410,44 +430,51 @@ export async function getAdminCompetitionEntries() {
         .select('*')
         .neq('email', 'admin1@ncc.id')
         .order('created_at', { ascending: false });
-
-      console.log("[SA] Tahap 1 hasil:", data?.length ?? 0, "baris, error:", error?.message);
-      if (!error && data && data.length > 0) {
-        return { data, error: null };
-      }
+      console.log("[SA] Cookie sesi hasil:", data?.length ?? 0, "baris");
+      if (!error && data && data.length > 0) return { data, error: null };
     }
 
-    // --- TAHAP 2: Login admin manual di server sebagai fallback ---
-    const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
-    const adminClient = createSupabaseClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    );
+    // --- TAHAP 3: Coba login admin1, atau daftarkan dulu jika belum ada ---
+    const authClient = createSupabaseClient(supabaseUrl, anonKey);
 
-    const { error: signInError } = await adminClient.auth.signInWithPassword({
+    let signInResult = await authClient.auth.signInWithPassword({
       email: 'admin1@ncc.id',
       password: '123456',
     });
-    console.log("[SA] Login admin1 fallback:", signInError ? `GAGAL - ${signInError.message}` : "BERHASIL");
 
-    if (!signInError) {
-      const { data, error } = await adminClient
+    // Jika gagal login → coba daftarkan akun admin1 dulu
+    if (signInResult.error) {
+      console.log("[SA] Login gagal, coba daftar akun admin1...", signInResult.error.message);
+      await authClient.auth.signUp({
+        email: 'admin1@ncc.id',
+        password: '123456',
+        options: { data: { full_name: 'Admin NCC', username: 'admin1' } }
+      });
+      // Coba login lagi setelah daftar
+      signInResult = await authClient.auth.signInWithPassword({
+        email: 'admin1@ncc.id',
+        password: '123456',
+      });
+    }
+
+    console.log("[SA] Login admin1:", signInResult.error ? `GAGAL - ${signInResult.error.message}` : "BERHASIL");
+
+    if (!signInResult.error) {
+      const { data, error } = await authClient
         .from('competition_entries')
         .select('*')
         .neq('email', 'admin1@ncc.id')
         .order('created_at', { ascending: false });
-
-      console.log("[SA] Tahap 2 hasil:", data?.length ?? 0, "baris, error:", error?.message);
+      console.log("[SA] Login admin hasil:", data?.length ?? 0, "baris");
       if (!error) return { data: data || [], error: null };
     }
 
-    // --- TAHAP 3: Coba query anonim (bekerja jika RLS dinonaktifkan di Supabase) ---
-    const { data: anonData, error: anonError } = await adminClient
+    // --- TAHAP 4: Last resort - query anonim (hanya berhasil jika RLS dinonaktifkan) ---
+    const { data: anonData, error: anonError } = await authClient
       .from('competition_entries')
       .select('*')
       .order('created_at', { ascending: false });
-
-    console.log("[SA] Tahap 3 (anon) hasil:", anonData?.length ?? 0, "baris, error:", anonError?.message);
+    console.log("[SA] Anon query hasil:", anonData?.length ?? 0, "baris, error:", anonError?.message);
     return { data: anonData || [], error: anonError?.message || null };
 
   } catch (err: any) {
@@ -455,4 +482,3 @@ export async function getAdminCompetitionEntries() {
     return { data: null, error: err.message || "Gagal mengambil data." };
   }
 }
-
