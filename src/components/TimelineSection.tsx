@@ -80,8 +80,10 @@ export default function TimelineSection() {
   const containerRef = useRef<HTMLElement>(null);
   const pathRef = useRef<SVGPathElement>(null);
   const [activeCategory, setActiveCategory] = useState<"all" | "lkti" | "olimpiade" | "speech" | "mtq">("all");
-  const [timelines, setTimelines] = useState(categoryTimelines);
-  
+  const [timelineDates, setTimelineDates] = useState<Record<string, string>>({});
+  const [isMounted, setIsMounted] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
   // Track scroll within this section
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -93,8 +95,6 @@ export default function TimelineSection() {
   
   // State for the traveling object
   const [point, setPoint] = useState({ x: 200, y: 50, angle: 0 });
-  const [isMounted, setIsMounted] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
@@ -117,6 +117,7 @@ export default function TimelineSection() {
 
         if (data && data.content) {
           const config = JSON.parse(data.content);
+          if (!Array.isArray(config)) return;
           
           const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
           const formatDate = (dateStr: string) => {
@@ -145,79 +146,77 @@ export default function TimelineSection() {
             return fallback || "Belum Ditentukan";
           };
 
-          const lktiCat = config.find((c: any) => c.category.includes("LKTI"));
-          const mipaCat = config.find((c: any) => c.category.includes("Olimpiade") || c.category.includes("MIPA"));
-          const speechCat = config.find((c: any) => c.category.includes("Speech"));
-          const mtqCat = config.find((c: any) => c.category.includes("MTQ"));
+          const lktiCat = config.find((c: any) => c.category && c.category.includes("LKTI"));
+          const mipaCat = config.find((c: any) => c.category && (c.category.includes("Olimpiade") || c.category.includes("MIPA")));
+          const speechCat = config.find((c: any) => c.category && c.category.includes("Speech"));
+          const mtqCat = config.find((c: any) => c.category && c.category.includes("MTQ"));
 
           const getItemDate = (catObj: any, waveLabel: string, itemLabel: string, fallback: string) => {
-            if (!catObj) return fallback;
+            if (!catObj || !Array.isArray(catObj.waves)) return fallback;
             const wave = catObj.waves.find((w: any) => w.label === waveLabel);
-            if (!wave) return fallback;
-            const item = wave.items.find((i: any) => i.label.toLowerCase().includes(itemLabel.toLowerCase()));
+            if (!wave || !Array.isArray(wave.items)) return fallback;
+            const item = wave.items.find((i: any) => i.label && i.label.toLowerCase().includes(itemLabel.toLowerCase()));
             if (!item) return fallback;
             return formatRange(item.start, item.end, fallback);
           };
 
-          setTimelines(prev => {
-            const next = JSON.parse(JSON.stringify(prev));
-            
-            // Map LKTI
-            if (lktiCat) {
-              next.lkti[0].date = getItemDate(lktiCat, "Gelombang I", "Pendaftaran", "16 Juli — 3 Sep 2026");
-              next.lkti[1].date = getItemDate(lktiCat, "Gelombang I", "Fullpaper", "12 — 18 Sep 2026");
-              next.lkti[2].date = getItemDate(lktiCat, "Gelombang II", "Pendaftaran", "1 — 25 Oktober 2026");
-              next.lkti[3].date = getItemDate(lktiCat, "Gelombang II", "Fullpaper", "1 — 9 Nov 2026");
-            }
+          const dates: Record<string, string> = {};
+          
+          // Map LKTI
+          if (lktiCat) {
+            dates["lkti-0"] = getItemDate(lktiCat, "Gelombang I", "Pendaftaran", "16 Juli — 3 Sep 2026");
+            dates["lkti-1"] = getItemDate(lktiCat, "Gelombang I", "Fullpaper", "12 — 18 Sep 2026");
+            dates["lkti-2"] = getItemDate(lktiCat, "Gelombang II", "Pendaftaran", "1 — 25 Oktober 2026");
+            dates["lkti-3"] = getItemDate(lktiCat, "Gelombang II", "Fullpaper", "1 — 9 Nov 2026");
+          }
 
-            // Map MIPA
-            if (mipaCat) {
-              next.olimpiade[0].date = getItemDate(mipaCat, "Gelombang I", "Seleksi 1", "10 September 2026");
-              next.olimpiade[1].date = getItemDate(mipaCat, "Gelombang I", "Seleksi 2", "14 September 2026");
-              next.olimpiade[2].date = getItemDate(mipaCat, "Gelombang II", "Simulasi", "29 Oktober 2026");
-              next.olimpiade[3].date = getItemDate(mipaCat, "Gelombang II", "Seleksi", "2 November 2026");
-            }
+          // Map MIPA
+          if (mipaCat) {
+            dates["olimpiade-0"] = getItemDate(mipaCat, "Gelombang I", "Seleksi 1", "10 September 2026");
+            dates["olimpiade-1"] = getItemDate(mipaCat, "Gelombang I", "Seleksi 2", "14 September 2026");
+            dates["olimpiade-2"] = getItemDate(mipaCat, "Gelombang II", "Simulasi", "29 Oktober 2026");
+            dates["olimpiade-3"] = getItemDate(mipaCat, "Gelombang II", "Seleksi", "2 November 2026");
+          }
 
-            // Map Speech
-            if (speechCat) {
-              next.speech[0].date = getItemDate(speechCat, "Gelombang I", "Pendaftaran", "16 Juli — 3 Sep 2026");
-              next.speech[1].date = getItemDate(speechCat, "Gelombang I", "Pengumuman", "14 September 2026");
-              next.speech[2].date = getItemDate(speechCat, "Gelombang II", "Pendaftaran", "1 — 25 Okt 2026");
-              next.speech[3].date = getItemDate(speechCat, "Gelombang II", "Pengumuman", "14 November 2026");
-            }
+          // Map Speech
+          if (speechCat) {
+            dates["speech-0"] = getItemDate(speechCat, "Gelombang I", "Pendaftaran", "16 Juli — 3 Sep 2026");
+            dates["speech-1"] = getItemDate(speechCat, "Gelombang I", "Pengumuman", "14 September 2026");
+            dates["speech-2"] = getItemDate(speechCat, "Gelombang II", "Pendaftaran", "1 — 25 Okt 2026");
+            dates["speech-3"] = getItemDate(speechCat, "Gelombang II", "Pengumuman", "14 November 2026");
+          }
 
-            // Map MTQ
-            if (mtqCat) {
-              next.mtq[0].date = getItemDate(mtqCat, "Gelombang I", "Pendaftaran", "16 Juli — 3 Sep 2026");
-              next.mtq[1].date = getItemDate(mtqCat, "Gelombang I", "Pengumuman", "14 September 2026");
-              next.mtq[2].date = getItemDate(mtqCat, "Gelombang II", "Pendaftaran", "1 — 25 Okt 2026");
-              next.mtq[3].date = getItemDate(mtqCat, "Gelombang II", "Pengumuman", "14 November 2026");
-            }
+          // Map MTQ
+          if (mtqCat) {
+            dates["mtq-0"] = getItemDate(mtqCat, "Gelombang I", "Pendaftaran", "16 Juli — 3 Sep 2026");
+            dates["mtq-1"] = getItemDate(mtqCat, "Gelombang I", "Pengumuman", "14 September 2026");
+            dates["mtq-2"] = getItemDate(mtqCat, "Gelombang II", "Pendaftaran", "1 — 25 Okt 2026");
+            dates["mtq-3"] = getItemDate(mtqCat, "Gelombang II", "Pengumuman", "14 November 2026");
+          }
 
-            // Map All (Umum)
-            next.all[0].date = formatRange(
-              lktiCat?.waves.find((w: any) => w.label === "Gelombang I")?.items.find((i: any) => i.label.toLowerCase().includes("pendaftaran"))?.start,
-              lktiCat?.waves.find((w: any) => w.label === "Gelombang II")?.items.find((i: any) => i.label.toLowerCase().includes("pendaftaran"))?.end,
-              "16 Juli — 25 Oktober 2026"
-            );
-            next.all[1].date = formatRange(
-              mipaCat?.waves.find((w: any) => w.label === "Gelombang I")?.items.find((i: any) => i.label.toLowerCase().includes("seleksi 1"))?.start,
-              mipaCat?.waves.find((w: any) => w.label === "Gelombang II")?.items.find((i: any) => i.label.toLowerCase().includes("seleksi"))?.end,
-              "10 September — 2 November"
-            );
-            next.all[2].date = formatRange(
-              lktiCat?.waves.find((w: any) => w.label === "Gelombang I")?.items.find((i: any) => i.label.toLowerCase().includes("fullpaper"))?.start,
-              lktiCat?.waves.find((w: any) => w.label === "Gelombang II")?.items.find((i: any) => i.label.toLowerCase().includes("fullpaper"))?.end,
-              "12 September — 9 November"
-            );
-            next.all[3].date = formatRange(
-              lktiCat?.waves.find((w: any) => w.label === "Gelombang I")?.items.find((i: any) => i.label.toLowerCase().includes("pengumuman"))?.start,
-              lktiCat?.waves.find((w: any) => w.label === "Gelombang II")?.items.find((i: any) => i.label.toLowerCase().includes("pengumuman"))?.end,
-              "26 September — 16 November"
-            );
+          // Map All (Umum)
+          dates["all-0"] = formatRange(
+            lktiCat?.waves?.find((w: any) => w.label === "Gelombang I")?.items?.find((i: any) => i.label && i.label.toLowerCase().includes("pendaftaran"))?.start,
+            lktiCat?.waves?.find((w: any) => w.label === "Gelombang II")?.items?.find((i: any) => i.label && i.label.toLowerCase().includes("pendaftaran"))?.end,
+            "16 Juli — 25 Oktober 2026"
+          );
+          dates["all-1"] = formatRange(
+            mipaCat?.waves?.find((w: any) => w.label === "Gelombang I")?.items?.find((i: any) => i.label && i.label.toLowerCase().includes("seleksi 1"))?.start,
+            mipaCat?.waves?.find((w: any) => w.label === "Gelombang II")?.items?.find((i: any) => i.label && i.label.toLowerCase().includes("seleksi"))?.end,
+            "10 September — 2 November 2026"
+          );
+          dates["all-2"] = formatRange(
+            lktiCat?.waves?.find((w: any) => w.label === "Gelombang I")?.items?.find((i: any) => i.label && i.label.toLowerCase().includes("fullpaper"))?.start,
+            lktiCat?.waves?.find((w: any) => w.label === "Gelombang II")?.items?.find((i: any) => i.label && i.label.toLowerCase().includes("fullpaper"))?.end,
+            "12 September — 9 November 2026"
+          );
+          dates["all-3"] = formatRange(
+            lktiCat?.waves?.find((w: any) => w.label === "Gelombang I")?.items?.find((i: any) => i.label && i.label.toLowerCase().includes("pengumuman"))?.start,
+            lktiCat?.waves?.find((w: any) => w.label === "Gelombang II")?.items?.find((i: any) => i.label && i.label.toLowerCase().includes("pengumuman"))?.end,
+            "26 September — 16 November 2026"
+          );
 
-            return next;
-          });
+          setTimelineDates(dates);
         }
       } catch (err) {
         console.error("Gagal load timeline config di landing page:", err);
@@ -251,7 +250,7 @@ export default function TimelineSection() {
     }
   });
 
-  const currentTimeline = timelines[activeCategory];
+  const currentTimeline = categoryTimelines[activeCategory];
 
   return (
     <section ref={containerRef} id="jadwal" className="relative z-10 min-h-screen w-full py-24 px-6 sm:px-10 bg-transparent overflow-hidden flex flex-col items-center justify-center">
@@ -343,10 +342,50 @@ export default function TimelineSection() {
           </div>
 
           {/* Nodes */}
-          {currentTimeline && currentTimeline[0] && <TimelineNode item={currentTimeline[0]} top="9.09%" left="25%" align="left" progress={smoothProgress} trigger={0.15} />}
-          {currentTimeline && currentTimeline[1] && <TimelineNode item={currentTimeline[1]} top="36.36%" left="75%" align="right" progress={smoothProgress} trigger={0.4} />}
-          {currentTimeline && currentTimeline[2] && <TimelineNode item={currentTimeline[2]} top="63.63%" left="25%" align="left" progress={smoothProgress} trigger={0.7} />}
-          {currentTimeline && currentTimeline[3] && <TimelineNode item={currentTimeline[3]} top="90.9%" left="75%" align="right" progress={smoothProgress} trigger={0.9} />}
+          {currentTimeline && currentTimeline[0] && (
+            <TimelineNode 
+              item={currentTimeline[0]} 
+              dateOverride={timelineDates[`${activeCategory}-0`]}
+              top="9.09%" 
+              left="25%" 
+              align="left" 
+              progress={smoothProgress} 
+              trigger={0.15} 
+            />
+          )}
+          {currentTimeline && currentTimeline[1] && (
+            <TimelineNode 
+              item={currentTimeline[1]} 
+              dateOverride={timelineDates[`${activeCategory}-1`]}
+              top="36.36%" 
+              left="75%" 
+              align="right" 
+              progress={smoothProgress} 
+              trigger={0.4} 
+            />
+          )}
+          {currentTimeline && currentTimeline[2] && (
+            <TimelineNode 
+              item={currentTimeline[2]} 
+              dateOverride={timelineDates[`${activeCategory}-2`]}
+              top="63.63%" 
+              left="25%" 
+              align="left" 
+              progress={smoothProgress} 
+              trigger={0.7} 
+            />
+          )}
+          {currentTimeline && currentTimeline[3] && (
+            <TimelineNode 
+              item={currentTimeline[3]} 
+              dateOverride={timelineDates[`${activeCategory}-3`]}
+              top="90.9%" 
+              left="75%" 
+              align="right" 
+              progress={smoothProgress} 
+              trigger={0.9} 
+            />
+          )}
         </div>
       )}
 
@@ -360,7 +399,11 @@ export default function TimelineSection() {
         
         <div className="space-y-12">
           {currentTimeline.map((item, i) => (
-            <MobileTimelineNode key={`${activeCategory}-${i}`} item={item} />
+            <MobileTimelineNode 
+              key={`${activeCategory}-${i}`} 
+              item={item} 
+              dateOverride={timelineDates[`${activeCategory}-${i}`]}
+            />
           ))}
         </div>
       </div>
@@ -387,6 +430,7 @@ export default function TimelineSection() {
 
 interface TimelineNodeProps {
   item: any;
+  dateOverride?: string;
   top: string;
   left: string;
   align: "left" | "right";
@@ -394,7 +438,7 @@ interface TimelineNodeProps {
   trigger: number;
 }
 
-function TimelineNode({ item, top, left, align, progress, trigger }: TimelineNodeProps) {
+function TimelineNode({ item, dateOverride, top, left, align, progress, trigger }: TimelineNodeProps) {
   const Icon = item.icon;
   const [active, setActive] = useState(false);
   
@@ -422,7 +466,7 @@ function TimelineNode({ item, top, left, align, progress, trigger }: TimelineNod
         <div className={`glass-panel w-72 lg:w-80 p-6 bg-white border border-slate-100 rounded-3xl shadow-lg transition-all hover:-translate-y-1 hover:shadow-xl ${align === 'left' ? 'text-right' : 'text-left'}`}>
           <div className={`flex items-center gap-3 mb-3 ${align === 'left' ? 'justify-end' : 'justify-start'} ${item.color}`}>
              {align !== 'left' && <Calendar size={14} />}
-             <span className="text-xs font-bold uppercase tracking-wider">{item.date}</span>
+             <span className="text-xs font-bold uppercase tracking-wider">{dateOverride || item.date}</span>
              {align === 'left' && <Calendar size={14} />}
           </div>
           <h3 className="text-xl font-bold mb-2 text-slate-900">{item.phase}</h3>
@@ -435,9 +479,10 @@ function TimelineNode({ item, top, left, align, progress, trigger }: TimelineNod
 
 interface MobileTimelineNodeProps {
   item: any;
+  dateOverride?: string;
 }
 
-function MobileTimelineNode({ item }: MobileTimelineNodeProps) {
+function MobileTimelineNode({ item, dateOverride }: MobileTimelineNodeProps) {
   const Icon = item.icon;
   const [active, setActive] = useState(false);
 
@@ -461,7 +506,7 @@ function MobileTimelineNode({ item }: MobileTimelineNodeProps) {
       <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm w-full transition-all duration-300 hover:shadow-md">
         <div className={`flex items-center gap-2 mb-2 ${item.color}`}>
           <Calendar size={12} />
-          <span className="text-xs font-bold uppercase">{item.date}</span>
+          <span className="text-xs font-bold uppercase">{dateOverride || item.date}</span>
         </div>
         <h3 className="text-lg font-bold mb-2 text-slate-900">{item.phase}</h3>
         <p className="text-sm text-slate-600 leading-relaxed">{item.description}</p>
