@@ -6,15 +6,29 @@ import { useGSAP } from "@gsap/react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 const Nicci = ({ size }: { size: number }) => (
-  <svg viewBox="0 0 1500 1925" width={size} height={size * 1.283} style={{ overflow: "visible" }}>
-    <image href="/NICCI_NICCO_DEPAN/NICCI NICCO.png" x="0" y="0" width="3000" height="1925" />
-  </svg>
+  <div 
+    style={{
+      width: `${size}px`,
+      height: `${size * 1.283}px`,
+      backgroundImage: 'url("/NICCI_NICCO_DEPAN/NICCI%20NICCO.png")',
+      backgroundSize: '200% 100%',
+      backgroundPosition: 'left center',
+      backgroundRepeat: 'no-repeat'
+    }}
+  />
 );
 
 const Nicco = ({ size }: { size: number }) => (
-  <svg viewBox="0 0 1500 1925" width={size} height={size * 1.283} style={{ overflow: "visible" }}>
-    <image href="/NICCI_NICCO_DEPAN/NICCI NICCO.png" x="-1500" y="0" width="3000" height="1925" />
-  </svg>
+  <div 
+    style={{
+      width: `${size}px`,
+      height: `${size * 1.283}px`,
+      backgroundImage: 'url("/NICCI_NICCO_DEPAN/NICCI%20NICCO.png")',
+      backgroundSize: '200% 100%',
+      backgroundPosition: 'right center',
+      backgroundRepeat: 'no-repeat'
+    }}
+  />
 );
 
 // Pre-generated positions to avoid hydration mismatch
