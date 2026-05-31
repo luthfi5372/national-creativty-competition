@@ -356,6 +356,51 @@ export default function IndonesiaMap() {
               </div>
             </div>
 
+            {/* Real-time Regional Breakdown Panel */}
+            <div className="p-6 bg-white/60 backdrop-blur-md rounded-[2rem] border border-slate-100 shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-black text-slate-700 uppercase tracking-wider">Sebaran Wilayah (Real-Time)</h4>
+                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-50 border border-emerald-100 text-emerald-600 rounded-full text-[9px] font-bold uppercase tracking-wider animate-pulse">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" /> Live DB Sync
+                </div>
+              </div>
+              
+              <div className="space-y-2.5 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
+                {Object.entries(stats.regionStats || {})
+                  .filter(([_, count]) => count > 0)
+                  .sort((a, b) => b[1] - a[1]) // Sort by highest count first
+                  .map(([region, count]) => {
+                    const percentage = stats.totalParticipants > 0 
+                      ? Math.round((count / stats.totalParticipants) * 100) 
+                      : 0;
+                    
+                    return (
+                      <div key={region} className="space-y-1">
+                        <div className="flex justify-between text-[11px] font-bold text-slate-600">
+                          <span className="uppercase tracking-tight">{region}</span>
+                          <span>{count} Peserta ({percentage}%)</span>
+                        </div>
+                        <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-indigo-600 rounded-full transition-all duration-1000"
+                            style={{ width: `${percentage}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                {(!stats.regionStats || Object.values(stats.regionStats).every(c => c === 0)) && (
+                  <p className="text-[11px] text-slate-400 font-medium italic text-center py-2">
+                    Belum ada data pendaftar terverifikasi.
+                  </p>
+                )}
+              </div>
+              
+              <p className="text-[10px] text-slate-400 font-medium leading-relaxed pt-1.5 border-t border-slate-100">
+                *Data di atas dihitung otomatis secara real-time dari seluruh berkas pendaftaran peserta yang telah berhasil terverifikasi oleh panitia di database pusat.
+              </p>
+            </div>
+
             <div className="p-5 bg-indigo-600 rounded-[2rem] text-white shadow-2xl shadow-indigo-200">
                <div className="flex items-center gap-3 mb-2">
                  <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
