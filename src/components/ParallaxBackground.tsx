@@ -36,8 +36,8 @@ const allIconsMapped = categoryIcons.flatMap(cat =>
 // Pre-generated positions to avoid hydration mismatch
 const generateElements = () => {
   const elements = [];
-  // Generate 150 elements to ensure the whole long page is populated
-  for (let i = 0; i < 150; i++) {
+  // Generate 80 elements to ensure the whole long page is populated (plenty for 600vh)
+  for (let i = 0; i < 80; i++) {
     const itemConfig = allIconsMapped[i % allIconsMapped.length];
     
     // Spread vertically across 600vh (6 screen heights)
@@ -88,36 +88,21 @@ export default function ParallaxBackground() {
     if (!mounted || isMobile) return; // Completely skip heavy scroll triggers on mobile
     gsap.registerPlugin(ScrollTrigger);
 
-    const parallaxItems = gsap.utils.toArray<HTMLElement>(".parallax-item");
-
-    parallaxItems.forEach((item) => {
-      const depth = parseFloat(item.dataset.depth || "1");
-      
-      // Move items UPwards as user scrolls DOWN
-      // Deeper items (higher depth) move faster
-      gsap.to(item, {
-        y: () => -1 * window.innerHeight * depth,
-        ease: "none",
-        scrollTrigger: {
-          trigger: document.body,
-          start: "top top",
-          end: "bottom bottom",
-          scrub: 1.5, // Smooth scrubbing taking 1.5s to catch up
-        }
-      });
-      
-      // Add a slight continuous rotation
-      gsap.to(item, {
+    // Group-based animation by depth levels (1 to 4)
+    // Collapses ScrollTrigger footprint from 300 instances to just 4!
+    for (let d = 1; d <= 4; d++) {
+      gsap.to(`.parallax-depth-${d}`, {
+        y: () => -1 * window.innerHeight * d,
         rotation: "+=45",
         ease: "none",
         scrollTrigger: {
           trigger: document.body,
           start: "top top",
           end: "bottom bottom",
-          scrub: true
+          scrub: 1.5,
         }
       });
-    });
+    }
     
   }, { scope: containerRef, dependencies: [mounted, isMobile] });
 
@@ -138,7 +123,7 @@ export default function ParallaxBackground() {
       {displayedItems.map((item) => (
         <div
           key={item.id}
-          className={`parallax-item absolute ${item.color}`}
+          className={`parallax-item parallax-depth-${item.depth} absolute ${item.color}`}
           data-depth={item.depth}
           style={{
             left: `${item.x}vw`,
