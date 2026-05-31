@@ -402,7 +402,7 @@ export default function StatusCards({
             <h3 className="font-bold text-lg">Proses Verifikasi</h3>
           </div>
           <p className="text-sm text-amber-50 font-medium leading-relaxed mb-4">
-            Berkas pendaftaran <strong className="text-white underline">{userEntry?.competition_type || "Kompetisi"}</strong> Anda sedang diperiksa oleh Markas Besar. 
+            Berkas pendaftaran <strong className="text-white underline">{userEntry?.competition_type || userEntry?.category || "Kompetisi"}</strong> Anda sedang diperiksa oleh Markas Besar. 
           </p>
           <div className="bg-black/10 rounded-xl p-3 text-xs font-bold uppercase tracking-wider text-center border border-white/20">
             Mohon Tunggu 1x24 Jam
@@ -444,7 +444,7 @@ export default function StatusCards({
             </div>
 
             <p className="text-[11px] text-slate-500 font-medium leading-relaxed mb-4">
-              Untuk mengaktifkan kepesertaan Anda di cabang <strong className="text-indigo-600">{userEntry.competition_type}</strong>, silakan lakukan transfer administrasi pendaftaran:
+              Untuk mengaktifkan kepesertaan Anda di cabang <strong className="text-indigo-600">{userEntry.competition_type || userEntry.category}</strong>, silakan lakukan transfer administrasi pendaftaran:
             </p>
 
             {/* Bank Card Info */}
@@ -624,7 +624,7 @@ export default function StatusCards({
               })()}
 
               {[
-                ...((userEntry.competition_type === "LKTI Nasional" || userEntry.competition_type === "Olimpiade MIPA") ? [
+                ...((userEntry.competition_type === "LKTI Nasional" || userEntry.category === "LKTI Nasional" || userEntry.competition_type === "Olimpiade MIPA" || userEntry.category === "Olimpiade MIPA") ? [
                   { label: "Nama Ketua (Anggota 1)", value: userEntry.full_name },
                   { label: "Nama Tim", value: userEntry.team_name },
                   { label: "NISN Ketua", value: userEntry.nisn }
@@ -636,7 +636,7 @@ export default function StatusCards({
                 { label: "WhatsApp", value: userEntry.phone },
                 { label: "Provinsi", value: userEntry.province },
                 // Tambahkan data Anggota 2 jika kategori Tim
-                ...((userEntry.competition_type === "LKTI Nasional" || userEntry.competition_type === "Olimpiade MIPA") ? [
+                ...((userEntry.competition_type === "LKTI Nasional" || userEntry.category === "LKTI Nasional" || userEntry.competition_type === "Olimpiade MIPA" || userEntry.category === "Olimpiade MIPA") ? [
                   { label: "Nama Anggota Tim", value: userEntry.participant2_name },
                   { label: "NISN Anggota Tim", value: userEntry.participant2_nisn }
                 ] : [])
@@ -693,7 +693,7 @@ export default function StatusCards({
             <form onSubmit={handleUpdateProfile} className="space-y-3 text-xs">
               <input 
                 type="text" 
-                placeholder={(userEntry.competition_type === "LKTI Nasional" || userEntry.competition_type === "Olimpiade MIPA") ? "Nama Ketua (Anggota 1)" : "Nama Lengkap"} 
+                placeholder={(userEntry.competition_type === "LKTI Nasional" || userEntry.category === "LKTI Nasional" || userEntry.competition_type === "Olimpiade MIPA" || userEntry.category === "Olimpiade MIPA") ? "Nama Ketua (Anggota 1)" : "Nama Lengkap"} 
                 className="w-full p-2.5 bg-slate-50 border rounded-xl font-semibold" 
                 value={profileForm.full_name} 
                 onChange={(e) => setProfileForm({...profileForm, full_name: e.target.value})} 
@@ -703,7 +703,7 @@ export default function StatusCards({
               <div className="grid grid-cols-2 gap-2">
                 <input 
                   type="text" 
-                  placeholder={(userEntry.competition_type === "LKTI Nasional" || userEntry.competition_type === "Olimpiade MIPA") ? "NISN Ketua" : "NISN"} 
+                  placeholder={(userEntry.competition_type === "LKTI Nasional" || userEntry.category === "LKTI Nasional" || userEntry.competition_type === "Olimpiade MIPA" || userEntry.category === "Olimpiade MIPA") ? "NISN Ketua" : "NISN"} 
                   className="w-full p-2.5 bg-slate-50 border rounded-xl font-semibold" 
                   value={profileForm.nisn} 
                   onChange={(e) => setProfileForm({...profileForm, nisn: e.target.value})} 
@@ -756,7 +756,7 @@ export default function StatusCards({
               </div>
               
               {/* Form Tambahan Anggota 2 jika kategori Tim */}
-              {(userEntry.competition_type === "LKTI Nasional" || userEntry.competition_type === "Olimpiade MIPA") && (
+              {(userEntry.competition_type === "LKTI Nasional" || userEntry.category === "LKTI Nasional" || userEntry.competition_type === "Olimpiade MIPA" || userEntry.category === "Olimpiade MIPA") && (
                 <div className="pt-2 space-y-2 border-t border-dashed border-slate-200 mt-2">
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Data Tim & Anggota 2</p>
                   <input type="text" placeholder="Nama Tim" className="w-full p-2.5 bg-slate-50 border rounded-xl font-bold" value={profileForm.team_name} onChange={(e) => setProfileForm({...profileForm, team_name: e.target.value})} />
@@ -786,7 +786,7 @@ export default function StatusCards({
                 <div className="text-center">
                   <p className="text-xs font-black text-slate-700">Akses Pengumpulan Ditutup</p>
                   <p className="text-[10px] text-slate-500 font-medium mt-1 leading-relaxed max-w-[220px] mx-auto">
-                    Portal pengumpulan karya Gelombang I & II untuk kategori <span className="font-bold text-indigo-600">{userEntry.competition_type}</span> saat ini sedang ditutup.
+                    Portal pengumpulan karya Gelombang I & II untuk kategori <span className="font-bold text-indigo-600">{userEntry.competition_type || userEntry.category}</span> saat ini sedang ditutup.
                   </p>
                 </div>
               </div>
@@ -957,7 +957,7 @@ export default function StatusCards({
               <h4 className="font-extrabold text-slate-800 text-sm flex items-center gap-1.5">
                 Status: Terdaftar <span className="inline-block px-1.5 py-0.5 rounded text-[8px] font-black tracking-wider bg-emerald-100 text-emerald-700 uppercase">{userEntry.payment_status}</span>
               </h4>
-              <p className="text-[11px] text-slate-400 mt-0.5 font-medium">Terdaftar di bidang: <span className="font-bold text-slate-600">{userEntry.competition_type}</span></p>
+              <p className="text-[11px] text-slate-400 mt-0.5 font-medium">Terdaftar di bidang: <span className="font-bold text-slate-600">{userEntry.competition_type || userEntry.category}</span></p>
             </div>
             <ChevronRight size={18} className="text-slate-400 group-hover:translate-x-1 transition-transform shrink-0" />
           </button>

@@ -162,7 +162,7 @@ export default function UserDashboard() {
             if (parsed.waves) setPortalWaves(parsed.waves);
             if (parsed.paymentRequirementStage) setPaymentRequirementStage(parsed.paymentRequirementStage);
             if (parsed.isRegistrationOpen !== undefined) setIsRegistrationOpen(parsed.isRegistrationOpen);
-            const userCategory = entry?.competition_type; 
+             const userCategory = entry?.competition_type || entry?.category; 
             
             let matchingKeyPrefix = "";
             if (userCategory === "Olimpiade MIPA") matchingKeyPrefix = "mipa";
@@ -279,7 +279,7 @@ export default function UserDashboard() {
               if (parsed.paymentRequirementStage) setPaymentRequirementStage(parsed.paymentRequirementStage);
               if (parsed.isRegistrationOpen !== undefined) setIsRegistrationOpen(parsed.isRegistrationOpen);
               
-              const userCategory = userEntry?.competition_type; 
+              const userCategory = userEntryRef.current?.competition_type || userEntryRef.current?.category; 
               let matchingKeyPrefix = "";
               if (userCategory === "Olimpiade MIPA") matchingKeyPrefix = "mipa";
               else if (userCategory === "Speech Contest") matchingKeyPrefix = "speech";
@@ -518,7 +518,7 @@ export default function UserDashboard() {
           <div className="lg:col-span-2">
             <AnnouncementBoard announcements={announcements} isLoading={isLoading} />
             <TimelineWidget 
-              userCategory={userEntry?.competition_type} 
+              userCategory={userEntry?.competition_type || userEntry?.category} 
               userStatus={userEntry?.payment_status}
               notes={userEntry?.notes}
               globalTimeline={globalTimeline}
@@ -528,7 +528,7 @@ export default function UserDashboard() {
             <SchoolHub userEntry={userEntry} currentUser={currentUser} />
             
             {/* KARTU AKSES PORTAL UJIAN LLMS (KHUSUS MIPA) */}
-            {userEntry?.competition_type === 'Olimpiade MIPA' && userEntry?.payment_status === 'Verified' && (
+            {((userEntry?.competition_type === 'Olimpiade MIPA' || userEntry?.category === 'Olimpiade MIPA') && userEntry?.payment_status === 'Verified') && (
               <div className="mt-6 bg-gradient-to-br from-[#5145cd] to-[#372b9c] rounded-[24px] p-6 text-white shadow-xl shadow-indigo-200/50 relative overflow-hidden group">
                 {/* Aksen Latar Belakang */}
                 <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-2xl transform translate-x-10 -translate-y-10 group-hover:scale-110 transition-transform duration-700"></div>

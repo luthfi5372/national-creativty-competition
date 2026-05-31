@@ -10,7 +10,7 @@ interface DashboardHeaderProps {
 
 export default function DashboardHeader({ userEntry, currentUser, handleLogout, progress }: DashboardHeaderProps) {
   return (
-    <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+    <header className="sticky top-0 z-[40] -mx-4 px-4 py-4 flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 bg-slate-50/90 backdrop-blur-md border-b border-slate-200/50">
       <div>
         <h1 className="text-3xl font-black text-slate-800 tracking-tight">Halo, Peserta NCC!</h1>
         <p className="text-slate-500 font-medium mt-1">Selamat datang di Dasbor Resmi National Creativity Competition 13th.</p>
