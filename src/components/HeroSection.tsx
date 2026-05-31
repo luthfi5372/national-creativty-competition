@@ -127,96 +127,28 @@ export default function HeroSection() {
           </motion.div>
         </motion.div>
 
-        {/* RIGHT COLUMN: Connected Chains/Network Visualization */}
-        <div className="relative w-full aspect-square md:aspect-[4/5] flex items-center justify-center">
-          
-          {/* Main Central Element: Trophy / Logo Placeholder */}
-          <motion.div 
-            animate={{ y: [-10, 10, -10] }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute z-20 w-32 h-32 md:w-40 md:h-40 bg-white/70 backdrop-blur-xl border border-white/60 shadow-2xl rounded-full flex flex-col items-center justify-center p-4 md:p-6"
-          >
-            <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center mb-1 md:mb-2 shadow-lg shadow-indigo-200">
-              <LineDrawIcon icon={Trophy} size={24} className="text-white md:hidden" delay={1.2} />
-              <LineDrawIcon icon={Trophy} size={32} className="text-white hidden md:inline-flex" delay={1.2} />
-            </div>
-            <span className="font-bold text-slate-800 text-xs md:text-sm tracking-widest text-center">NCC 13TH</span>
-          </motion.div>
-
-          {/* Orbiting / Floating Nicco Mascot (Blue) */}
+        {/* RIGHT COLUMN: Large Combined Waving Mascots (Nicci & Nicco) */}
+        <div className="relative w-full flex items-center justify-center min-h-[350px] md:min-h-[500px]">
           <motion.div 
             animate={{ 
-              y: [-15, 15, -15], 
-              rotate: [4, -4, 4] 
+              y: [-12, 12, -12],
+              rotate: [-1.5, 1.5, -1.5]
             }}
             transition={{ 
-              duration: 5, 
+              duration: 6, 
               repeat: Infinity, 
-              ease: "easeInOut", 
-              delay: 0.5 
+              ease: "easeInOut" 
             }}
-            className="absolute top-0 right-0 md:top-6 md:right-0 lg:-right-8 scale-90 md:scale-110 origin-top-right z-10 w-28 md:w-36 aspect-[1275/1653] flex items-center justify-center pointer-events-none"
+            className="w-full max-w-[520px] md:max-w-[600px] lg:max-w-[650px] aspect-[2550/1702] relative pointer-events-none"
           >
             <img 
-              src="/nicco.svg" 
-              alt="Nicco Mascot" 
-              className="w-full h-full object-contain filter drop-shadow-[0_15px_20px_rgba(99,102,241,0.15)]" 
+              src="/mascots.svg" 
+              alt="Nicci & Nicco Mascots" 
+              className="w-full h-full object-contain filter drop-shadow-[0_25px_50px_-12px_rgba(99,102,241,0.18)]" 
             />
           </motion.div>
-
-          <motion.div 
-            animate={{ y: [15, -15, 15], rotate: [2, -2, 2] }}
-            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-            className="absolute bottom-2 left-2 md:bottom-20 md:left-0 lg:-left-12 scale-75 md:scale-100 origin-bottom-left z-30 w-56 bg-white/90 backdrop-blur-md border border-slate-100 shadow-xl rounded-2xl p-4 flex items-center gap-3"
-          >
-            <div className="w-10 h-10 rounded-xl bg-emerald-100 flex py-2 shrink-0 items-center justify-center text-emerald-600">
-              <LineDrawIcon icon={Mic} size={20} delay={1.6} />
-            </div>
-            <div>
-              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Kategori</div>
-              <div className="text-sm font-bold text-slate-800">Speech Contest</div>
-            </div>
-          </motion.div>
-
-          {/* Orbiting / Floating Nicci Mascot (Pink) */}
-          <motion.div 
-            animate={{ 
-              y: [-10, 10, -10], 
-              x: [-6, 6, -6], 
-              rotate: [-5, 5, -5] 
-            }}
-            transition={{ 
-              duration: 4.5, 
-              repeat: Infinity, 
-              ease: "easeInOut", 
-              delay: 1.5 
-            }}
-            className="absolute hidden md:flex top-1/2 -translate-y-1/2 -left-6 lg:-left-20 z-10 w-28 md:w-36 aspect-[1275/1699] items-center justify-center pointer-events-none"
-          >
-            <img 
-              src="/nicci.svg" 
-              alt="Nicci Mascot" 
-              className="w-full h-full object-contain filter drop-shadow-[0_15px_20px_rgba(236,72,153,0.15)]" 
-            />
-          </motion.div>
-
-          {/* Decorative Institution Badge */}
-          <motion.div 
-             animate={{ y: [10, -10, 10] }}
-             transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-             className="absolute bottom-2 right-2 md:bottom-10 md:right-4 lg:-right-12 scale-75 md:scale-100 origin-bottom-right z-20 bg-indigo-600 text-white px-5 py-3 rounded-2xl shadow-lg shadow-indigo-600/30 flex items-center gap-3"
-          >
-             <GraduationCap size={24} className="text-indigo-200" />
-             <div className="text-left">
-               <div className="text-[10px] font-medium text-indigo-200 tracking-wide uppercase">Diselenggarakan oleh</div>
-               <div className="text-sm font-bold whitespace-nowrap">SMA Darul Ulum 1</div>
-             </div>
-          </motion.div>
-
         </div>
       </div>
     </section>
   );
 }
-
-
