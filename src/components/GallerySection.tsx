@@ -8,6 +8,7 @@ import { useGSAP } from "@gsap/react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 const filters = ["ALL", "ACADEMIC", "SPEECH", "ARTS", "GALLERY"];
 
@@ -166,9 +167,12 @@ export default function GallerySection() {
                 )}
               >
                 {/* Image Rendering */}
-                <img 
+                <Image 
                   src={item.src} 
                   alt={item.label} 
+                  fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
+                  priority={item.id === "admin-0" || item.id === "admin-1"}
                   className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 />
 

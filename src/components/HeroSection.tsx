@@ -66,9 +66,9 @@ export default function HeroSection() {
             className="text-5xl sm:text-6xl md:text-7xl font-bold leading-[1.05] tracking-tight mb-6 text-slate-900"
             style={{ fontFamily: "var(--font-display, var(--font-space-grotesk))" }}
           >
-            <TextAnimate text="Tumbuhkan" type="word" delay={0.5} className="block" />
-            <TextAnimate text="Inovasi Nyata" type="word" delay={0.7} className="block text-indigo-600" />
-            <TextAnimate text="Di Sini." type="word" delay={0.9} className="block" />
+            <span className="block animate-fade-in-up [animation-delay:100ms] opacity-0">Tumbuhkan</span>
+            <span className="block text-indigo-600 animate-fade-in-up [animation-delay:300ms] opacity-0">Inovasi Nyata</span>
+            <span className="block animate-fade-in-up [animation-delay:500ms] opacity-0">Di Sini.</span>
           </h1>
 
           <motion.p
