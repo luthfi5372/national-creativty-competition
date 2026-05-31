@@ -1194,7 +1194,12 @@ function ModernHQDashboardContent() {
     } finally {
       // Selalu logout & redirect meskipun sync gagal
       try { await supabase.auth.signOut(); } catch (_) {}
-      router.push('/login');
+      try {
+        const { logoutLocalUser } = await import("@/app/actions/auth");
+        await logoutLocalUser();
+      } catch (_) {
+        router.push('/login');
+      }
     }
   };
 

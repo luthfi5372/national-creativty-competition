@@ -33,8 +33,13 @@ export default function UserDashboard() {
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
-    await supabase.auth.signOut();
-    router.push('/login');
+    try { await supabase.auth.signOut(); } catch (_) {}
+    try {
+      const { logoutLocalUser } = await import("@/app/actions/auth");
+      await logoutLocalUser();
+    } catch (_) {
+      router.push('/login');
+    }
   };
 
   const [showForm, setShowForm] = useState(false);

@@ -274,8 +274,13 @@ export default function SettingsDashboard() {
       if (!confirmed) return;
     }
 
-    await supabase.auth.signOut();
-    router.push('/login');
+    try { await supabase.auth.signOut(); } catch (_) {}
+    try {
+      const { logoutLocalUser } = await import("@/app/actions/auth");
+      await logoutLocalUser();
+    } catch (_) {
+      router.push('/login');
+    }
   };
 
   // Toggle Gerbang Pendaftaran langsung
