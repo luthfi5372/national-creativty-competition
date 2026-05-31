@@ -1735,8 +1735,8 @@ function ModernHQDashboardContent() {
     // Fungsi penarik data utama — selalu pastikan sesi valid dulu
     const fetchRealData = async (isRetry = false) => {
       try {
-        // Selalu pastikan sesi valid sebelum fetch
-        await ensureAdminSession();
+        // Jalankan pemulihan sesi di background agar tidak memblokir render data utama!
+        ensureAdminSession();
 
         const { data, error } = await getAdminCompetitionEntries() as any;
 
@@ -1825,8 +1825,8 @@ function ModernHQDashboardContent() {
         { event: '*', schema: 'public', table: 'competition_entries' },
         async (payload) => {
           console.log("Radar mendeteksi pergerakan data!", payload);
-          // Pastikan sesi valid sebelum re-fetch dari radar
-          await ensureAdminSession();
+          // Pastikan sesi valid sebelum re-fetch dari radar (jalankan di background)
+          ensureAdminSession();
           await fetchRealData();
         }
       )
