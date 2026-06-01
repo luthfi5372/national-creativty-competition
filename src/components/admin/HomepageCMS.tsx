@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { 
   Trophy, Banknote, ScrollText, GraduationCap, Medal, Award, Users, BookOpen, Heart, Zap, Sparkles, Smartphone, Globe, CheckCircle2,
   Trash2, Pencil, Save, X, History, Plus, FileText, Loader2, AlertCircle, Clock, Brain, Star, Video, Upload, Calendar
@@ -333,14 +334,17 @@ export default function HomepageCMS() {
 
   return (
     <div className="space-y-8 animate-fade-in-up">
-      {/* LOCAL TOAST SYSTEM */}
-      {toast.show && (
-        <div className={`fixed bottom-6 right-6 z-50 px-6 py-4 rounded-2xl shadow-xl flex items-center gap-3 border animate-bounce ${
-          toast.type === "success" ? "bg-emerald-500 text-white border-emerald-400" : "bg-rose-500 text-white border-rose-400"
+      {/* LOCAL TOAST SYSTEM (PORTALED TO document.body WITH MAXIMUM Z-INDEX OVER ALL BACKDROPS) */}
+      {toast.show && typeof document !== "undefined" && createPortal(
+        <div className={`fixed top-6 left-1/2 -translate-x-1/2 z-[9999] px-6 py-4 rounded-2xl shadow-xl flex items-center gap-3 border animate-in slide-in-from-top duration-300 ${
+          toast.type === "success" 
+            ? "bg-emerald-500 text-white border-emerald-400 shadow-lg shadow-emerald-500/20" 
+            : "bg-rose-500 text-white border-rose-400 shadow-lg shadow-rose-500/20"
         }`}>
           {toast.type === "success" ? <CheckCircle2 size={20} /> : <AlertCircle size={20} />}
           <span className="text-sm font-bold">{toast.message}</span>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* 1. HEADER & GLOBAL CONTROLS */}
@@ -484,7 +488,7 @@ export default function HomepageCMS() {
                           </div>
                         </div>
                         
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center gap-1.5 z-20">
                           <button 
                             onClick={() => openEditModal(item)}
                             className="w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:border-indigo-200 flex items-center justify-center transition-all shadow-sm"
@@ -560,8 +564,8 @@ export default function HomepageCMS() {
                               </div>
                             </div>
 
-                            {/* Actions Overlay */}
-                            <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            {/* Actions Overlay (Always visible for robust UX on all devices) */}
+                            <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 z-20">
                               <button 
                                 onClick={() => openEditModal(feat)}
                                 className="w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:border-indigo-200 flex items-center justify-center transition-all shadow-sm"
@@ -702,8 +706,8 @@ export default function HomepageCMS() {
                               </span>
                             </div>
 
-                            {/* Controls Overlay */}
-                            <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            {/* Controls Overlay (Always visible for robust UX on all devices) */}
+                            <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 z-20">
                               <button 
                                 onClick={() => openEditModal(item)}
                                 className="w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:border-indigo-200 flex items-center justify-center transition-all shadow-sm"
