@@ -83,6 +83,25 @@ const categoryTimelines = {
   ]
 };
 
+const generateSvgPath = (numItems: number) => {
+  if (numItems <= 1) {
+    return "M 280 50 C 280 150, 520 150, 520 250";
+  }
+  
+  let path = "M 280 50";
+  for (let i = 0; i < numItems - 1; i++) {
+    const yStart = 50 + i * 200;
+    const yEnd = yStart + 200;
+    const isGoingRight = i % 2 === 0;
+    if (isGoingRight) {
+      path += ` C 280 ${yStart + 100}, 520 ${yStart + 100}, 520 ${yEnd}`;
+    } else {
+      path += ` C 520 ${yStart + 100}, 280 ${yStart + 100}, 280 ${yEnd}`;
+    }
+  }
+  return path;
+};
+
 export default function TimelineSection() {
   const containerRef = useRef<HTMLElement>(null);
   const pathRef = useRef<SVGPathElement>(null);
@@ -315,6 +334,9 @@ export default function TimelineSection() {
   });
 
   const currentTimeline = dynamicTimelines[activeCategory];
+  const numItems = currentTimeline ? currentTimeline.length : 0;
+  const totalHeight = numItems > 0 ? 100 + (numItems - 1) * 200 : 700;
+  const svgPath = generateSvgPath(numItems);
 
   return (
     <section ref={containerRef} id="jadwal" className="relative z-10 min-h-screen w-full py-24 px-6 sm:px-10 bg-transparent overflow-hidden flex flex-col items-center justify-center">
@@ -352,12 +374,15 @@ export default function TimelineSection() {
 
       {/* DESKTOP TIMELINE (SVG MOTION PATH) */}
       {!isMobile && (
-        <div className="relative w-full max-w-5xl h-[700px] shrink-0 hidden md:block">
+        <div 
+          className="relative w-full max-w-5xl shrink-0 hidden md:block"
+          style={{ height: `${totalHeight}px` }}
+        >
           <div className="absolute inset-0 flex justify-center pointer-events-none">
-            <svg viewBox="0 0 800 700" className="w-full h-full overflow-visible" fill="none">
+            <svg viewBox={`0 0 800 ${totalHeight}`} className="w-full h-full overflow-visible" fill="none">
               {/* Background Track */}
               <path
-                d="M 280 50 C 280 150, 520 150, 520 250 C 520 350, 280 350, 280 450 C 280 550, 520 550, 520 650"
+                d={svgPath}
                 stroke="#e2e8f0"
                 strokeWidth="15"
                 strokeLinecap="round"
@@ -366,7 +391,7 @@ export default function TimelineSection() {
               
               {/* Glowing Secondary Path */}
               <motion.path
-                d="M 280 50 C 280 150, 520 150, 520 250 C 520 350, 280 350, 280 450 C 280 550, 520 550, 520 650"
+                d={svgPath}
                 stroke="url(#gradient-path)"
                 strokeWidth="15"
                 strokeLinecap="round"
@@ -376,7 +401,7 @@ export default function TimelineSection() {
               {/* Main Animated Path */}
               <motion.path
                 ref={pathRef}
-                d="M 280 50 C 280 150, 520 150, 520 250 C 520 350, 280 350, 280 450 C 280 550, 520 550, 520 650"
+                d={svgPath}
                 stroke="url(#gradient-path)"
                 strokeWidth="8"
                 strokeLinecap="round"
@@ -405,50 +430,21 @@ export default function TimelineSection() {
           </div>
 
           {/* Nodes */}
-          {currentTimeline && currentTimeline[0] && (
-            <TimelineNode 
-              item={currentTimeline[0]} 
-              dateOverride={timelineDates[`${activeCategory}-0`]}
-              top="9.09%" 
-              left="35%" 
-              align="left" 
-              progress={smoothProgress} 
-              trigger={0.15} 
-            />
-          )}
-          {currentTimeline && currentTimeline[1] && (
-            <TimelineNode 
-              item={currentTimeline[1]} 
-              dateOverride={timelineDates[`${activeCategory}-1`]}
-              top="36.36%" 
-              left="65%" 
-              align="right" 
-              progress={smoothProgress} 
-              trigger={0.4} 
-            />
-          )}
-          {currentTimeline && currentTimeline[2] && (
-            <TimelineNode 
-              item={currentTimeline[2]} 
-              dateOverride={timelineDates[`${activeCategory}-2`]}
-              top="63.63%" 
-              left="35%" 
-              align="left" 
-              progress={smoothProgress} 
-              trigger={0.7} 
-            />
-          )}
-          {currentTimeline && currentTimeline[3] && (
-            <TimelineNode 
-              item={currentTimeline[3]} 
-              dateOverride={timelineDates[`${activeCategory}-3`]}
-              top="90.9%" 
-              left="65%" 
-              align="right" 
-              progress={smoothProgress} 
-              trigger={0.9} 
-            />
-          )}
+          {currentTimeline.map((item: any, i: number) => {
+            const trigger = numItems > 1 ? 0.1 + (i / (numItems - 1)) * 0.8 : 0.5;
+            return (
+              <TimelineNode 
+                key={`${activeCategory}-${i}`}
+                item={item} 
+                dateOverride={timelineDates[`${activeCategory}-${i}`] || item.date}
+                top={`${50 + i * 200}px`}
+                left={i % 2 === 0 ? "35%" : "65%"}
+                align={i % 2 === 0 ? "left" : "right"}
+                progress={smoothProgress} 
+                trigger={trigger} 
+              />
+            );
+          })}
         </div>
       )}
 
