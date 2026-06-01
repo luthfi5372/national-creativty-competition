@@ -9,7 +9,14 @@ import {
   useMotionValueEvent,
   MotionValue,
 } from "framer-motion";
-import { Calendar, MapPin, Trophy, Users, Clock, ArrowRight } from "lucide-react";
+import { 
+  Calendar, MapPin, Trophy, Users, Clock, ArrowRight,
+  Banknote, ScrollText, GraduationCap, Medal, Award, BookOpen, Heart, Zap, Sparkles, Smartphone, Globe, CheckCircle2, Brain, Star, Video, Upload 
+} from "lucide-react";
+
+const iconMap: Record<string, any> = {
+  Trophy, Banknote, ScrollText, GraduationCap, Medal, Award, Users, BookOpen, Heart, Zap, Sparkles, Smartphone, Globe, CheckCircle2, Clock, Brain, Star, Video, Upload, Calendar
+};
 
 const categoryTimelines = {
   all: [
@@ -81,6 +88,7 @@ export default function TimelineSection() {
   const pathRef = useRef<SVGPathElement>(null);
   const [activeCategory, setActiveCategory] = useState<"lkti" | "olimpiade" | "speech" | "mtq">("lkti");
   const [timelineDates, setTimelineDates] = useState<Record<string, string>>({});
+  const [dynamicTimelines, setDynamicTimelines] = useState<any>(categoryTimelines);
   const [isMounted, setIsMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -114,120 +122,165 @@ export default function TimelineSection() {
           process.env.NEXT_PUBLIC_SUPABASE_URL!,
           process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
         );
+
+        // Fetch dynamic curvy timeline steps from homepage_descriptions
+        const { data: dbItems } = await supabase
+          .from('homepage_descriptions')
+          .select('*')
+          .in('category', ['lkti', 'olimpiade', 'speech', 'mtq'])
+          .order('order_index', { ascending: true });
+
+        if (dbItems && dbItems.length > 0) {
+          const lktiSteps = dbItems.filter((item: any) => item.category === 'lkti').map(item => ({
+            phase: item.title,
+            date: item.date_range || 'Segera Diumumkan',
+            icon: iconMap[item.icon] || Users,
+            description: item.content,
+            color: "text-blue-600",
+            bg: "bg-blue-50",
+            border: "border-blue-100"
+          }));
+
+          const mipaSteps = dbItems.filter((item: any) => item.category === 'olimpiade').map(item => ({
+            phase: item.title,
+            date: item.date_range || 'Segera Diumumkan',
+            icon: iconMap[item.icon] || Users,
+            description: item.content,
+            color: "text-amber-600",
+            bg: "bg-amber-50",
+            border: "border-amber-100"
+          }));
+
+          const speechSteps = dbItems.filter((item: any) => item.category === 'speech').map(item => ({
+            phase: item.title,
+            date: item.date_range || 'Segera Diumumkan',
+            icon: iconMap[item.icon] || Users,
+            description: item.content,
+            color: "text-purple-600",
+            bg: "bg-purple-50",
+            border: "border-purple-100"
+          }));
+
+          const mtqSteps = dbItems.filter((item: any) => item.category === 'mtq').map(item => ({
+            phase: item.title,
+            date: item.date_range || 'Segera Diumumkan',
+            icon: iconMap[item.icon] || Users,
+            description: item.content,
+            color: "text-emerald-600",
+            bg: "bg-emerald-50",
+            border: "border-emerald-100"
+          }));
+
+          setDynamicTimelines({
+            all: categoryTimelines.all,
+            lkti: lktiSteps.length > 0 ? lktiSteps : categoryTimelines.lkti,
+            olimpiade: mipaSteps.length > 0 ? mipaSteps : categoryTimelines.olimpiade,
+            speech: speechSteps.length > 0 ? speechSteps : categoryTimelines.speech,
+            mtq: mtqSteps.length > 0 ? mtqSteps : categoryTimelines.mtq
+          });
+        }
+
+        // Fetch dates override for backward compatibility
         const { data, error } = await supabase
           .from('announcements')
           .select('content')
           .eq('title', 'SYSTEM_TIMELINE_CONFIG')
           .single();
 
-        if (error) {
-          console.warn("[TimelineSection] Gagal fetch dari DB:", error.message);
-          return;
-        }
-
-        if (data && data.content) {
+        if (!error && data && data.content) {
           const config = JSON.parse(data.content);
-          if (!Array.isArray(config)) return;
-
-          
-          const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-          const formatDate = (dateStr: string) => {
-            if (!dateStr) return "";
-            const d = new Date(dateStr);
-            if (isNaN(d.getTime())) return dateStr;
-            return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
-          };
-          
-          const formatRange = (start?: string, end?: string, fallback?: string) => {
-            if (start && end) {
-              const s = new Date(start);
-              const e = new Date(end);
-              if (!isNaN(s.getTime()) && !isNaN(e.getTime())) {
-                if (s.getMonth() === e.getMonth() && s.getFullYear() === e.getFullYear()) {
-                  return `${s.getDate()} — ${e.getDate()} ${months[s.getMonth()]} ${s.getFullYear()}`;
-                } else if (s.getFullYear() === e.getFullYear()) {
-                  return `${s.getDate()} ${months[s.getMonth()]} — ${e.getDate()} ${months[e.getMonth()]} ${s.getFullYear()}`;
-                } else {
-                  return `${s.getDate()} ${months[s.getMonth()]} ${s.getFullYear()} — ${e.getDate()} ${months[e.getMonth()]} ${e.getFullYear()}`;
+          if (Array.isArray(config)) {
+            const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+            const formatDate = (dateStr: string) => {
+              if (!dateStr) return "";
+              const d = new Date(dateStr);
+              if (isNaN(d.getTime())) return dateStr;
+              return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+            };
+            
+            const formatRange = (start?: string, end?: string, fallback?: string) => {
+              if (start && end) {
+                const s = new Date(start);
+                const e = new Date(end);
+                if (!isNaN(s.getTime()) && !isNaN(e.getTime())) {
+                  if (s.getMonth() === e.getMonth() && s.getFullYear() === e.getFullYear()) {
+                    return `${s.getDate()} — ${e.getDate()} ${months[s.getMonth()]} ${s.getFullYear()}`;
+                  } else if (s.getFullYear() === e.getFullYear()) {
+                    return `${s.getDate()} ${months[s.getMonth()]} — ${e.getDate()} ${months[e.getMonth()]} ${s.getFullYear()}`;
+                  } else {
+                    return `${s.getDate()} ${months[s.getMonth()]} ${s.getFullYear()} — ${e.getDate()} ${months[e.getMonth()]} ${e.getFullYear()}`;
+                  }
                 }
               }
+              if (start) return formatDate(start);
+              if (end) return `s.d. ${formatDate(end)}`;
+              return fallback || "Belum Ditentukan";
+            };
+
+            const lktiCat = config.find((c: any) => c.category && c.category.includes("LKTI"));
+            const mipaCat = config.find((c: any) => c.category && (c.category.includes("Olimpiade") || c.category.includes("MIPA")));
+            const speechCat = config.find((c: any) => c.category && c.category.includes("Speech"));
+            const mtqCat = config.find((c: any) => c.category && c.category.includes("MTQ"));
+
+            const getItemDate = (catObj: any, waveLabel: string, itemLabel: string, fallback: string) => {
+              if (!catObj || !Array.isArray(catObj.waves)) return fallback;
+              const wave = catObj.waves.find((w: any) => w.label === waveLabel);
+              if (!wave || !Array.isArray(wave.items)) return fallback;
+              const item = wave.items.find((i: any) => i.label && i.label.toLowerCase().includes(itemLabel.toLowerCase()));
+              if (!item) return fallback;
+              return formatRange(item.start, item.end, fallback);
+            };
+
+            const dates: Record<string, string> = {};
+            
+            if (lktiCat) {
+              dates["lkti-0"] = getItemDate(lktiCat, "Gelombang I", "Pendaftaran", "Segera Diumumkan");
+              dates["lkti-1"] = getItemDate(lktiCat, "Gelombang I", "Fullpaper", "Segera Diumumkan");
+              dates["lkti-2"] = getItemDate(lktiCat, "Gelombang II", "Pendaftaran", "Segera Diumumkan");
+              dates["lkti-3"] = getItemDate(lktiCat, "Gelombang II", "Fullpaper", "Segera Diumumkan");
             }
-            if (start) return formatDate(start);
-            if (end) return `s.d. ${formatDate(end)}`;
-            return fallback || "Belum Ditentukan";
-          };
+            if (mipaCat) {
+              dates["olimpiade-0"] = getItemDate(mipaCat, "Gelombang I", "Seleksi 1", "Segera Diumumkan");
+              dates["olimpiade-1"] = getItemDate(mipaCat, "Gelombang I", "Seleksi 2", "Segera Diumumkan");
+              dates["olimpiade-2"] = getItemDate(mipaCat, "Gelombang II", "Simulasi", "Segera Diumumkan");
+              dates["olimpiade-3"] = getItemDate(mipaCat, "Gelombang II", "Seleksi", "Segera Diumumkan");
+            }
+            if (speechCat) {
+              dates["speech-0"] = getItemDate(speechCat, "Gelombang I", "Pendaftaran", "Segera Diumumkan");
+              dates["speech-1"] = getItemDate(speechCat, "Gelombang I", "Pengumuman", "Segera Diumumkan");
+              dates["speech-2"] = getItemDate(speechCat, "Gelombang II", "Pendaftaran", "Segera Diumumkan");
+              dates["speech-3"] = getItemDate(speechCat, "Gelombang II", "Pengumuman", "Segera Diumumkan");
+            }
+            if (mtqCat) {
+              dates["mtq-0"] = getItemDate(mtqCat, "Gelombang I", "Pendaftaran", "Segera Diumumkan");
+              dates["mtq-1"] = getItemDate(mtqCat, "Gelombang I", "Pengumuman", "Segera Diumumkan");
+              dates["mtq-2"] = getItemDate(mtqCat, "Gelombang II", "Pendaftaran", "Segera Diumumkan");
+              dates["mtq-3"] = getItemDate(mtqCat, "Gelombang II", "Pengumuman", "Segera Diumumkan");
+            }
 
-          const lktiCat = config.find((c: any) => c.category && c.category.includes("LKTI"));
-          const mipaCat = config.find((c: any) => c.category && (c.category.includes("Olimpiade") || c.category.includes("MIPA")));
-          const speechCat = config.find((c: any) => c.category && c.category.includes("Speech"));
-          const mtqCat = config.find((c: any) => c.category && c.category.includes("MTQ"));
+            dates["all-0"] = formatRange(
+              lktiCat?.waves?.find((w: any) => w.label === "Gelombang I")?.items?.find((i: any) => i.label && i.label.toLowerCase().includes("pendaftaran"))?.start,
+              lktiCat?.waves?.find((w: any) => w.label === "Gelombang II")?.items?.find((i: any) => i.label && i.label.toLowerCase().includes("pendaftaran"))?.end,
+              "Segera Diumumkan"
+            );
+            dates["all-1"] = formatRange(
+              mipaCat?.waves?.find((w: any) => w.label === "Gelombang I")?.items?.find((i: any) => i.label && i.label.toLowerCase().includes("seleksi 1"))?.start,
+              mipaCat?.waves?.find((w: any) => w.label === "Gelombang II")?.items?.find((i: any) => i.label && i.label.toLowerCase().includes("seleksi"))?.end,
+              "Segera Diumumkan"
+            );
+            dates["all-2"] = formatRange(
+              lktiCat?.waves?.find((w: any) => w.label === "Gelombang I")?.items?.find((i: any) => i.label && i.label.toLowerCase().includes("fullpaper"))?.start,
+              lktiCat?.waves?.find((w: any) => w.label === "Gelombang II")?.items?.find((i: any) => i.label && i.label.toLowerCase().includes("fullpaper"))?.end,
+              "Segera Diumumkan"
+            );
+            dates["all-3"] = formatRange(
+              lktiCat?.waves?.find((w: any) => w.label === "Gelombang I")?.items?.find((i: any) => i.label && i.label.toLowerCase().includes("pengumuman"))?.start,
+              lktiCat?.waves?.find((w: any) => w.label === "Gelombang II")?.items?.find((i: any) => i.label && i.label.toLowerCase().includes("pengumuman"))?.end,
+              "Segera Diumumkan"
+            );
 
-          const getItemDate = (catObj: any, waveLabel: string, itemLabel: string, fallback: string) => {
-            if (!catObj || !Array.isArray(catObj.waves)) return fallback;
-            const wave = catObj.waves.find((w: any) => w.label === waveLabel);
-            if (!wave || !Array.isArray(wave.items)) return fallback;
-            const item = wave.items.find((i: any) => i.label && i.label.toLowerCase().includes(itemLabel.toLowerCase()));
-            if (!item) return fallback;
-            return formatRange(item.start, item.end, fallback);
-          };
-
-          const dates: Record<string, string> = {};
-          
-          // Map LKTI
-          if (lktiCat) {
-            dates["lkti-0"] = getItemDate(lktiCat, "Gelombang I", "Pendaftaran", "Segera Diumumkan");
-            dates["lkti-1"] = getItemDate(lktiCat, "Gelombang I", "Fullpaper", "Segera Diumumkan");
-            dates["lkti-2"] = getItemDate(lktiCat, "Gelombang II", "Pendaftaran", "Segera Diumumkan");
-            dates["lkti-3"] = getItemDate(lktiCat, "Gelombang II", "Fullpaper", "Segera Diumumkan");
+            setTimelineDates(dates);
           }
-
-          // Map MIPA
-          if (mipaCat) {
-            dates["olimpiade-0"] = getItemDate(mipaCat, "Gelombang I", "Seleksi 1", "Segera Diumumkan");
-            dates["olimpiade-1"] = getItemDate(mipaCat, "Gelombang I", "Seleksi 2", "Segera Diumumkan");
-            dates["olimpiade-2"] = getItemDate(mipaCat, "Gelombang II", "Simulasi", "Segera Diumumkan");
-            dates["olimpiade-3"] = getItemDate(mipaCat, "Gelombang II", "Seleksi", "Segera Diumumkan");
-          }
-
-          // Map Speech
-          if (speechCat) {
-            dates["speech-0"] = getItemDate(speechCat, "Gelombang I", "Pendaftaran", "Segera Diumumkan");
-            dates["speech-1"] = getItemDate(speechCat, "Gelombang I", "Pengumuman", "Segera Diumumkan");
-            dates["speech-2"] = getItemDate(speechCat, "Gelombang II", "Pendaftaran", "Segera Diumumkan");
-            dates["speech-3"] = getItemDate(speechCat, "Gelombang II", "Pengumuman", "Segera Diumumkan");
-          }
-
-          // Map MTQ
-          if (mtqCat) {
-            dates["mtq-0"] = getItemDate(mtqCat, "Gelombang I", "Pendaftaran", "Segera Diumumkan");
-            dates["mtq-1"] = getItemDate(mtqCat, "Gelombang I", "Pengumuman", "Segera Diumumkan");
-            dates["mtq-2"] = getItemDate(mtqCat, "Gelombang II", "Pendaftaran", "Segera Diumumkan");
-            dates["mtq-3"] = getItemDate(mtqCat, "Gelombang II", "Pengumuman", "Segera Diumumkan");
-          }
-
-          // Map All (Umum)
-          dates["all-0"] = formatRange(
-            lktiCat?.waves?.find((w: any) => w.label === "Gelombang I")?.items?.find((i: any) => i.label && i.label.toLowerCase().includes("pendaftaran"))?.start,
-            lktiCat?.waves?.find((w: any) => w.label === "Gelombang II")?.items?.find((i: any) => i.label && i.label.toLowerCase().includes("pendaftaran"))?.end,
-            "Segera Diumumkan"
-          );
-          dates["all-1"] = formatRange(
-            mipaCat?.waves?.find((w: any) => w.label === "Gelombang I")?.items?.find((i: any) => i.label && i.label.toLowerCase().includes("seleksi 1"))?.start,
-            mipaCat?.waves?.find((w: any) => w.label === "Gelombang II")?.items?.find((i: any) => i.label && i.label.toLowerCase().includes("seleksi"))?.end,
-            "Segera Diumumkan"
-          );
-          dates["all-2"] = formatRange(
-            lktiCat?.waves?.find((w: any) => w.label === "Gelombang I")?.items?.find((i: any) => i.label && i.label.toLowerCase().includes("fullpaper"))?.start,
-            lktiCat?.waves?.find((w: any) => w.label === "Gelombang II")?.items?.find((i: any) => i.label && i.label.toLowerCase().includes("fullpaper"))?.end,
-            "Segera Diumumkan"
-          );
-          dates["all-3"] = formatRange(
-            lktiCat?.waves?.find((w: any) => w.label === "Gelombang I")?.items?.find((i: any) => i.label && i.label.toLowerCase().includes("pengumuman"))?.start,
-            lktiCat?.waves?.find((w: any) => w.label === "Gelombang II")?.items?.find((i: any) => i.label && i.label.toLowerCase().includes("pengumuman"))?.end,
-            "Segera Diumumkan"
-          );
-
-          setTimelineDates(dates);
         }
       } catch (err) {
         console.error("Gagal load timeline config di landing page:", err);
@@ -261,7 +314,7 @@ export default function TimelineSection() {
     }
   });
 
-  const currentTimeline = categoryTimelines[activeCategory];
+  const currentTimeline = dynamicTimelines[activeCategory];
 
   return (
     <section ref={containerRef} id="jadwal" className="relative z-10 min-h-screen w-full py-24 px-6 sm:px-10 bg-transparent overflow-hidden flex flex-col items-center justify-center">

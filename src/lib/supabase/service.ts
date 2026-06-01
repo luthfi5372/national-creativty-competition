@@ -575,6 +575,7 @@ export async function adminUpsertHomepageDescription(desc: {
   content: string;
   icon?: string;
   order_index?: number;
+  date_range?: string;
 }) {
   const supabase = createClient();
   try {
@@ -586,7 +587,8 @@ export async function adminUpsertHomepageDescription(desc: {
         title: desc.title,
         content: desc.content,
         icon: desc.icon || 'Trophy',
-        order_index: desc.order_index || 0
+        order_index: desc.order_index || 0,
+        date_range: desc.date_range || 'Segera Diumumkan'
       })
       .select();
 
