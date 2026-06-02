@@ -614,15 +614,14 @@ function ModernHQDashboardContent() {
   useEffect(() => {
     if (selectedSchoolGroup) {
       const schoolKey = selectedSchoolGroup.npsn || selectedSchoolGroup.schoolName;
-      if (unreadCounts[schoolKey]) {
-        setUnreadCounts((prev) => {
-          const updated = { ...prev };
-          delete updated[schoolKey];
-          return updated;
-        });
-      }
+      setUnreadCounts((prev) => {
+        if (!prev[schoolKey]) return prev;
+        const updated = { ...prev };
+        delete updated[schoolKey];
+        return updated;
+      });
     }
-  }, [selectedSchoolGroup, unreadCounts]);
+  }, [selectedSchoolGroup]);
 
   // Auto-dismiss floating chat notification after 6 seconds
   useEffect(() => {
@@ -5047,15 +5046,15 @@ function ModernHQDashboardContent() {
                         <School size={20} />
                       </div>
                       <div>
-                        <h3 className="font-black text-slate-800 text-sm tracking-tight uppercase">{selectedSchoolGroup.schoolName}</h3>
+                        <h3 className="font-black text-slate-800 text-sm tracking-tight uppercase">{selectedSchoolGroup?.schoolName}</h3>
                         <div className="flex items-center gap-2 mt-0.5">
-                          {selectedSchoolGroup.npsn && (
+                          {selectedSchoolGroup?.npsn && (
                             <span className="bg-indigo-100 text-indigo-700 font-mono text-[9px] font-extrabold px-1.5 py-0.5 rounded border border-indigo-200/50">
                               NPSN: {selectedSchoolGroup.npsn}
                             </span>
                           )}
                           <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                            {selectedSchoolGroup.students.length} Peserta Resmi Terdaftar
+                            {selectedSchoolGroup?.students?.length || 0} Peserta Resmi Terdaftar
                           </span>
                         </div>
                       </div>
@@ -5285,7 +5284,7 @@ function ModernHQDashboardContent() {
                     <input
                       type="text"
                       required
-                      placeholder={`Ketik pengumuman atau balasan resmi untuk forum ${selectedSchoolGroup.schoolName}...`}
+                      placeholder={`Ketik pengumuman atau balasan resmi untuk forum ${selectedSchoolGroup?.schoolName || ""}...`}
                       value={groupMsgText}
                       onChange={(e) => setGroupMsgText(e.target.value)}
                       disabled={isSendingGroupMsg || isLoadingGroupMessages}
@@ -6130,14 +6129,14 @@ function ModernHQDashboardContent() {
 
           {/* Members List (Scrollable) */}
           <div className="flex-1 overflow-y-auto py-5 pr-1 space-y-4 custom-scrollbar">
-            {(!selectedSchoolGroup?.students || selectedSchoolGroup.students.length === 0) ? (
+            {(!selectedSchoolGroup?.students || selectedSchoolGroup?.students?.length === 0) ? (
               <div className="text-center py-8 text-slate-400">
                 <Users size={32} className="mx-auto text-slate-200 mb-2" />
                 <p className="text-xs font-bold uppercase tracking-wider">Tidak Ada Anggota</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {selectedSchoolGroup.students.map((student: any) => {
+                {(selectedSchoolGroup?.students || []).map((student: any) => {
                   let ticketCode = generateTicketCode(student.id);
                   let paymentStatus = student.payment_status || "Unpaid";
                   
