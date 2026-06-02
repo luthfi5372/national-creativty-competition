@@ -1117,6 +1117,8 @@ function ModernHQDashboardContent() {
 
   // --- MEMORI KAWALAN KEGIATAN & PORTAL ---
   const [isRegistrationOpen, setIsRegistrationOpen] = useState(true);
+  const [activeKegiatanWaveId, setActiveKegiatanWaveId] = useState<number>(1);
+  const [expandedScheduleId, setExpandedScheduleId] = useState<string | null>(null);
   
   const [submissionStatus, setSubmissionStatus] = useState([
     { id: 'mipa_g1', name: 'Olimpiade MIPA (Gel. I)', isOpen: false, openAt: "", closeAt: "", mode: "" },
@@ -1130,15 +1132,39 @@ function ModernHQDashboardContent() {
   ]);
 
   const toggleSubmission = (id: string) => {
-    setSubmissionStatus(prev => prev.map(item => 
-      item.id === id ? { ...item, isOpen: !item.isOpen, mode: "Manual" } : item
-    ));
+    setSubmissionStatus(prev => {
+      const exists = prev.some(item => item.id === id);
+      if (!exists) {
+        const defaultName = id.includes('lkti') ? 'LKTI Nasional' 
+                         : id.includes('mipa') ? 'Olimpiade MIPA' 
+                         : id.includes('speech') ? 'Speech Contest' 
+                         : 'MTQ';
+        const waveId = id.split('_g')[1] || "1";
+        const waveLabel = `Gel. ${waveId}`;
+        return [...prev, { id, name: `${defaultName} (${waveLabel})`, isOpen: true, openAt: "", closeAt: "", mode: "Manual" }];
+      }
+      return prev.map(item => 
+        item.id === id ? { ...item, isOpen: !item.isOpen, mode: "Manual" } : item
+      );
+    });
   };
 
   const updateSchedule = (id: string, type: 'openAt' | 'closeAt' | 'mode', value: string) => {
-    setSubmissionStatus(prev => prev.map(item => 
-      item.id === id ? { ...item, [type]: value } : item
-    ));
+    setSubmissionStatus(prev => {
+      const exists = prev.some(item => item.id === id);
+      if (!exists) {
+        const defaultName = id.includes('lkti') ? 'LKTI Nasional' 
+                         : id.includes('mipa') ? 'Olimpiade MIPA' 
+                         : id.includes('speech') ? 'Speech Contest' 
+                         : 'MTQ';
+        const waveId = id.split('_g')[1] || "1";
+        const waveLabel = `Gel. ${waveId}`;
+        return [...prev, { id, name: `${defaultName} (${waveLabel})`, isOpen: false, openAt: "", closeAt: "", mode: "Manual", [type]: value }];
+      }
+      return prev.map(item => 
+        item.id === id ? { ...item, [type]: value } : item
+      );
+    });
   };
 
   // --- ⏰ LOGIKA PENJADWALAN OTOMATIS REAL-TIME ---
@@ -4262,231 +4288,306 @@ function ModernHQDashboardContent() {
                 </div>
               </button>
             </div>
-            {/* 1.5 PENGATURAN GELOMBANG PENDAFTARAN */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-sm border border-white/60">
-              <div className="flex items-center gap-3 mb-8 pb-4 border-b border-slate-100">
-                <div className="p-2.5 bg-blue-100 text-blue-600 rounded-xl">
-                  <Calendar size={20} />
+            {/* 2. PUSAT KAWALAN PENDAFTARAN & PENGUMPULAN FAIL KARYA (DENGAN TABS GELOMBANG) */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-sm border border-white/60 space-y-8 animate-in fade-in duration-300">
+              
+              {/* HEADER SECTION */}
+              <div className="flex flex-col md:flex-row md:items-center justify-between pb-6 border-b border-slate-100 gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-indigo-100 text-indigo-600 rounded-xl">
+                    <Calendar size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black text-slate-800">Kontrol Gelombang & Portals</h3>
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">Kelola status registrasi dan portal pengumpulan karya untuk setiap gelombang.</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-xl font-black text-slate-800">Gelombang Pendaftaran (Gelombang I & II)</h3>
-                  <p className="text-xs text-slate-500 font-medium">Buka atau tutup gelombang pendaftaran peserta sesuai timeline kompetisi.</p>
+                
+                {/* WAVES SEGMENTED TABS SWITCHER */}
+                <div className="flex bg-slate-100/80 p-1 rounded-2xl border border-slate-200/50 w-full md:w-auto overflow-x-auto gap-1">
+                  {waves.map((wave) => {
+                    const isSelected = activeKegiatanWaveId === wave.id;
+                    return (
+                      <button
+                        key={wave.id}
+                        type="button"
+                        onClick={() => {
+                          setActiveKegiatanWaveId(wave.id);
+                          setExpandedScheduleId(null); // Close open datepickers on tab switch
+                        }}
+                        className={`px-4 py-2 rounded-xl text-xs font-black transition-all shrink-0 flex items-center gap-2 ${
+                          isSelected
+                            ? "bg-white text-indigo-600 shadow-md shadow-indigo-50/50 scale-[1.02]"
+                            : "text-slate-500 hover:text-slate-700"
+                        }`}
+                      >
+                        <span>{wave.name.split(' (')[0]}</span>
+                        <div className={`w-1.5 h-1.5 rounded-full ${wave.status === 'Aktif' ? 'bg-green-500 animate-pulse' : 'bg-slate-300'}`}></div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {waves.map((wave) => (
-                  <div key={wave.id} className={`flex items-center justify-between p-6 rounded-2xl border-2 transition-all duration-300 ${wave.status === 'Aktif' ? 'border-blue-400 bg-blue-50/40 shadow-sm' : 'border-slate-100 bg-slate-50/50 hover:border-slate-200'}`}>
+              {/* ACTIVE WAVE DETAILS BANNER */}
+              {(() => {
+                const activeWave = waves.find(w => w.id === activeKegiatanWaveId) || waves[0];
+                if (!activeWave) return null;
+                
+                return (
+                  <div className={`flex flex-col md:flex-row md:items-center justify-between p-6 rounded-2xl border-2 transition-all duration-300 bg-gradient-to-r ${
+                    activeWave.status === 'Aktif' 
+                      ? 'border-indigo-100 from-indigo-50/20 to-violet-50/10 shadow-sm shadow-indigo-50/20' 
+                      : 'border-slate-100 from-slate-50/40 to-slate-50/20'
+                  }`}>
                     <div>
-                      <h4 className="font-bold text-slate-800">{wave.name}</h4>
-                      <p className="text-[10px] text-slate-400 font-medium mt-0.5">{wave.startDate} s/d {wave.endDate}</p>
-                      <div className="flex items-center gap-1.5 px-3 py-1 mt-2 bg-slate-50 border border-slate-100 rounded-lg w-fit">
-                        <div className={`w-1.5 h-1.5 rounded-full ${wave.status === 'Aktif' ? 'bg-green-500 animate-pulse' : 'bg-slate-300'}`}></div>
-                        <span className={`text-[10px] font-black ${wave.status === 'Aktif' ? 'text-green-600' : 'text-slate-500'}`}>
-                          {wave.status === 'Aktif' ? 'Sedang Berjalan' : 'Ditutup'}
+                      <div className="flex items-center gap-2.5">
+                        <h4 className="font-extrabold text-slate-800 text-base">{activeWave.name}</h4>
+                        <span className={`text-[9px] font-black px-2 py-0.5 rounded-md ${
+                          activeWave.status === 'Aktif' 
+                            ? 'bg-emerald-50 text-emerald-600 border border-emerald-100 animate-pulse' 
+                            : 'bg-slate-100 text-slate-400 border border-slate-200'
+                        }`}>
+                          {activeWave.status === 'Aktif' ? 'Live / Dibuka' : 'Ditutup'}
                         </span>
                       </div>
+                      <p className="text-xs text-slate-400 font-medium mt-1 flex items-center gap-1.5">
+                        <Calendar size={12} className="text-indigo-400" />
+                        Periode Registrasi: <span className="font-bold text-slate-600">{formatIndoDate(activeWave.startDate)} – {formatIndoDate(activeWave.endDate)}</span>
+                      </p>
                     </div>
-                    
-                    <button 
-                      onClick={() => {
-                        toggleWaveStatus(wave.id);
-                        showToast(`${wave.name} ${wave.status === 'Aktif' ? 'Ditutup' : 'Diaktifkan'}`, wave.status === 'Aktif' ? 'error' : 'success');
-                      }}
-                      className={`relative w-16 h-8 rounded-full transition-colors duration-300 focus:outline-none shadow-inner shrink-0 ${wave.status === 'Aktif' ? 'bg-blue-600' : 'bg-slate-300'}`}
-                    >
-                      <div className={`absolute top-1 left-1 bg-white w-6 h-6 rounded-full shadow-md transition-transform duration-300 flex items-center justify-center ${wave.status === 'Aktif' ? 'translate-x-8' : 'translate-x-0'}`}>
-                        {wave.status === 'Aktif' ? <FileCheck size={12} className="text-blue-600" /> : <X size={12} className="text-slate-400" />}
-                      </div>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-            {/* 2. KAWALAN PENGUMPULAN FAIL PER KATEGORI - GELOMBANG I */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-sm border border-white/60">
-              <div className="flex items-center gap-3 mb-8 pb-4 border-b border-slate-100">
-                <div className="p-2.5 bg-indigo-100 text-indigo-600 rounded-xl">
-                  <FolderOpen size={20} />
-                </div>
-                <div>
-                  <h3 className="text-xl font-black text-slate-800">Akses Pengumpulan Fail Karya (Gelombang I)</h3>
-                  <p className="text-xs text-slate-500 font-medium">Buka atau tutup portal pengumpulan karya Gelombang I.</p>
-                </div>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {submissionStatus.filter(c => c.id.endsWith('_g1')).map((category) => (
-                  <div key={category.id} className={`flex flex-col p-5 rounded-2xl border-2 transition-all duration-300 ${category.isOpen ? 'border-indigo-400 bg-indigo-50/40 shadow-sm' : 'border-slate-100 bg-slate-50/50 hover:border-slate-200'}`}>
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <h4 className="font-bold text-slate-800">{category.name}</h4>
-                        <div className="flex items-center gap-2 mt-1">
-                          <p className={`text-[10px] font-bold tracking-widest uppercase ${category.isOpen ? 'text-indigo-600' : 'text-slate-400'}`}>
-                            {category.isOpen ? '● Portal Terbuka' : '○ Portal Ditutup'}
-                          </p>
-                          {category.mode ? (
-                            <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-bold uppercase ${category.mode === 'Auto' ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-500'}`}>
-                              {category.mode}
-                            </span>
-                          ) : (
-                            <span className="text-[8px] px-1.5 py-0.5 rounded-full font-bold uppercase bg-amber-100 text-amber-600 animate-pulse">
-                              Pilih Mode Control
-                            </span>
+                    <div className="flex items-center gap-3 mt-4 md:mt-0 shrink-0">
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Registrasi Gelombang:</span>
+                      <button 
+                        onClick={() => {
+                          toggleWaveStatus(activeWave.id);
+                          showToast(`${activeWave.name} ${activeWave.status === 'Aktif' ? 'Ditutup' : 'Diaktifkan'}`, activeWave.status === 'Aktif' ? 'error' : 'success');
+                        }}
+                        className={`relative w-16 h-8 rounded-full transition-colors duration-300 focus:outline-none shadow-inner shrink-0 ${activeWave.status === 'Aktif' ? 'bg-indigo-600' : 'bg-slate-300'}`}
+                      >
+                        <div className={`absolute top-1 left-1 bg-white w-6 h-6 rounded-full shadow-md transition-transform duration-300 flex items-center justify-center ${activeWave.status === 'Aktif' ? 'translate-x-8' : 'translate-x-0'}`}>
+                          {activeWave.status === 'Aktif' ? <FileCheck size={12} className="text-indigo-600" /> : <X size={12} className="text-slate-400" />}
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* CATEGORY PORTALS GRID FOR ACTIVE WAVE */}
+              {(() => {
+                const activeWave = waves.find(w => w.id === activeKegiatanWaveId) || waves[0];
+                if (!activeWave) return null;
+
+                const suffix = `_g${activeWave.id}`;
+                let waveSubmissions = submissionStatus.filter(c => c.id.endsWith(suffix));
+                
+                // Fallback dynamically if submissionStatus entries do not exist yet (e.g. for custom added Wave 3)
+                if (waveSubmissions.length === 0) {
+                  const wavePrefixName = activeWave.name.split(' (')[0];
+                  const categories = [
+                    { id: `mipa_g${activeWave.id}`, name: `Olimpiade MIPA (${wavePrefixName})` },
+                    { id: `speech_g${activeWave.id}`, name: `Speech Contest (${wavePrefixName})` },
+                    { id: `lkti_g${activeWave.id}`, name: `LKTI Nasional (${wavePrefixName})` },
+                    { id: `mtq_g${activeWave.id}`, name: `MTQ (${wavePrefixName})` }
+                  ];
+                  waveSubmissions = categories.map(cat => {
+                    const existing = submissionStatus.find(s => s.id === cat.id);
+                    return existing || {
+                      id: cat.id,
+                      name: cat.name,
+                      isOpen: false,
+                      openAt: "",
+                      closeAt: "",
+                      mode: "Manual"
+                    };
+                  });
+                }
+
+                const waveColors = [
+                  { text: "text-indigo-600", bg: "bg-indigo-50 border border-indigo-100", activeBorder: "border-indigo-400 bg-indigo-50/20 shadow-md shadow-indigo-50/20", colorKey: "indigo", pillBg: "bg-indigo-100 text-indigo-600", toggleBg: "bg-indigo-600" },
+                  { text: "text-violet-600", bg: "bg-violet-50 border border-violet-100", activeBorder: "border-violet-400 bg-violet-50/20 shadow-md shadow-violet-50/20", colorKey: "violet", pillBg: "bg-violet-100 text-violet-600", toggleBg: "bg-violet-600" },
+                  { text: "text-amber-600", bg: "bg-amber-50 border border-amber-100", activeBorder: "border-amber-400 bg-amber-50/20 shadow-md shadow-amber-50/20", colorKey: "amber", pillBg: "bg-amber-100 text-amber-600", toggleBg: "bg-amber-600" },
+                  { text: "text-emerald-600", bg: "bg-emerald-50 border border-emerald-100", activeBorder: "border-emerald-400 bg-emerald-50/20 shadow-md shadow-emerald-50/20", colorKey: "emerald", pillBg: "bg-emerald-100 text-emerald-600", toggleBg: "bg-emerald-600" }
+                ];
+                const color = waveColors[(activeWave.id - 1) % waveColors.length] || waveColors[0];
+
+                return (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {waveSubmissions.map((category) => {
+                      const isExpanded = expandedScheduleId === category.id;
+                      const hasMode = category.mode && category.mode !== "";
+                      const displayMode = hasMode ? category.mode : "Manual";
+
+                      return (
+                        <div 
+                          key={category.id} 
+                          className={`flex flex-col p-6 rounded-[2rem] border-2 transition-all duration-500 overflow-hidden relative ${
+                            category.isOpen 
+                              ? color.activeBorder 
+                              : 'border-slate-100 bg-slate-50/40 hover:border-slate-200'
+                          }`}
+                        >
+                          {/* Inner glowing glow effect if portal open */}
+                          {category.isOpen && (
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-400/5 rounded-bl-full pointer-events-none -z-10"></div>
+                          )}
+
+                          {/* MAIN INFO BAR */}
+                          <div className="flex items-center justify-between mb-4 gap-4">
+                            <div>
+                              <h4 className="font-extrabold text-slate-800 text-sm tracking-tight">{category.name}</h4>
+                              
+                              {/* Portal status indicator */}
+                              <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                                <span className={`text-[9px] font-black uppercase tracking-wider flex items-center gap-1 ${
+                                  category.isOpen ? color.text : 'text-slate-400'
+                                }`}>
+                                  <div className={`w-1.5 h-1.5 rounded-full ${category.isOpen ? 'bg-indigo-600 animate-pulse' : 'bg-slate-300'}`}></div>
+                                  {category.isOpen ? 'Portal Terbuka' : 'Portal Ditutup'}
+                                </span>
+                                
+                                <span className={`text-[8px] px-2 py-0.5 rounded-md font-black uppercase ${
+                                  displayMode === 'Auto' ? color.pillBg : 'bg-slate-100 text-slate-500 border border-slate-200/50'
+                                }`}>
+                                  Mode: {displayMode}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* CONTROLS (MODE BUTTONS + SWITCH) */}
+                            <div className="flex flex-col items-end gap-2.5 shrink-0">
+                              {/* Segmented manual/auto override */}
+                              <div className="flex bg-slate-100/80 p-0.5 rounded-xl border border-slate-200/50">
+                                <button 
+                                  type="button"
+                                  onClick={() => {
+                                    updateSchedule(category.id, 'mode', 'Manual');
+                                    setExpandedScheduleId(null);
+                                  }}
+                                  className={`text-[9px] px-2.5 py-1 rounded-lg font-bold transition-all ${
+                                    displayMode === 'Manual' 
+                                      ? 'bg-white text-slate-800 shadow-sm' 
+                                      : 'text-slate-400 hover:text-slate-600'
+                                  }`}
+                                >
+                                  MANUAL
+                                </button>
+                                <button 
+                                  type="button"
+                                  onClick={() => {
+                                    updateSchedule(category.id, 'mode', 'Auto');
+                                    setExpandedScheduleId(category.id); // auto-expand schedule pane
+                                  }}
+                                  className={`text-[9px] px-2.5 py-1 rounded-lg font-bold transition-all ${
+                                    displayMode === 'Auto' 
+                                      ? `${color.toggleBg} text-white shadow-sm` 
+                                      : 'text-slate-400 hover:text-slate-600'
+                                  }`}
+                                >
+                                  AUTO
+                                </button>
+                              </div>
+
+                              {/* Instantly opening/closing toggle switch */}
+                              <button 
+                                type="button"
+                                onClick={() => {
+                                  toggleSubmission(category.id);
+                                  showToast(`${category.name} ${!category.isOpen ? 'Portal Dibuka' : 'Portal Ditutup'}`, !category.isOpen ? 'success' : 'error');
+                                }}
+                                className={`relative w-11 h-6 rounded-full transition-all duration-300 focus:outline-none shadow-inner shrink-0 ${
+                                  category.isOpen ? color.toggleBg : 'bg-slate-300'
+                                }`}
+                              >
+                                <div className={`absolute top-0.5 left-0.5 bg-white w-5 h-5 rounded-full shadow-md transition-transform duration-300 flex items-center justify-center ${
+                                  category.isOpen ? 'translate-x-5' : 'translate-x-0'
+                                }`}>
+                                  {category.isOpen ? <FileCheck size={10} className={color.text} /> : <X size={10} className="text-slate-400" />}
+                                </div>
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* PORTAL SHIELD / STATUS DESCRIPTION */}
+                          <div className="mt-2 pt-3 border-t border-slate-100 flex items-center justify-between text-slate-400 gap-4">
+                            {displayMode === 'Manual' ? (
+                              <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-medium">
+                                <Power size={11} className="text-slate-400" />
+                                <span>Kontrol Instan: Portal diubah secara manual</span>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col gap-0.5 min-w-0">
+                                <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-bold">
+                                  <Clock size={11} className={category.isOpen ? color.text : 'text-slate-400'} />
+                                  <span>Otomasi Jadwal Aktif:</span>
+                                </div>
+                                <span className="text-[9px] text-slate-400 font-medium truncate pl-4">
+                                  {category.openAt || category.closeAt ? (
+                                    <>
+                                      {category.openAt ? `Buka: ${new Date(category.openAt).toLocaleString('id-ID', {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'})}` : "Buka: Instan"}
+                                      {category.closeAt ? ` • Tutup: ${new Date(category.closeAt).toLocaleString('id-ID', {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'})}` : " • Tutup: Manual"}
+                                    </>
+                                  ) : (
+                                    "Belum ada jadwal yang disimpan"
+                                  )}
+                                </span>
+                              </div>
+                            )}
+
+                            {/* Collapse Toggle trigger button for Auto Mode */}
+                            {displayMode === 'Auto' && (
+                              <button
+                                type="button"
+                                onClick={() => setExpandedScheduleId(isExpanded ? null : category.id)}
+                                className={`text-[10px] font-black px-3 py-1.5 bg-slate-50 hover:bg-slate-100 rounded-xl transition-all border border-slate-200/60 text-slate-600 flex items-center gap-1 shrink-0 ${
+                                  isExpanded ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : ''
+                                }`}
+                              >
+                                <span>{isExpanded ? "Tutup" : "Atur Jadwal"}</span>
+                                <ChevronDown size={11} className={`transition-transform duration-300 ${isExpanded ? 'rotate-180' : 'rotate-0'}`} />
+                              </button>
+                            )}
+                          </div>
+
+                          {/* COLLAPSIBLE SCHEDULE PANELS */}
+                          {displayMode === 'Auto' && (
+                            <div className={`transition-all duration-500 ease-in-out ${
+                              isExpanded ? 'max-h-[200px] mt-4 opacity-100 pt-4 border-t border-dashed border-slate-200' : 'max-h-0 opacity-0 pointer-events-none'
+                            }`}>
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                                    <Calendar size={10} className="text-indigo-400" /> Auto-Open
+                                  </label>
+                                  <input 
+                                    type="datetime-local" 
+                                    className="w-full text-[10px] p-2.5 bg-slate-50 border border-slate-200/80 rounded-xl outline-none focus:border-indigo-400 focus:bg-white font-medium text-slate-600 transition-all shadow-inner"
+                                    value={category.openAt || ""}
+                                    onChange={(e) => updateSchedule(category.id, 'openAt', e.target.value)}
+                                  />
+                                </div>
+                                <div className="space-y-1.5">
+                                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                                    <Clock size={10} className="text-indigo-400" /> Auto-Close
+                                  </label>
+                                  <input 
+                                    type="datetime-local" 
+                                    className="w-full text-[10px] p-2.5 bg-slate-50 border border-slate-200/80 rounded-xl outline-none focus:border-indigo-400 focus:bg-white font-medium text-slate-600 transition-all shadow-inner"
+                                    value={category.closeAt || ""}
+                                    onChange={(e) => updateSchedule(category.id, 'closeAt', e.target.value)}
+                                  />
+                                </div>
+                              </div>
+                            </div>
                           )}
                         </div>
-                      </div>
-                      
-                      <div className="flex flex-col items-end gap-2">
-                        <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200">
-                          <button 
-                            onClick={() => updateSchedule(category.id, 'mode', 'Manual')}
-                            className={`text-[8px] px-2 py-1 rounded-md font-bold transition-all ${category.mode === 'Manual' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-                          >
-                            MANUAL
-                          </button>
-                          <button 
-                            onClick={() => updateSchedule(category.id, 'mode', 'Auto')}
-                            className={`text-[8px] px-2 py-1 rounded-md font-bold transition-all ${category.mode === 'Auto' ? 'bg-indigo-500 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-                          >
-                            AUTO
-                          </button>
-                        </div>
-                        <button 
-                          disabled={!category.mode}
-                          onClick={() => {
-                            toggleSubmission(category.id);
-                            showToast(`${category.name} ${!category.isOpen ? 'Portal Dibuka' : 'Portal Ditutup'}`, !category.isOpen ? 'success' : 'error');
-                          }}
-                          className={`relative w-10 h-5 rounded-full transition-all duration-300 focus:outline-none shadow-inner shrink-0 ${!category.mode ? 'opacity-20 cursor-not-allowed' : category.isOpen ? 'bg-indigo-500' : 'bg-slate-300'}`}
-                        >
-                          <div className={`absolute top-0.5 left-0.5 bg-white w-4 h-4 rounded-full shadow-md transition-transform duration-300 flex items-center justify-center ${category.isOpen ? 'translate-x-5' : 'translate-x-0'}`}>
-                            {category.isOpen ? <FileCheck size={8} className="text-indigo-600" /> : <X size={8} className="text-slate-400" />}
-                          </div>
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className={`grid grid-cols-2 gap-3 pt-3 border-t border-slate-200/50 transition-opacity ${(!category.mode || category.mode === 'Manual') ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
-                      <div className="space-y-1">
-                        <label className="text-[9px] font-bold text-slate-400 uppercase flex items-center gap-1">
-                          <Calendar size={10} /> Auto-Open
-                        </label>
-                        <input 
-                          type="datetime-local" 
-                          className="w-full text-[10px] p-1.5 bg-white border border-slate-200 rounded-lg outline-none focus:border-indigo-400 font-medium text-slate-600"
-                          value={category.openAt || ""}
-                          onChange={(e) => updateSchedule(category.id, 'openAt', e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[9px] font-bold text-slate-400 uppercase flex items-center gap-1">
-                          <Clock size={10} /> Auto-Close
-                        </label>
-                        <input 
-                          type="datetime-local" 
-                          className="w-full text-[10px] p-1.5 bg-white border border-slate-200 rounded-lg outline-none focus:border-indigo-400 font-medium text-slate-600"
-                          value={category.closeAt || ""}
-                          onChange={(e) => updateSchedule(category.id, 'closeAt', e.target.value)}
-                        />
-                      </div>
-                    </div>
+                      );
+                    })}
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* 2.5 KAWALAN PENGUMPULAN FAIL PER KATEGORI - GELOMBANG II */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-sm border border-white/60">
-              <div className="flex items-center gap-3 mb-8 pb-4 border-b border-slate-100">
-                <div className="p-2.5 bg-violet-100 text-violet-600 rounded-xl">
-                  <FolderOpen size={20} />
-                </div>
-                <div>
-                  <h3 className="text-xl font-black text-slate-800">Akses Pengumpulan Fail Karya (Gelombang II)</h3>
-                  <p className="text-xs text-slate-500 font-medium">Buka atau tutup portal pengumpulan karya Gelombang II.</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {submissionStatus.filter(c => c.id.endsWith('_g2')).map((category) => (
-                  <div key={category.id} className={`flex flex-col p-5 rounded-2xl border-2 transition-all duration-300 ${category.isOpen ? 'border-violet-400 bg-violet-50/40 shadow-sm' : 'border-slate-100 bg-slate-50/50 hover:border-slate-200'}`}>
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <h4 className="font-bold text-slate-800">{category.name}</h4>
-                        <div className="flex items-center gap-2 mt-1">
-                          <p className={`text-[10px] font-bold tracking-widest uppercase ${category.isOpen ? 'text-violet-600' : 'text-slate-400'}`}>
-                            {category.isOpen ? '● Portal Terbuka' : '○ Portal Ditutup'}
-                          </p>
-                          {category.mode ? (
-                            <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-bold uppercase ${category.mode === 'Auto' ? 'bg-violet-100 text-violet-600' : 'bg-slate-100 text-slate-500'}`}>
-                              {category.mode}
-                            </span>
-                          ) : (
-                            <span className="text-[8px] px-1.5 py-0.5 rounded-full font-bold uppercase bg-amber-100 text-amber-600 animate-pulse">
-                              Pilih Mode Control
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div className="flex flex-col items-end gap-2">
-                        <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200">
-                          <button 
-                            onClick={() => updateSchedule(category.id, 'mode', 'Manual')}
-                            className={`text-[8px] px-2 py-1 rounded-md font-bold transition-all ${category.mode === 'Manual' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-                          >
-                            MANUAL
-                          </button>
-                          <button 
-                            onClick={() => updateSchedule(category.id, 'mode', 'Auto')}
-                            className={`text-[8px] px-2 py-1 rounded-md font-bold transition-all ${category.mode === 'Auto' ? 'bg-violet-500 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-                          >
-                            AUTO
-                          </button>
-                        </div>
-                        <button 
-                          disabled={!category.mode}
-                          onClick={() => {
-                            toggleSubmission(category.id);
-                            showToast(`${category.name} ${!category.isOpen ? 'Portal Dibuka' : 'Portal Ditutup'}`, !category.isOpen ? 'success' : 'error');
-                          }}
-                          className={`relative w-10 h-5 rounded-full transition-all duration-300 focus:outline-none shadow-inner shrink-0 ${!category.mode ? 'opacity-20 cursor-not-allowed' : category.isOpen ? 'bg-violet-500' : 'bg-slate-300'}`}
-                        >
-                          <div className={`absolute top-0.5 left-0.5 bg-white w-4 h-4 rounded-full shadow-md transition-transform duration-300 flex items-center justify-center ${category.isOpen ? 'translate-x-5' : 'translate-x-0'}`}>
-                            {category.isOpen ? <FileCheck size={8} className="text-violet-600" /> : <X size={8} className="text-slate-400" />}
-                          </div>
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className={`grid grid-cols-2 gap-3 pt-3 border-t border-slate-200/50 transition-opacity ${(!category.mode || category.mode === 'Manual') ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
-                      <div className="space-y-1">
-                        <label className="text-[9px] font-bold text-slate-400 uppercase flex items-center gap-1">
-                          <Calendar size={10} /> Auto-Open
-                        </label>
-                        <input 
-                          type="datetime-local" 
-                          className="w-full text-[10px] p-1.5 bg-white border border-slate-200 rounded-lg outline-none focus:border-violet-400 font-medium text-slate-600"
-                          value={category.openAt || ""}
-                          onChange={(e) => updateSchedule(category.id, 'openAt', e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[9px] font-bold text-slate-400 uppercase flex items-center gap-1">
-                          <Clock size={10} /> Auto-Close
-                        </label>
-                        <input 
-                          type="datetime-local" 
-                          className="w-full text-[10px] p-1.5 bg-white border border-slate-200 rounded-lg outline-none focus:border-violet-400 font-medium text-slate-600"
-                          value={category.closeAt || ""}
-                          onChange={(e) => updateSchedule(category.id, 'closeAt', e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                );
+              })()}
             </div>
 
             {/* 3. KAWALAN PENGUMPULAN FAIL PER TAHAP */}

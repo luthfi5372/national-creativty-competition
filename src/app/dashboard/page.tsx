@@ -171,13 +171,27 @@ export default function UserDashboard() {
             else if (userCategory === "MTQ" || userCategory === "MTQ Nasional") matchingKeyPrefix = "mtq";
 
             if (matchingKeyPrefix && parsed.submissionStatus) {
-              const isGel1Open = parsed.submissionStatus.find((item: any) => item.id === `${matchingKeyPrefix}_g1`)?.isOpen;
-              const isGel2Open = parsed.submissionStatus.find((item: any) => item.id === `${matchingKeyPrefix}_g2`)?.isOpen;
-              setIsSubmissionOpen(!!(isGel1Open || isGel2Open));
-              if (isGel1Open && isGel2Open) setActiveSubmissionWave("Gelombang I & II");
-              else if (isGel1Open) setActiveSubmissionWave("Gelombang I");
-              else if (isGel2Open) setActiveSubmissionWave("Gelombang II");
-              else setActiveSubmissionWave("");
+              const categorySubs = parsed.submissionStatus.filter((item: any) => item.id.startsWith(`${matchingKeyPrefix}_g`));
+              const openSubs = categorySubs.filter((item: any) => item.isOpen);
+              const isAnyOpen = openSubs.length > 0;
+              setIsSubmissionOpen(isAnyOpen);
+              
+              if (isAnyOpen) {
+                const openWaveNames = openSubs.map((sub: any) => {
+                  const waveIdStr = sub.id.split('_g')[1];
+                  const wave = parsed.waves?.find((w: any) => w.id.toString() === waveIdStr);
+                  if (wave) {
+                    return wave.name.split(' (')[0];
+                  }
+                  const waveIdNum = parseInt(waveIdStr);
+                  const romanNumerals = ["", "I", "II", "III", "IV", "V"];
+                  return `Gelombang ${romanNumerals[waveIdNum] || waveIdStr}`;
+                });
+                const uniqueNames = Array.from(new Set(openWaveNames));
+                setActiveSubmissionWave(uniqueNames.join(" & "));
+              } else {
+                setActiveSubmissionWave("");
+              }
             } else {
               setIsSubmissionOpen(true);
               setActiveSubmissionWave("");
@@ -287,13 +301,27 @@ export default function UserDashboard() {
               else if (userCategory === "MTQ" || userCategory === "MTQ Nasional") matchingKeyPrefix = "mtq";
 
               if (matchingKeyPrefix && parsed.submissionStatus) {
-                const isGel1Open = parsed.submissionStatus.find((item: any) => item.id === `${matchingKeyPrefix}_g1`)?.isOpen;
-                const isGel2Open = parsed.submissionStatus.find((item: any) => item.id === `${matchingKeyPrefix}_g2`)?.isOpen;
-                setIsSubmissionOpen(!!(isGel1Open || isGel2Open));
-                if (isGel1Open && isGel2Open) setActiveSubmissionWave("Gelombang I & II");
-                else if (isGel1Open) setActiveSubmissionWave("Gelombang I");
-                else if (isGel2Open) setActiveSubmissionWave("Gelombang II");
-                else setActiveSubmissionWave("");
+                const categorySubs = parsed.submissionStatus.filter((item: any) => item.id.startsWith(`${matchingKeyPrefix}_g`));
+                const openSubs = categorySubs.filter((item: any) => item.isOpen);
+                const isAnyOpen = openSubs.length > 0;
+                setIsSubmissionOpen(isAnyOpen);
+                
+                if (isAnyOpen) {
+                  const openWaveNames = openSubs.map((sub: any) => {
+                    const waveIdStr = sub.id.split('_g')[1];
+                    const wave = parsed.waves?.find((w: any) => w.id.toString() === waveIdStr);
+                    if (wave) {
+                      return wave.name.split(' (')[0];
+                    }
+                    const waveIdNum = parseInt(waveIdStr);
+                    const romanNumerals = ["", "I", "II", "III", "IV", "V"];
+                    return `Gelombang ${romanNumerals[waveIdNum] || waveIdStr}`;
+                  });
+                  const uniqueNames = Array.from(new Set(openWaveNames));
+                  setActiveSubmissionWave(uniqueNames.join(" & "));
+                } else {
+                  setActiveSubmissionWave("");
+                }
               }
             } catch (e) {}
           }

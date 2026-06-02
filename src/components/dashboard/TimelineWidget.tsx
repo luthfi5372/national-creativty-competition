@@ -127,9 +127,19 @@ export default function TimelineWidget({ userCategory, userStatus, notes, global
           category: cat.category,
           color: getCategoryColor(cat.category),
           waves: cat.waves.map((wave: any) => {
-            const isGel1 = wave.label.includes('I') && !wave.label.includes('II');
             const matchedPortalWave = portalWaves && portalWaves.length > 0
-              ? portalWaves.find((w: any) => isGel1 ? w.name.includes('1') : w.name.includes('2'))
+              ? portalWaves.find((w: any) => {
+                  const cleanLabel = wave.label.toLowerCase();
+                  const cleanName = w.name.toLowerCase();
+                  if (cleanLabel.includes('iii') && cleanName.includes('3')) return true;
+                  if (cleanLabel.includes('ii') && !cleanLabel.includes('iii') && cleanName.includes('2')) return true;
+                  if (cleanLabel.includes('i') && !cleanLabel.includes('ii') && !cleanLabel.includes('iii') && cleanName.includes('1')) return true;
+                  
+                  const digitsLabel = cleanLabel.replace(/\D/g, '');
+                  const digitsName = cleanName.replace(/\D/g, '');
+                  if (digitsLabel && digitsName && digitsLabel === digitsName) return true;
+                  return false;
+                })
               : null;
             const isActive = matchedPortalWave 
               ? matchedPortalWave.status === 'Aktif'
