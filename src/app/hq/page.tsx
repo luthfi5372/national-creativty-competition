@@ -31,6 +31,7 @@ import katex from "katex";
 import "katex/dist/katex.min.css";
 import Papa from "papaparse";
 import HomepageCMS from "@/components/admin/HomepageCMS";
+import { motion, AnimatePresence } from "framer-motion";
 
 
 
@@ -441,7 +442,64 @@ function ModernHQDashboardContent() {
   const [hqForwardingMsg, setHqForwardingMsg] = useState<any | null>(null);
   const [searchForwardSchool, setSearchForwardSchool] = useState("");
 
-  // Efek memuat obrolan untuk Forum Sekolah terpilih
+  // WhatsApp-style notification and unread counts states
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
+  const [activeNotification, setActiveNotification] = useState<any | null>(null);
+
+  // Keep refs to avoid stale closures in WebSockets real-time handler
+  const selectedSchoolGroupRef = useRef<any>(null);
+  const activeTabRef = useRef<string>("Dashboard");
+
+  useEffect(() => {
+    selectedSchoolGroupRef.current = selectedSchoolGroup;
+  }, [selectedSchoolGroup]);
+
+  useEffect(() => {
+    activeTabRef.current = activeTab;
+  }, [activeTab]);
+
+  // Audio synthesizer for pleasant premium dual-note notification chime
+  const playPremiumChime = () => {
+    try {
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContext) return;
+      const ctx = new AudioContext();
+      
+      // Chime note 1 (D5)
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.type = "sine";
+      osc1.frequency.setValueAtTime(587.33, ctx.currentTime);
+      gain1.gain.setValueAtTime(0, ctx.currentTime);
+      gain1.gain.linearRampToValueAtTime(0.15, ctx.currentTime + 0.05);
+      gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
+      osc1.start();
+      osc1.stop(ctx.currentTime + 0.4);
+
+      // Chime note 2 (A5, slightly delayed)
+      setTimeout(() => {
+        try {
+          const osc2 = ctx.createOscillator();
+          const gain2 = ctx.createGain();
+          osc2.type = "sine";
+          osc2.frequency.setValueAtTime(880.00, ctx.currentTime);
+          gain2.gain.setValueAtTime(0, ctx.currentTime);
+          gain2.gain.linearRampToValueAtTime(0.15, ctx.currentTime + 0.05);
+          gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+          osc2.connect(gain2);
+          gain2.connect(ctx.destination);
+          osc2.start();
+          osc2.stop(ctx.currentTime + 0.6);
+        } catch (e) {}
+      }, 80);
+    } catch (e) {
+      console.warn("AudioContext chime error:", e);
+    }
+  };
+
+  // Efek memuat obrolan awal untuk Forum Sekolah terpilih
   useEffect(() => {
     if (activeTab !== "ForumSekolah" || !selectedSchoolGroup) return;
 
@@ -465,18 +523,16 @@ function ModernHQDashboardContent() {
     };
 
     fetchGroupMessages();
+  }, [activeTab, selectedSchoolGroup]);
 
-    // Subscribe real-time
-    const channelKey = selectedSchoolGroup.npsn 
-      ? `npsn_${selectedSchoolGroup.npsn}` 
-      : selectedSchoolGroup.schoolName.replace(/\s+/g, "_");
-
+  // Langganan global real-time untuk seluruh obrolan sekolah
+  useEffect(() => {
     const channel = supabase
-      .channel(`hq_school_chat_${channelKey}`)
+      .channel("hq_global_school_chat")
       .on(
         "postgres_changes",
         {
-          event: "*", // Listen to all events!
+          event: "*",
           schema: "public",
           table: "school_messages",
         },
@@ -491,16 +547,51 @@ function ModernHQDashboardContent() {
           const newOrOld = payload.new || payload.old;
           if (!newOrOld) return;
 
-          const matchesNpsn = selectedSchoolGroup.npsn && newOrOld.npsn === selectedSchoolGroup.npsn;
-          const matchesSchool = selectedSchoolGroup.schoolName && newOrOld.school_name?.toLowerCase() === selectedSchoolGroup.schoolName.toLowerCase();
+          const currentSelected = selectedSchoolGroupRef.current;
+          const isCurrentSchool = currentSelected && (
+            (currentSelected.npsn && newOrOld.npsn === currentSelected.npsn) ||
+            (!currentSelected.npsn && newOrOld.school_name?.toLowerCase() === currentSelected.schoolName.toLowerCase())
+          );
 
-          if (matchesNpsn || matchesSchool) {
-            if (payload.eventType === "INSERT") {
+          if (payload.eventType === "INSERT") {
+            // Append message if it belongs to the currently active chat
+            if (isCurrentSchool) {
               setGroupMessages((prev) => {
                 if (prev.some(m => m.id === payload.new.id)) return prev;
                 return [...prev, payload.new];
               });
-            } else if (payload.eventType === "UPDATE") {
+            }
+
+            // Increment unread count and trigger notification if:
+            // 1. The message is NOT sent by the admin themselves
+            // 2. AND (the admin is NOT looking at the ForumSekolah tab OR the message is NOT from the active school)
+            const isFromAdmin = payload.new.sender_id === "hq-admin" || payload.new.sender_id === "hq_admin";
+            const isLookingAtForumTab = activeTabRef.current === "ForumSekolah";
+
+            if (!isFromAdmin) {
+              // Play a pleasant notification chime
+              playPremiumChime();
+
+              if (!isCurrentSchool || !isLookingAtForumTab) {
+                const schoolKey = payload.new.npsn || payload.new.school_name || "Unknown";
+                setUnreadCounts((prev) => ({
+                  ...prev,
+                  [schoolKey]: (prev[schoolKey] || 0) + 1,
+                }));
+
+                // Set floating notification
+                setActiveNotification({
+                  id: payload.new.id || Math.random().toString(),
+                  senderName: payload.new.sender_name,
+                  schoolName: payload.new.school_name,
+                  npsn: payload.new.npsn,
+                  message: payload.new.message,
+                  timestamp: new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
+                });
+              }
+            }
+          } else if (payload.eventType === "UPDATE") {
+            if (isCurrentSchool) {
               setGroupMessages((prev) => prev.map(msg => msg.id === payload.new.id ? payload.new : msg));
             }
           }
@@ -511,7 +602,31 @@ function ModernHQDashboardContent() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [activeTab, selectedSchoolGroup, supabase]);
+  }, [supabase]);
+
+  // Efek otomatis menghapus unread counts ketika sekolah dipilih
+  useEffect(() => {
+    if (selectedSchoolGroup) {
+      const schoolKey = selectedSchoolGroup.npsn || selectedSchoolGroup.schoolName;
+      if (unreadCounts[schoolKey]) {
+        setUnreadCounts((prev) => {
+          const updated = { ...prev };
+          delete updated[schoolKey];
+          return updated;
+        });
+      }
+    }
+  }, [selectedSchoolGroup, unreadCounts]);
+
+  // Auto-dismiss floating chat notification after 6 seconds
+  useEffect(() => {
+    if (activeNotification) {
+      const timer = setTimeout(() => {
+        setActiveNotification(null);
+      }, 6000);
+      return () => clearTimeout(timer);
+    }
+  }, [activeNotification]);
 
   const handleSendGroupMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -2310,6 +2425,7 @@ function ModernHQDashboardContent() {
     
     return Object.values(groups);
   }, [realEntries]);
+  const totalUnreadCount = Object.values(unreadCounts).reduce((sum, count) => sum + count, 0);
 
   return (
     <div className="flex h-screen bg-slate-50 text-slate-800 font-sans overflow-hidden relative">
@@ -2361,7 +2477,7 @@ function ModernHQDashboardContent() {
               }
             }).length },
             { id: "Pengumuman", icon: <Megaphone size={18} />, label: "Siaran Info" },
-            { id: "ForumSekolah", icon: <MessageSquare size={18} />, label: "Forum Sekolah" },
+            { id: "ForumSekolah", icon: <MessageSquare size={18} />, label: "Forum Sekolah", count: totalUnreadCount > 0 ? totalUnreadCount : undefined },
             { id: "Kegiatan", icon: <CalendarDays size={18} />, label: "Kegiatan" },
             { id: "Schedule", icon: <FileText size={18} />, label: "Kelola Halaman Depan" },
             { id: "Timeline", icon: <Calendar size={18} />, label: "Kelola Timeline Lomba" },
@@ -2400,7 +2516,13 @@ function ModernHQDashboardContent() {
                   {item.label}
                 </div>
                 {item.count !== undefined && (
-                  <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black ${activeTab === item.id ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                  <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black transition-all ${
+                    item.id === "ForumSekolah"
+                      ? "bg-emerald-500 text-white shadow-[0_0_12px_rgba(16,185,129,0.5)] animate-pulse"
+                      : activeTab === item.id 
+                        ? 'bg-white/20 text-white' 
+                        : 'bg-slate-100 text-slate-500'
+                  }`}>
                     {item.count}
                   </span>
                 )}
@@ -4835,7 +4957,7 @@ function ModernHQDashboardContent() {
                         }`}>
                           {group.schoolName.charAt(0)}
                         </div>
-                        <div className="overflow-hidden min-w-0">
+                        <div className="overflow-hidden min-w-0 flex-1">
                           <h4 className={`font-bold text-xs truncate uppercase tracking-tight ${isSelected ? "text-white" : "text-slate-800"}`}>
                             {group.schoolName}
                           </h4>
@@ -4858,6 +4980,15 @@ function ModernHQDashboardContent() {
                             </span>
                           </div>
                         </div>
+                        {(() => {
+                          const schoolKey = group.npsn || group.schoolName;
+                          const unreadNum = unreadCounts[schoolKey] || 0;
+                          return unreadNum > 0 ? (
+                            <span className="shrink-0 bg-emerald-500 text-white font-extrabold text-[10px] w-5 h-5 flex items-center justify-center rounded-full shadow-[0_0_12px_rgba(16,185,129,0.5)] animate-bounce">
+                              {unreadNum}
+                            </span>
+                          ) : null;
+                        })()}
                       </button>
                     );
                   })}
@@ -5953,6 +6084,60 @@ function ModernHQDashboardContent() {
           </div>
         </div>
       </div>
+      {/* 🔔 FLOATING TOAST NOTIFICATION FOR REAL-TIME SCHOOL CHAT */}
+      <AnimatePresence>
+        {activeNotification && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.9 }}
+            onClick={() => {
+              setActiveTab("ForumSekolah");
+              const matchingSchool = schoolGroups.find(
+                g => (activeNotification.npsn && g.npsn === activeNotification.npsn) || 
+                     (!activeNotification.npsn && g.schoolName === activeNotification.schoolName)
+              );
+              if (matchingSchool) {
+                setSelectedSchoolGroup(matchingSchool);
+              }
+              setActiveNotification(null);
+            }}
+            className="fixed bottom-6 right-6 z-[999] max-w-sm w-full bg-white/80 backdrop-blur-xl border border-indigo-100/60 shadow-[0_20px_50px_rgba(79,70,229,0.15)] rounded-3xl p-4 flex gap-3.5 cursor-pointer hover:bg-white/90 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 group"
+          >
+            <div className="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center shrink-0 shadow-sm transition-transform duration-300 group-hover:rotate-12">
+              <MessageSquare size={20} />
+            </div>
+            
+            <div className="min-w-0 flex-1">
+              <div className="flex justify-between items-start gap-1">
+                <h4 className="text-xs font-black text-slate-800 truncate uppercase tracking-tight">
+                  {activeNotification.senderName}
+                </h4>
+                <span className="text-[9px] text-slate-400 font-bold tracking-wider shrink-0 mt-0.5">
+                  {activeNotification.timestamp}
+                </span>
+              </div>
+              <p className="text-[10px] font-bold text-indigo-500 truncate mt-0.5 uppercase tracking-wide">
+                {activeNotification.schoolName}
+              </p>
+              <p className="text-[11px] text-slate-600 mt-1 font-medium line-clamp-2 leading-relaxed">
+                {activeNotification.message}
+              </p>
+            </div>
+            
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveNotification(null);
+              }}
+              className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100/50 shrink-0 self-start transition-colors"
+            >
+              <X size={14} />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* 🌟 PREMIUM SOLID DARK OVERLAY FOR HQ LOGOUT & SYNC (LOCKDOWN MODE - LIGHTWEIGHT & LAG-FREE) */}
       {isLoggingOut && (
         <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-slate-950 animate-in fade-in duration-200">
