@@ -30,6 +30,7 @@ import {
 import katex from "katex";
 import "katex/dist/katex.min.css";
 import Papa from "papaparse";
+import HomepageCMS from "@/components/admin/HomepageCMS";
 
 
 
@@ -426,6 +427,7 @@ function ModernHQDashboardContent() {
   const [dynamicChartData, setDynamicChartData] = useState<any[]>([]);
   const [dynamicBarData, setDynamicBarData] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('Dashboard');
+  const [mediaSubTab, setMediaSubTab] = useState<'gallery' | 'homepage'>('gallery');
   const [selectedSchoolGroup, setSelectedSchoolGroup] = useState<any>(null);
   const [groupMessages, setGroupMessages] = useState<any[]>([]);
   const [isLoadingGroupMessages, setIsLoadingGroupMessages] = useState(false);
@@ -4440,8 +4442,25 @@ function ModernHQDashboardContent() {
         {/* 🎛️ KONTEN TAB: MEDIA (KUSTOMISASI ASET VISUAL) */}
         {activeTab === "Media" && (
           <div className="space-y-6">
-            {/* 1. MANAJEMEN GALERI BERANDA */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-sm border border-white/60">
+            {/* SUB-TAB SWITCHER FOR MEDIA */}
+            <div className="flex bg-white/80 backdrop-blur-md p-1.5 rounded-2xl border border-white/60 max-w-lg mr-auto text-left shadow-sm">
+              <button
+                onClick={() => setMediaSubTab("gallery")}
+                className={`flex-1 py-2.5 px-4 rounded-xl font-bold text-xs uppercase transition-all flex items-center justify-center gap-2 ${mediaSubTab === 'gallery' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+              >
+                <ImageIcon size={14} /> Galeri Foto Utama
+              </button>
+              <button
+                onClick={() => setMediaSubTab("homepage")}
+                className={`flex-1 py-2.5 px-4 rounded-xl font-bold text-xs uppercase transition-all flex items-center justify-center gap-2 ${mediaSubTab === 'homepage' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+              >
+                <Sparkles size={14} /> Konten & Timeline Landing Page
+              </button>
+            </div>
+
+            {mediaSubTab === "gallery" ? (
+              /* 1. MANAJEMEN GALERI BERANDA */
+              <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-sm border border-white/60">
               <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4 border-b border-slate-100 pb-6">
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 bg-indigo-100 text-indigo-600 rounded-xl">
@@ -4570,6 +4589,9 @@ function ModernHQDashboardContent() {
                 )}
               </div>
             </div>
+            ) : (
+              <HomepageCMS />
+            )}
           </div>
         )}
 
