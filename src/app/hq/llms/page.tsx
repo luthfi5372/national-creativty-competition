@@ -321,7 +321,9 @@ export default function IntegratedLLMSDashboard() {
     return (
       <div
         key={session.id}
-        className="bg-white border border-slate-100/90 shadow-[0_4px_20px_rgba(0,0,0,0.015)] hover:border-indigo-150 rounded-[24px] p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all duration-300 relative hover:shadow-md hover:scale-[1.005] group/card"
+        className={`bg-white border border-slate-100/90 shadow-[0_4px_20px_rgba(0,0,0,0.015)] hover:border-indigo-150 rounded-[24px] p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all duration-300 relative hover:shadow-md hover:scale-[1.005] group/card hover:z-20 ${
+          openDropdownId === session.id ? "z-30" : "z-10"
+        }`}
       >
         {/* Kolom Kiri: Ikon & Info Judul */}
         <div className="flex items-center gap-4 min-w-0">
