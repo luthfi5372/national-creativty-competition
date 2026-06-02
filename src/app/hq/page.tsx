@@ -3045,38 +3045,37 @@ function ModernHQDashboardContent() {
                       }).length
                     )}
                   </span>
-                  {/* Gelombang 1 */}
-                  <span className="bg-sky-50 text-sky-700 px-3.5 py-1.5 rounded-xl text-xs font-black border border-sky-100 shadow-sm shrink-0 flex items-center gap-1.5 min-w-[120px]">
-                    <span className="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
-                    {waves[0]?.name?.split(" (")[0] || "Gelombang 1"}: {isLoading ? (
-                      <span className="inline-block w-6 h-3 bg-sky-200/50 rounded animate-pulse"></span>
-                    ) : (
-                      realEntries.filter(e => {
-                        if (!e.notes) return false;
-                        try {
-                          if (!JSON.parse(e.notes).submission_url) return false;
-                          const wName = getParticipantWave(e.created_at);
-                          return wName.toLowerCase().includes("gelombang 1") || wName.toLowerCase().includes("early bird");
-                        } catch (err) { return false; }
-                      }).length
-                    )}
-                  </span>
-                  {/* Gelombang 2 */}
-                  <span className="bg-amber-50 text-amber-700 px-3.5 py-1.5 rounded-xl text-xs font-black border border-amber-100 shadow-sm shrink-0 flex items-center gap-1.5 min-w-[120px]">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                    {waves[1]?.name?.split(" (")[0] || "Gelombang 2"}: {isLoading ? (
-                      <span className="inline-block w-6 h-3 bg-amber-200/50 rounded animate-pulse"></span>
-                    ) : (
-                      realEntries.filter(e => {
-                        if (!e.notes) return false;
-                        try {
-                          if (!JSON.parse(e.notes).submission_url) return false;
-                          const wName = getParticipantWave(e.created_at);
-                          return wName.toLowerCase().includes("gelombang 2") || wName.toLowerCase().includes("regular");
-                        } catch (err) { return false; }
-                      }).length
-                    )}
-                  </span>
+                  {/* Dynamic Waves Stats */}
+                  {waves.map((wave, idx) => {
+                    const statColors = [
+                      { bg: "bg-sky-50 text-sky-700 border-sky-100", dot: "bg-sky-500" },
+                      { bg: "bg-amber-50 text-amber-700 border-amber-100", dot: "bg-amber-500" },
+                      { bg: "bg-violet-50 text-violet-700 border-violet-100", dot: "bg-violet-500" },
+                      { bg: "bg-emerald-50 text-emerald-700 border-emerald-100", dot: "bg-emerald-500" }
+                    ];
+                    const style = statColors[idx % statColors.length];
+                    const waveCleanName = wave.name.split(" (")[0];
+
+                    return (
+                      <span key={wave.id} className={`${style.bg} px-3.5 py-1.5 rounded-xl text-xs font-black border border-slate-200/20 shadow-sm shrink-0 flex items-center gap-1.5 min-w-[120px]`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${style.dot}`}></span>
+                        {waveCleanName}: {isLoading ? (
+                          <span className="inline-block w-6 h-3 bg-slate-200/50 rounded animate-pulse"></span>
+                        ) : (
+                          realEntries.filter(e => {
+                            if (!e.notes) return false;
+                            try {
+                              if (!JSON.parse(e.notes).submission_url) return false;
+                              const wName = getParticipantWave(e.created_at);
+                              return wName.toLowerCase().includes(waveCleanName.toLowerCase()) ||
+                                     (idx === 0 && wName.toLowerCase().includes("early bird")) ||
+                                     (idx === 1 && wName.toLowerCase().includes("regular"));
+                            } catch (err) { return false; }
+                          }).length
+                        )}
+                      </span>
+                    );
+                  })}
                   {/* Ekspor CSV Karya Button */}
                   <button
                     onClick={handleExportKaryaCSV}
@@ -3129,25 +3128,36 @@ function ModernHQDashboardContent() {
                     ))}
                   </div>
 
-                  {/* Filter Gelombang */}
-                  <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200/60 shadow-inner">
-                    {[
-                      { value: "All", label: "Semua Gelombang" },
-                      { value: "Gelombang 1", label: "Gelombang 1" },
-                      { value: "Gelombang 2", label: "Gelombang 2" }
-                    ].map((wTab) => (
-                      <button
-                        key={wTab.value}
-                        onClick={() => setFilterWave(wTab.value)}
-                        className={`px-4 py-2 rounded-lg text-xs font-black transition-all ${
-                          filterWave === wTab.value
-                            ? 'bg-white text-slate-800 shadow-sm border border-slate-200/40'
-                            : 'text-slate-500 hover:text-slate-800'
-                        }`}
-                      >
-                        {wTab.label}
-                      </button>
-                    ))}
+                  {/* Filter Gelombang Dinamis */}
+                  <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200/60 shadow-inner overflow-x-auto gap-0.5 max-w-full">
+                    <button
+                      type="button"
+                      onClick={() => setFilterWave("All")}
+                      className={`px-4 py-2 rounded-lg text-xs font-black transition-all shrink-0 ${
+                        filterWave === "All"
+                          ? 'bg-white text-slate-800 shadow-sm border border-slate-200/40'
+                          : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      Semua Gelombang
+                    </button>
+                    {waves.map((wave) => {
+                      const waveCleanName = wave.name.split(" (")[0];
+                      return (
+                        <button
+                          key={wave.id}
+                          type="button"
+                          onClick={() => setFilterWave(waveCleanName)}
+                          className={`px-4 py-2 rounded-lg text-xs font-black transition-all shrink-0 ${
+                            filterWave === waveCleanName
+                              ? 'bg-white text-slate-800 shadow-sm border border-slate-200/40'
+                              : 'text-slate-500 hover:text-slate-800'
+                          }`}
+                        >
+                          {waveCleanName}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -3190,13 +3200,11 @@ function ModernHQDashboardContent() {
                       .filter(e => {
                         if (filterWave === "All") return true;
                         const wName = getParticipantWave(e.created_at);
-                        if (filterWave === "Gelombang 1") {
-                          return wName.toLowerCase().includes("gelombang 1") || wName.toLowerCase().includes("early bird");
-                        }
-                        if (filterWave === "Gelombang 2") {
-                          return wName.toLowerCase().includes("gelombang 2") || wName.toLowerCase().includes("regular");
-                        }
-                        return true;
+                        const cleanFilter = filterWave.toLowerCase();
+                        const cleanWName = wName.toLowerCase();
+                        if (cleanFilter.includes("gelombang 1") && (cleanWName.includes("gelombang 1") || cleanWName.includes("early bird"))) return true;
+                        if (cleanFilter.includes("gelombang 2") && (cleanWName.includes("gelombang 2") || cleanWName.includes("regular"))) return true;
+                        return cleanWName.includes(cleanFilter);
                       })
                       .filter(e => {
                         if (!searchQuery) return true;
@@ -3247,14 +3255,25 @@ function ModernHQDashboardContent() {
                             <div className="text-[10px] text-slate-400 mt-0.5">{entry.province || "-"}</div>
                           </td>
                           <td className="py-4 px-6">
-                            <span className={`px-2.5 py-1 rounded-xl text-[11px] font-bold border transition-colors ${
-                              getParticipantWave(entry.created_at).toLowerCase().includes("gelombang 2") ||
-                              getParticipantWave(entry.created_at).toLowerCase().includes("regular")
-                                ? 'bg-amber-50 text-amber-700 border-amber-100/80 hover:bg-amber-100/50'
-                                : 'bg-sky-50 text-sky-700 border-sky-100/80 hover:bg-sky-100/50'
-                            }`}>
-                              {getParticipantWave(entry.created_at).split(" (")[0]}
-                            </span>
+                            {(() => {
+                              const wName = getParticipantWave(entry.created_at);
+                              const waveClean = wName.split(" (")[0];
+                              const matchedWave = waves.find(w => w.name.includes(waveClean) || waveClean.includes(w.name.split(" (")[0]));
+                              const waveId = matchedWave ? matchedWave.id : 1;
+                              const badgeColors = [
+                                'bg-sky-50 text-sky-700 border-sky-100/80 hover:bg-sky-100/50',
+                                'bg-amber-50 text-amber-700 border-amber-100/80 hover:bg-amber-100/50',
+                                'bg-violet-50 text-violet-700 border-violet-100/80 hover:bg-violet-100/50',
+                                'bg-emerald-50 text-emerald-700 border-emerald-100/80 hover:bg-emerald-100/50'
+                              ];
+                              const badgeStyle = badgeColors[(waveId - 1) % badgeColors.length] || badgeColors[0];
+
+                              return (
+                                <span className={`px-2.5 py-1 rounded-xl text-[11px] font-bold border transition-colors ${badgeStyle}`}>
+                                  {waveClean}
+                                </span>
+                              );
+                            })()}
                           </td>
                           <td className="py-4 px-6">
                             <span className="bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-xl text-xs font-bold border border-indigo-100">
