@@ -11,7 +11,7 @@ import {
   LayoutGrid, Users, BadgeCheck, Megaphone, 
   Calendar, Image as ImageIcon, Server, Settings,
   LogOut, UserCircle, ShieldCheck, BellRing, Database, Clock, Loader2, Trophy,
-  Power, XCircle, CheckCircle2, Trash2, AlertCircle, Plus, CheckCircle
+  Power, XCircle, CheckCircle2, Trash2, AlertCircle, Plus, CheckCircle, FileText
 } from 'lucide-react';
 
 export default function SettingsDashboard() {
@@ -418,6 +418,11 @@ export default function SettingsDashboard() {
           <Link href="/hq?tab=Timeline" className="flex items-center space-x-3 px-4 py-3 text-gray-500 hover:bg-gray-50 rounded-xl transition-all font-semibold text-sm">
             <Calendar className="w-5 h-5" />
             <span>Kelola Timeline Lomba</span>
+          </Link>
+
+          <Link href="/hq?tab=Schedule" className="flex items-center space-x-3 px-4 py-3 text-gray-500 hover:bg-gray-50 rounded-xl transition-all font-semibold text-sm">
+            <FileText className="w-5 h-5" />
+            <span>Kelola Halaman Depan</span>
           </Link>
           
           <Link href="/hq?tab=Media" className="flex items-center space-x-3 px-4 py-3 text-gray-500 hover:bg-gray-50 rounded-xl transition-all font-semibold text-sm">

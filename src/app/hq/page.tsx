@@ -427,7 +427,6 @@ function ModernHQDashboardContent() {
   const [dynamicChartData, setDynamicChartData] = useState<any[]>([]);
   const [dynamicBarData, setDynamicBarData] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('Dashboard');
-  const [mediaSubTab, setMediaSubTab] = useState<'gallery' | 'homepage'>('gallery');
   const [selectedSchoolGroup, setSelectedSchoolGroup] = useState<any>(null);
   const [groupMessages, setGroupMessages] = useState<any[]>([]);
   const [isLoadingGroupMessages, setIsLoadingGroupMessages] = useState(false);
@@ -2289,6 +2288,7 @@ function ModernHQDashboardContent() {
             { id: "Pengumuman", icon: <Megaphone size={18} />, label: "Siaran Info" },
             { id: "ForumSekolah", icon: <MessageSquare size={18} />, label: "Forum Sekolah" },
             { id: "Kegiatan", icon: <CalendarDays size={18} />, label: "Kegiatan" },
+            { id: "Schedule", icon: <FileText size={18} />, label: "Kelola Halaman Depan" },
             { id: "Timeline", icon: <Calendar size={18} />, label: "Kelola Timeline Lomba" },
             { id: "Media", icon: <ImageIcon size={18} />, label: "Kelola Media" },
             { id: "LLMS", icon: <GraduationCap size={18} />, label: "Manajemen LLMS", badge: "New" },
@@ -2346,7 +2346,7 @@ function ModernHQDashboardContent() {
         <header className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">
-              {activeTab === "BelumDaftar" ? "Belum Pilih Bidang Lomba" : activeTab === "ForumSekolah" ? "Forum Sekolah (NPSN)" : activeTab === "Timeline" ? "Kelola Timeline Lomba" : activeTab}
+              {activeTab === "BelumDaftar" ? "Belum Pilih Bidang Lomba" : activeTab === "ForumSekolah" ? "Forum Sekolah (NPSN)" : activeTab === "Schedule" ? "Kelola Halaman Depan" : activeTab === "Timeline" ? "Kelola Timeline Lomba" : activeTab}
             </h1>
             <p className="text-slate-500 text-sm mt-1">
               {activeTab === "Dashboard" && "Pantau pergerakan data pendaftaran NCC 13th."}
@@ -2356,6 +2356,7 @@ function ModernHQDashboardContent() {
               {activeTab === "Karya" && "Manajemen dan direktori pengumpulan karya tulis, video, dan naskah peserta."}
               {activeTab === "ForumSekolah" && "Pantau dan interaksi langsung pada obrolan forum Ruang Sekolah secara real-time."}
               {activeTab === "Kegiatan" && "Kawal gerbang pendaftaran dan fail karya."}
+              {activeTab === "Schedule" && "Manajemen dinamis penjelasan, deskripsi, dan benefits di halaman awal website."}
               {activeTab === "Timeline" && "Kelola tanggal penting, gelombang pendaftaran, dan alur lomba peserta."}
               {activeTab === "Pengaturan" && "Konfigurasi sistem Markas Besar."}
             </p>
@@ -3639,6 +3640,11 @@ function ModernHQDashboardContent() {
 
 
 
+        {/* 6. TAB: DYNAMIC HOMEPAGE CMS */}
+        {activeTab === 'Schedule' && (
+          <HomepageCMS />
+        )}
+
         {/* 6B. TAB: DYNAMIC USER TIMELINE CONFIGURATION (RE-LOCATED) */}
         {/* 6. TAB: SCHEDULE LOMBA (MASTER SCHEDULE) */}
           {activeTab === 'Timeline' && (
@@ -4442,25 +4448,8 @@ function ModernHQDashboardContent() {
         {/* 🎛️ KONTEN TAB: MEDIA (KUSTOMISASI ASET VISUAL) */}
         {activeTab === "Media" && (
           <div className="space-y-6">
-            {/* SUB-TAB SWITCHER FOR MEDIA */}
-            <div className="flex bg-white/80 backdrop-blur-md p-1.5 rounded-2xl border border-white/60 max-w-lg mr-auto text-left shadow-sm">
-              <button
-                onClick={() => setMediaSubTab("gallery")}
-                className={`flex-1 py-2.5 px-4 rounded-xl font-bold text-xs uppercase transition-all flex items-center justify-center gap-2 ${mediaSubTab === 'gallery' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
-              >
-                <ImageIcon size={14} /> Galeri Foto Utama
-              </button>
-              <button
-                onClick={() => setMediaSubTab("homepage")}
-                className={`flex-1 py-2.5 px-4 rounded-xl font-bold text-xs uppercase transition-all flex items-center justify-center gap-2 ${mediaSubTab === 'homepage' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
-              >
-                <Sparkles size={14} /> Konten & Timeline Landing Page
-              </button>
-            </div>
-
-            {mediaSubTab === "gallery" ? (
-              /* 1. MANAJEMEN GALERI BERANDA */
-              <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-sm border border-white/60">
+            {/* 1. MANAJEMEN GALERI BERANDA */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-sm border border-white/60">
               <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4 border-b border-slate-100 pb-6">
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 bg-indigo-100 text-indigo-600 rounded-xl">
@@ -4589,9 +4578,6 @@ function ModernHQDashboardContent() {
                 )}
               </div>
             </div>
-            ) : (
-              <HomepageCMS />
-            )}
           </div>
         )}
 

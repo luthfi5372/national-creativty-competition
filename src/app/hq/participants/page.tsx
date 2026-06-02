@@ -8,7 +8,7 @@ import { createClient } from '@/lib/supabase/client';
 import { 
   LayoutGrid, Users, BadgeCheck, Megaphone, 
   Calendar, Image as ImageIcon, Server, Settings,
-  LogOut, ShieldCheck, Clock, Search, Loader2, MoreVertical
+  LogOut, ShieldCheck, Clock, Search, Loader2, MoreVertical, FileText
 } from 'lucide-react';
 
 export default function ParticipantsBook() {
@@ -95,6 +95,11 @@ export default function ParticipantsBook() {
           <Link href="/hq?tab=Timeline" className="flex items-center space-x-3 px-4 py-3 text-gray-500 hover:bg-gray-50 rounded-xl transition-all font-semibold text-sm">
             <Calendar className="w-5 h-5" />
             <span>Kelola Timeline Lomba</span>
+          </Link>
+
+          <Link href="/hq?tab=Schedule" className="flex items-center space-x-3 px-4 py-3 text-gray-500 hover:bg-gray-50 rounded-xl transition-all font-semibold text-sm">
+            <FileText className="w-5 h-5" />
+            <span>Kelola Halaman Depan</span>
           </Link>
           
           <Link href="/hq?tab=Media" className="flex items-center space-x-3 px-4 py-3 text-gray-500 hover:bg-gray-50 rounded-xl transition-all font-semibold text-sm">

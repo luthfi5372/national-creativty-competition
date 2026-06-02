@@ -507,6 +507,7 @@ export default function IntegratedLLMSDashboard() {
     { href: "/hq?tab=ForumSekolah", icon: MessageSquare, label: "Forum Sekolah" },
     { href: "/hq?tab=Kegiatan", icon: Calendar, label: "Kegiatan" },
     { href: "/hq?tab=Timeline", icon: Calendar, label: "Kelola Timeline Lomba" },
+    { href: "/hq?tab=Schedule", icon: FileText, label: "Kelola Halaman Depan" },
     { href: "/hq?tab=Media", icon: ImageIcon, label: "Kelola Media" },
     { href: "/hq/settings", icon: Settings, label: "Pengaturan" },
   ];
