@@ -1415,10 +1415,8 @@ function ModernHQDashboardContent() {
     ));
   };
 
-  const [waves, setWaves] = useState([
-    { id: 1, name: "Gelombang 1 (Early Bird)", status: "Aktif", startDate: "2026-07-16", endDate: "2026-09-03" },
-    { id: 2, name: "Gelombang 2 (Regular)", status: "Segera", startDate: "2026-10-01", endDate: "2026-10-25" },
-  ]);
+  // Waves loaded dynamically from DB via fetchPortalSettings — do NOT hardcode here
+  const [waves, setWaves] = useState<any[]>([]);
 
   const toggleWaveStatus = (id: number) => {
     setWaves(prev => prev.map(w => 
@@ -2678,7 +2676,7 @@ function ModernHQDashboardContent() {
 
   // --- 🌊 DYNAMIC WAVE DETECTION HELPER ---
   const getParticipantWave = (createdAtStr: string) => {
-    if (!createdAtStr) return "Gelombang 1 (Early Bird)";
+    if (!createdAtStr) return waves.length > 0 ? waves[0].name : "Gelombang 1";
     const date = new Date(createdAtStr);
     
     // Sort waves chronologically by start date
@@ -2698,18 +2696,18 @@ function ModernHQDashboardContent() {
       }
     }
     
-    // Fallback: compare boundaries
+    // Fallback: assign to the chronologically closest past wave
     if (sortedWaves.length > 0) {
       const firstWaveEnd = sortedWaves[0].endDate ? new Date(sortedWaves[0].endDate + "T23:59:59") : new Date();
       if (date <= firstWaveEnd) {
         return sortedWaves[0].name;
       } else if (sortedWaves.length > 1) {
-        return sortedWaves[1].name;
+        return sortedWaves[sortedWaves.length - 1].name;
       }
       return sortedWaves[0].name;
     }
     
-    return "Gelombang 1 (Early Bird)";
+    return "Gelombang 1";
   };
 
   // --- 🌊 EXPORT SUBMISSIONS CSV ---
@@ -2796,14 +2794,14 @@ function ModernHQDashboardContent() {
       })
       .filter(e => {
         if (filterWave === "All") return true;
-        const wName = getParticipantWave(e.created_at);
-        if (filterWave === "Gelombang 1") {
-          return wName.toLowerCase().includes("gelombang 1") || wName.toLowerCase().includes("early bird");
-        }
-        if (filterWave === "Gelombang 2") {
-          return wName.toLowerCase().includes("gelombang 2") || wName.toLowerCase().includes("regular");
-        }
-        return true;
+        // Dynamic: match selected wave by checking if entry's registration date falls within the wave's date range
+        const selectedWave = waves.find(w => w.name === filterWave || w.name.split(" (")[0] === filterWave);
+        if (!selectedWave) return true; // Unknown wave key — show all
+        if (!selectedWave.startDate || !selectedWave.endDate) return true;
+        const entryDate = new Date(e.created_at);
+        const start = new Date(selectedWave.startDate + "T00:00:00");
+        const end   = new Date(selectedWave.endDate   + "T23:59:59");
+        return entryDate >= start && entryDate <= end;
       })
       .filter(e => {
         if (!searchQuery) return true;
@@ -3122,28 +3120,30 @@ function ModernHQDashboardContent() {
                       `Total Tiket Aktif: ${realEntries.filter(e => e.payment_status === 'Verified').length}`
                     )}
                   </span>
-                  <span className="bg-sky-50 text-sky-700 px-3.5 py-1.5 rounded-xl text-xs font-black border border-sky-100 shadow-sm shrink-0 flex items-center gap-1.5 min-w-[120px]">
-                    <span className="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
-                    {waves[0]?.name?.split(" (")[0] || "Gelombang 1"}: {isLoading ? (
-                      <span className="inline-block w-6 h-3 bg-sky-200/50 rounded animate-pulse"></span>
-                    ) : (
-                      realEntries.filter(e => {
-                        const wName = getParticipantWave(e.created_at);
-                        return wName.toLowerCase().includes("gelombang 1") || wName.toLowerCase().includes("early bird");
-                      }).length
-                    )}
-                  </span>
-                  <span className="bg-amber-50 text-amber-700 px-3.5 py-1.5 rounded-xl text-xs font-black border border-amber-100 shadow-sm shrink-0 flex items-center gap-1.5 min-w-[120px]">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                    {waves[1]?.name?.split(" (")[0] || "Gelombang 2"}: {isLoading ? (
-                      <span className="inline-block w-6 h-3 bg-amber-200/50 rounded animate-pulse"></span>
-                    ) : (
-                      realEntries.filter(e => {
-                        const wName = getParticipantWave(e.created_at);
-                        return wName.toLowerCase().includes("gelombang 2") || wName.toLowerCase().includes("regular");
-                      }).length
-                    )}
-                  </span>
+                  {waves.map((wave, idx) => {
+                    const statColors = [
+                      { bg: "bg-sky-50 text-sky-700 border-sky-100", dot: "bg-sky-500" },
+                      { bg: "bg-amber-50 text-amber-700 border-amber-100", dot: "bg-amber-500" },
+                      { bg: "bg-violet-50 text-violet-700 border-violet-100", dot: "bg-violet-500" },
+                      { bg: "bg-emerald-50 text-emerald-700 border-emerald-100", dot: "bg-emerald-500" },
+                      { bg: "bg-pink-50 text-pink-700 border-pink-100", dot: "bg-pink-500" },
+                    ];
+                    const style = statColors[idx % statColors.length];
+                    const waveClean = wave.name.split(" (")[0];
+                    const count = realEntries.filter(e => {
+                      if (!wave.startDate || !wave.endDate) return false;
+                      const d = new Date(e.created_at);
+                      return d >= new Date(wave.startDate + "T00:00:00") && d <= new Date(wave.endDate + "T23:59:59");
+                    }).length;
+                    return (
+                      <span key={wave.id ?? idx} className={`${style.bg} px-3.5 py-1.5 rounded-xl text-xs font-black border shadow-sm shrink-0 flex items-center gap-1.5 min-w-[120px]`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${style.dot}`}></span>
+                        {waveClean}: {isLoading ? (
+                          <span className="inline-block w-6 h-3 bg-slate-200/50 rounded animate-pulse"></span>
+                        ) : count}
+                      </span>
+                    );
+                  })}
                   <span className="bg-slate-50 text-slate-600 px-3.5 py-1.5 rounded-xl text-xs font-black border border-slate-200 shadow-sm shrink-0 flex items-center gap-1.5 min-w-[100px]">
                     <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                     Total Semua: {isLoading ? (
@@ -3215,8 +3215,11 @@ function ModernHQDashboardContent() {
                     className="w-full pl-4 pr-10 py-2.5 bg-white/90 backdrop-blur-md border border-white/60 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 appearance-none text-slate-700 font-medium shadow-sm transition-all"
                   >
                     <option value="All">Semua Gelombang</option>
-                    <option value="Gelombang 1">Gelombang 1</option>
-                    <option value="Gelombang 2">Gelombang 2</option>
+                    {waves.map((wave) => (
+                      <option key={wave.id ?? wave.name} value={wave.name}>
+                        {wave.name}
+                      </option>
+                    ))}
                   </select>
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                     <Filter size={14} className="text-slate-400" />
@@ -3622,10 +3625,9 @@ function ModernHQDashboardContent() {
                             if (!e.notes) return false;
                             try {
                               if (!JSON.parse(e.notes).submission_url) return false;
-                              const wName = getParticipantWave(e.created_at);
-                              return wName.toLowerCase().includes(waveCleanName.toLowerCase()) ||
-                                     (idx === 0 && wName.toLowerCase().includes("early bird")) ||
-                                     (idx === 1 && wName.toLowerCase().includes("regular"));
+                              if (!wave.startDate || !wave.endDate) return false;
+                              const d = new Date(e.created_at);
+                              return d >= new Date(wave.startDate + "T00:00:00") && d <= new Date(wave.endDate + "T23:59:59");
                             } catch (err) { return false; }
                           }).length
                         )}
@@ -3755,12 +3757,14 @@ function ModernHQDashboardContent() {
                       })
                       .filter(e => {
                         if (filterWave === "All") return true;
-                        const wName = getParticipantWave(e.created_at);
-                        const cleanFilter = filterWave.toLowerCase();
-                        const cleanWName = wName.toLowerCase();
-                        if (cleanFilter.includes("gelombang 1") && (cleanWName.includes("gelombang 1") || cleanWName.includes("early bird"))) return true;
-                        if (cleanFilter.includes("gelombang 2") && (cleanWName.includes("gelombang 2") || cleanWName.includes("regular"))) return true;
-                        return cleanWName.includes(cleanFilter);
+                        // Dynamic: find the selected wave and match by date range
+                        const selectedWave = waves.find(w => w.name === filterWave || w.name.split(" (")[0] === filterWave);
+                        if (!selectedWave) return true;
+                        if (!selectedWave.startDate || !selectedWave.endDate) return true;
+                        const entryDate = new Date(e.created_at);
+                        const start = new Date(selectedWave.startDate + "T00:00:00");
+                        const end   = new Date(selectedWave.endDate   + "T23:59:59");
+                        return entryDate >= start && entryDate <= end;
                       })
                       .filter(e => {
                         if (!searchQuery) return true;
