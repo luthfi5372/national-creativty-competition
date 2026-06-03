@@ -21,7 +21,7 @@ import {
   LayoutDashboard, Users, FileCheck, Settings, 
   ArrowUpRight, ArrowDownRight, Download, Calendar, 
   Bell, MoreHorizontal, Sparkles, Search, Filter, Printer, X, IdCard, Megaphone, Send, ArrowRight, Save, MessageSquare, ArrowDown,
-  CheckCircle2, AlertCircle, LogOut, Trash2, MapPin, School, Target, XCircle, Power, Shield, Clock, CalendarDays, FolderOpen, ShieldCheck, CheckCircle, Eye, EyeOff, FileText, ImageIcon, Camera, Trophy, Medal, GraduationCap, Building2, ClipboardCheck, Pencil, History, MegaphoneOff, Forward, AlertTriangle, Plus
+  CheckCircle2, AlertCircle, LogOut, Trash2, MapPin, School, Target, XCircle, Power, Shield, Clock, CalendarDays, FolderOpen, ShieldCheck, CheckCircle, Eye, EyeOff, FileText, ImageIcon, Camera, Trophy, Medal, GraduationCap, Building2, ClipboardCheck, Pencil, History, MegaphoneOff, Forward, AlertTriangle, Plus, Instagram, Gift
 } from "lucide-react";
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -1912,49 +1912,170 @@ function ModernHQDashboardContent() {
       try { adminNotes = JSON.parse(p.notes); } catch (e) {}
     }
     
-    const hasFiles = adminNotes.profile_photo_url || adminNotes.student_card_url || adminNotes.submission_url;
+    const hasFiles = 
+      adminNotes.instagram_follow_url ||
+      adminNotes.profile_photo_url || 
+      adminNotes.student_card_url || 
+      adminNotes.twibbon_url ||
+      adminNotes.profile_photo_url2 || 
+      adminNotes.student_card_url2 || 
+      adminNotes.twibbon_url2 ||
+      adminNotes.submission_url;
+
     if (!hasFiles) return null;
 
+    const isTeam = p.competition_type === "LKTI Nasional" || p.competition_type === "Olimpiade MIPA" || p.category === "LKTI Nasional" || p.category === "Olimpiade MIPA";
+
     return (
-      <div className="p-4 bg-white/60 border border-slate-100 rounded-xl shadow-sm space-y-3">
+      <div className="p-4 bg-white/60 border border-slate-100 rounded-xl shadow-sm space-y-4">
         <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
           <FolderOpen size={12} className="text-indigo-500" /> Berkas Pendukung Peserta
         </p>
-        
-        {adminNotes.profile_photo_url && (
+
+        {/* Bukti Follow Instagram */}
+        {adminNotes.instagram_follow_url && (
           <div className="flex items-center justify-between py-2 border-b border-slate-100/60 text-sm">
             <span className="text-xs font-semibold text-slate-600 flex items-center gap-1.5">
-              <ImageIcon size={13} className="text-blue-500" /> Foto Formal
+              <Instagram size={13} className="text-pink-500" /> Bukti Follow Instagram
             </span>
             <a 
-              href={adminNotes.profile_photo_url} 
+              href={adminNotes.instagram_follow_url} 
               target="_blank" 
               rel="noreferrer" 
-              className="text-xs font-bold text-indigo-600 hover:underline bg-indigo-50 px-2.5 py-1 rounded-lg"
+              className="text-xs font-bold text-pink-600 hover:underline bg-pink-50 border border-pink-100 px-2.5 py-1 rounded-lg"
             >
               Buka
             </a>
           </div>
         )}
 
-        {adminNotes.student_card_url && (
-          <div className={`flex items-center justify-between py-2 text-sm ${adminNotes.submission_url ? 'border-b border-slate-100/60' : ''}`}>
-            <span className="text-xs font-semibold text-slate-600 flex items-center gap-1.5">
-              <IdCard size={13} className="text-amber-500" /> Kartu Pelajar
-            </span>
-            <a 
-              href={adminNotes.student_card_url} 
-              target="_blank" 
-              rel="noreferrer" 
-              className="text-xs font-bold text-indigo-600 hover:underline bg-indigo-50 px-2.5 py-1 rounded-lg"
-            >
-              Buka
-            </a>
+        {/* Berkas Ketua / Utama */}
+        <div className="space-y-2">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
+            {isTeam ? "Berkas Ketua (Peserta 1)" : "Berkas Utama"}
+          </p>
+
+          {adminNotes.profile_photo_url && (
+            <div className="flex items-center justify-between py-1.5 text-sm pl-2 border-l-2 border-blue-500">
+              <span className="text-xs font-medium text-slate-600 flex items-center gap-1.5">
+                <ImageIcon size={13} className="text-blue-500" /> Foto Formal
+              </span>
+              <a 
+                href={adminNotes.profile_photo_url} 
+                target="_blank" 
+                rel="noreferrer" 
+                className="text-xs font-bold text-indigo-600 hover:underline bg-indigo-50 px-2 py-0.5 rounded-lg"
+              >
+                Buka
+              </a>
+            </div>
+          )}
+
+          {adminNotes.student_card_url && (
+            <div className="flex items-center justify-between py-1.5 text-sm pl-2 border-l-2 border-amber-500">
+              <span className="text-xs font-medium text-slate-600 flex items-center gap-1.5">
+                <IdCard size={13} className="text-amber-500" /> Kartu Pelajar
+              </span>
+              <a 
+                href={adminNotes.student_card_url} 
+                target="_blank" 
+                rel="noreferrer" 
+                className="text-xs font-bold text-indigo-600 hover:underline bg-indigo-50 px-2 py-0.5 rounded-lg"
+              >
+                Buka
+              </a>
+            </div>
+          )}
+
+          {adminNotes.twibbon_url && (
+            <div className="flex items-center justify-between py-1.5 text-sm pl-2 border-l-2 border-purple-500">
+              <span className="text-xs font-medium text-slate-600 flex items-center gap-1.5">
+                <Gift size={13} className="text-purple-500" /> Bukti Twibbon
+              </span>
+              <a 
+                href={adminNotes.twibbon_url} 
+                target="_blank" 
+                rel="noreferrer" 
+                className="text-xs font-bold text-indigo-600 hover:underline bg-indigo-50 px-2 py-0.5 rounded-lg"
+              >
+                Buka
+              </a>
+            </div>
+          )}
+        </div>
+
+        {/* Berkas Anggota 2 (jika tim) */}
+        {(isTeam || adminNotes.profile_photo_url2 || adminNotes.student_card_url2 || adminNotes.twibbon_url2) && (
+          <div className="space-y-2 pt-2 border-t border-slate-100">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
+              Berkas Anggota 2
+            </p>
+
+            {adminNotes.profile_photo_url2 ? (
+              <div className="flex items-center justify-between py-1.5 text-sm pl-2 border-l-2 border-blue-500">
+                <span className="text-xs font-medium text-slate-600 flex items-center gap-1.5">
+                  <ImageIcon size={13} className="text-blue-500" /> Foto Formal
+                </span>
+                <a 
+                  href={adminNotes.profile_photo_url2} 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  className="text-xs font-bold text-indigo-600 hover:underline bg-indigo-50 px-2 py-0.5 rounded-lg"
+                >
+                  Buka
+                </a>
+              </div>
+            ) : isTeam ? (
+              <div className="text-[11px] text-slate-400 italic pl-2 border-l-2 border-slate-300 py-1">
+                Foto belum diunggah
+              </div>
+            ) : null}
+
+            {adminNotes.student_card_url2 ? (
+              <div className="flex items-center justify-between py-1.5 text-sm pl-2 border-l-2 border-amber-500">
+                <span className="text-xs font-medium text-slate-600 flex items-center gap-1.5">
+                  <IdCard size={13} className="text-amber-500" /> Kartu Pelajar
+                </span>
+                <a 
+                  href={adminNotes.student_card_url2} 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  className="text-xs font-bold text-indigo-600 hover:underline bg-indigo-50 px-2 py-0.5 rounded-lg"
+                >
+                  Buka
+                </a>
+              </div>
+            ) : isTeam ? (
+              <div className="text-[11px] text-slate-400 italic pl-2 border-l-2 border-slate-300 py-1">
+                Kartu pelajar belum diunggah
+              </div>
+            ) : null}
+
+            {adminNotes.twibbon_url2 ? (
+              <div className="flex items-center justify-between py-1.5 text-sm pl-2 border-l-2 border-purple-500">
+                <span className="text-xs font-medium text-slate-600 flex items-center gap-1.5">
+                  <Gift size={13} className="text-purple-500" /> Bukti Twibbon
+                </span>
+                <a 
+                  href={adminNotes.twibbon_url2} 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  className="text-xs font-bold text-indigo-600 hover:underline bg-indigo-50 px-2 py-0.5 rounded-lg"
+                >
+                  Buka
+                </a>
+              </div>
+            ) : isTeam ? (
+              <div className="text-[11px] text-slate-400 italic pl-2 border-l-2 border-slate-300 py-1">
+                Twibbon belum diunggah
+              </div>
+            ) : null}
           </div>
         )}
 
+        {/* Link Karya / Submission */}
         {adminNotes.submission_url && (
-          <div className="flex items-center justify-between py-2 text-sm">
+          <div className="flex items-center justify-between py-2 border-t border-slate-100 text-sm">
             <span className="text-xs font-semibold text-slate-600 flex items-center gap-1.5">
               <FolderOpen size={13} className="text-emerald-500" /> Link Karya / Submission
             </span>

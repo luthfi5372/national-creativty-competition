@@ -103,10 +103,16 @@ export default function StatusCards({
 
   const [profilePhoto, setProfilePhoto] = useState<File | null>(null);
   const [studentCard, setStudentCard] = useState<File | null>(null);
+  const [twibbon, setTwibbon] = useState<File | null>(null);
+  const [instagramFollow, setInstagramFollow] = useState<File | null>(null);
+
+  const [profilePhoto2, setProfilePhoto2] = useState<File | null>(null);
+  const [studentCard2, setStudentCard2] = useState<File | null>(null);
+  const [twibbon2, setTwibbon2] = useState<File | null>(null);
 
   const handleUploadProfileFiles = async () => {
-    if (!profilePhoto && !studentCard) {
-      return showToast("Pilih file foto formal atau kartu pelajar terlebih dahulu!", "error");
+    if (!profilePhoto && !studentCard && !twibbon && !instagramFollow && !profilePhoto2 && !studentCard2 && !twibbon2) {
+      return showToast("Pilih file berkas terlebih dahulu!", "error");
     }
 
     setIsUploadingFiles(true);
@@ -116,32 +122,53 @@ export default function StatusCards({
         try { notesObj = JSON.parse(userEntry.notes); } catch (e) {}
       }
 
-      if (profilePhoto) {
-        const fileExt = profilePhoto.name.split('.').pop();
-        const fileName = `${userEntry?.id}-formal-${Math.random()}.${fileExt}`;
-        const { error: uploadError } = await supabase.storage.from('payment-proofs').upload(fileName, profilePhoto);
+      const uploadFile = async (file: File, typeLabel: string) => {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${userEntry?.id}-${typeLabel}-${Math.random()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage.from('payment-proofs').upload(fileName, file);
         if (uploadError) throw uploadError;
         const { data: urlData } = supabase.storage.from('payment-proofs').getPublicUrl(fileName);
-        notesObj.profile_photo_url = urlData.publicUrl;
+        return urlData.publicUrl;
+      };
+
+      if (instagramFollow) {
+        notesObj.instagram_follow_url = await uploadFile(instagramFollow, "instagram");
+      }
+      if (profilePhoto) {
+        notesObj.profile_photo_url = await uploadFile(profilePhoto, "formal");
+      }
+      if (studentCard) {
+        notesObj.student_card_url = await uploadFile(studentCard, "card");
+      }
+      if (twibbon) {
+        notesObj.twibbon_url = await uploadFile(twibbon, "twibbon");
       }
 
-      if (studentCard) {
-        const fileExt = studentCard.name.split('.').pop();
-        const fileName = `${userEntry?.id}-card-${Math.random()}.${fileExt}`;
-        const { error: uploadError } = await supabase.storage.from('payment-proofs').upload(fileName, studentCard);
-        if (uploadError) throw uploadError;
-        const { data: urlData } = supabase.storage.from('payment-proofs').getPublicUrl(fileName);
-        notesObj.student_card_url = urlData.publicUrl;
+      if (profilePhoto2) {
+        notesObj.profile_photo_url2 = await uploadFile(profilePhoto2, "formal2");
+      }
+      if (studentCard2) {
+        notesObj.student_card_url2 = await uploadFile(studentCard2, "card2");
+      }
+      if (twibbon2) {
+        notesObj.twibbon_url2 = await uploadFile(twibbon2, "twibbon2");
       }
 
       const updatedNotes = JSON.stringify(notesObj);
       const { error: dbError } = await supabase.from('competition_entries').update({ notes: updatedNotes }).eq('id', userEntry?.id);
       if (dbError) throw dbError;
 
-      showToast("Berkas foto profil berhasil diperbarui!", "success");
+      showToast("Berkas pendaftaran berhasil diperbarui!", "success");
       setUserEntry((prev: any) => ({ ...prev, notes: updatedNotes }));
+      
+      // Reset all states
       setProfilePhoto(null);
       setStudentCard(null);
+      setTwibbon(null);
+      setInstagramFollow(null);
+      setProfilePhoto2(null);
+      setStudentCard2(null);
+      setTwibbon2(null);
     } catch (err: any) {
       console.error("Upload files error:", err);
       let errMsg = err.message || "Kesalahan tidak dikenal";
@@ -154,9 +181,17 @@ export default function StatusCards({
     }
   };
 
-  // 🌊 HAPUS BERKAS FOTO/KARTU PELAJAR DARI NOTES DUA ARAH
-  const handleRemoveFile = async (key: 'profile_photo_url' | 'student_card_url') => {
-    const fileLabel = key === 'profile_photo_url' ? 'Foto Formal' : 'Kartu Pelajar';
+  // 🌊 HAPUS BERKAS DARI NOTES DUA ARAH
+  const handleRemoveFile = async (key: string) => {
+    let fileLabel = 'Berkas';
+    if (key === 'profile_photo_url') fileLabel = 'Foto Formal (Ketua)';
+    else if (key === 'student_card_url') fileLabel = 'Kartu Pelajar (Ketua)';
+    else if (key === 'twibbon_url') fileLabel = 'Twibbon (Ketua)';
+    else if (key === 'profile_photo_url2') fileLabel = 'Foto Formal (Anggota 2)';
+    else if (key === 'student_card_url2') fileLabel = 'Kartu Pelajar (Anggota 2)';
+    else if (key === 'twibbon_url2') fileLabel = 'Twibbon (Anggota 2)';
+    else if (key === 'instagram_follow_url') fileLabel = 'Bukti Follow Instagram';
+
     if (!window.confirm(`Apakah Anda yakin ingin menghapus ${fileLabel}?`)) return;
     
     try {
@@ -648,43 +683,176 @@ export default function StatusCards({
               ))}
 
               <div className="pt-4 mt-2 border-t-2 border-dashed border-slate-100 space-y-4">
-                <div className="flex flex-col gap-2">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                    <ImageIcon size={12} className="text-indigo-500" /> Foto Formal Sekolah
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input type="file" accept="image/*" onChange={(e) => setProfilePhoto(e.target.files?.[0] || null)} className="block w-full text-[10px] text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:bg-indigo-50 file:text-indigo-600" />
-                    {(() => {
-                      let n: any = {}; if (userEntry.notes) try { n = JSON.parse(userEntry.notes); } catch(e) {}
-                      return n.profile_photo_url && (
-                        <div className="flex gap-1 shrink-0">
-                          <a href={n.profile_photo_url} target="_blank" rel="noreferrer" className="text-indigo-600 font-bold text-[10px] bg-indigo-50 px-2 py-1 rounded-lg hover:bg-indigo-100 transition-colors">Lihat</a>
-                          <button type="button" onClick={() => handleRemoveFile('profile_photo_url')} className="text-red-600 font-bold text-[10px] bg-red-50 px-2 py-1 rounded-lg hover:bg-red-100 transition-colors">Hapus</button>
+                {(() => {
+                  let n: any = {}; 
+                  if (userEntry.notes) {
+                    try { n = JSON.parse(userEntry.notes); } catch(e) {}
+                  }
+                  
+                  const isTeam = userEntry.competition_type === "Olimpiade MIPA" || 
+                                 userEntry.competition_type === "LKTI Nasional" || 
+                                 userEntry.category === "Olimpiade MIPA" || 
+                                 userEntry.category === "LKTI Nasional";
+
+                  return (
+                    <>
+                      {/* 1. Instagram Proof */}
+                      <div className="flex flex-col gap-1.5 pb-2 border-b border-slate-100">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                          <ImageIcon size={12} className="text-pink-500" /> Bukti Follow Instagram
+                        </label>
+                        <div className="flex items-center gap-2">
+                          {n.instagram_follow_url ? (
+                            <div className="flex justify-between items-center w-full">
+                              <span className="text-[10px] text-slate-500 font-semibold truncate max-w-[200px]">Bukti_Instagram.png</span>
+                              <div className="flex gap-1 shrink-0">
+                                <a href={n.instagram_follow_url} target="_blank" rel="noreferrer" className="text-indigo-600 font-bold text-[10px] bg-indigo-50 px-2 py-1 rounded-lg hover:bg-indigo-100 transition-colors">Lihat</a>
+                                <button type="button" onClick={() => handleRemoveFile('instagram_follow_url')} className="text-red-600 font-bold text-[10px] bg-red-50 px-2 py-1 rounded-lg hover:bg-red-100 transition-colors">Hapus</button>
+                              </div>
+                            </div>
+                          ) : (
+                            <input type="file" accept="image/*" onChange={(e) => setInstagramFollow(e.target.files?.[0] || null)} className="block w-full text-[10px] text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:bg-pink-50 file:text-pink-600 cursor-pointer" />
+                          )}
                         </div>
-                      );
-                    })()}
-                  </div>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                    <IdCard size={12} className="text-indigo-500" /> Scan Kartu Pelajar
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input type="file" accept="image/*" onChange={(e) => setStudentCard(e.target.files?.[0] || null)} className="block w-full text-[10px] text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:bg-indigo-50 file:text-indigo-600" />
-                    {(() => {
-                      let n: any = {}; if (userEntry.notes) try { n = JSON.parse(userEntry.notes); } catch(e) {}
-                      return n.student_card_url && (
-                        <div className="flex gap-1 shrink-0">
-                          <a href={n.student_card_url} target="_blank" rel="noreferrer" className="text-indigo-600 font-bold text-[10px] bg-indigo-50 px-2 py-1 rounded-lg hover:bg-indigo-100 transition-colors">Lihat</a>
-                          <button type="button" onClick={() => handleRemoveFile('student_card_url')} className="text-red-600 font-bold text-[10px] bg-red-50 px-2 py-1 rounded-lg hover:bg-red-100 transition-colors">Hapus</button>
+                      </div>
+
+                      {/* 2. Berkas Ketua / Peserta 1 */}
+                      <div className="space-y-3 pb-2 border-b border-slate-100">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{isTeam ? "Berkas Ketua Tim (Peserta 1)" : "Berkas Utama Peserta"}</p>
+                        
+                        {/* Foto Formal */}
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] font-bold text-slate-400 uppercase px-0.5">Foto Formal</label>
+                          <div className="flex items-center gap-2">
+                            {n.profile_photo_url ? (
+                              <div className="flex justify-between items-center w-full">
+                                <span className="text-[9px] text-slate-500 font-semibold truncate max-w-[200px]">Foto_Formal.png</span>
+                                <div className="flex gap-1 shrink-0">
+                                  <a href={n.profile_photo_url} target="_blank" rel="noreferrer" className="text-indigo-600 font-bold text-[10px] bg-indigo-50 px-2 py-1 rounded-lg hover:bg-indigo-100 transition-colors">Lihat</a>
+                                  <button type="button" onClick={() => handleRemoveFile('profile_photo_url')} className="text-red-600 font-bold text-[10px] bg-red-50 px-2 py-1 rounded-lg hover:bg-red-100 transition-colors">Hapus</button>
+                                </div>
+                              </div>
+                            ) : (
+                              <input type="file" accept="image/*" onChange={(e) => setProfilePhoto(e.target.files?.[0] || null)} className="block w-full text-[10px] text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:bg-blue-50 file:text-blue-600 cursor-pointer" />
+                            )}
+                          </div>
                         </div>
-                      );
-                    })()}
-                  </div>
-                </div>
-                {(profilePhoto || studentCard) && (
-                  <button onClick={handleUploadProfileFiles} disabled={isUploadingFiles} className="w-full bg-indigo-600 text-white text-xs font-bold py-2.5 rounded-xl shadow-md">
-                    {isUploadingFiles ? "Mengunggah..." : "Simpan Berkas Baru"}
+
+                        {/* Kartu Pelajar */}
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] font-bold text-slate-400 uppercase px-0.5">Kartu Pelajar</label>
+                          <div className="flex items-center gap-2">
+                            {n.student_card_url ? (
+                              <div className="flex justify-between items-center w-full">
+                                <span className="text-[9px] text-slate-500 font-semibold truncate max-w-[200px]">Kartu_Pelajar.png</span>
+                                <div className="flex gap-1 shrink-0">
+                                  <a href={n.student_card_url} target="_blank" rel="noreferrer" className="text-indigo-600 font-bold text-[10px] bg-indigo-50 px-2 py-1 rounded-lg hover:bg-indigo-100 transition-colors">Lihat</a>
+                                  <button type="button" onClick={() => handleRemoveFile('student_card_url')} className="text-red-600 font-bold text-[10px] bg-red-50 px-2 py-1 rounded-lg hover:bg-red-100 transition-colors">Hapus</button>
+                                </div>
+                              </div>
+                            ) : (
+                              <input type="file" accept="image/*" onChange={(e) => setStudentCard(e.target.files?.[0] || null)} className="block w-full text-[10px] text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:bg-amber-50 file:text-amber-600 cursor-pointer" />
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Twibbon */}
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] font-bold text-slate-400 uppercase px-0.5">Twibbon (Opsional)</label>
+                          <div className="flex items-center gap-2">
+                            {n.twibbon_url ? (
+                              <div className="flex justify-between items-center w-full">
+                                <span className="text-[9px] text-slate-500 font-semibold truncate max-w-[200px]">Twibbon.png</span>
+                                <div className="flex gap-1 shrink-0">
+                                  <a href={n.twibbon_url} target="_blank" rel="noreferrer" className="text-indigo-600 font-bold text-[10px] bg-indigo-50 px-2 py-1 rounded-lg hover:bg-indigo-100 transition-colors">Lihat</a>
+                                  <button type="button" onClick={() => handleRemoveFile('twibbon_url')} className="text-red-600 font-bold text-[10px] bg-red-50 px-2 py-1 rounded-lg hover:bg-red-100 transition-colors">Hapus</button>
+                                </div>
+                              </div>
+                            ) : (
+                              <input type="file" accept="image/*" onChange={(e) => setTwibbon(e.target.files?.[0] || null)} className="block w-full text-[10px] text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:bg-purple-50 file:text-purple-600 cursor-pointer" />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 3. Berkas Anggota 2 */}
+                      {isTeam && (
+                        <div className="space-y-3 pb-2 border-b border-slate-100">
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Berkas Anggota 2</p>
+
+                          {/* Foto Formal 2 */}
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] font-bold text-slate-400 uppercase px-0.5">Foto Formal</label>
+                            <div className="flex items-center gap-2">
+                              {n.profile_photo_url2 ? (
+                                <div className="flex justify-between items-center w-full">
+                                  <span className="text-[9px] text-slate-500 font-semibold truncate max-w-[200px]">Foto_Formal_Anggota2.png</span>
+                                  <div className="flex gap-1 shrink-0">
+                                    <a href={n.profile_photo_url2} target="_blank" rel="noreferrer" className="text-indigo-600 font-bold text-[10px] bg-indigo-50 px-2 py-1 rounded-lg hover:bg-indigo-100 transition-colors">Lihat</a>
+                                    <button type="button" onClick={() => handleRemoveFile('profile_photo_url2')} className="text-red-600 font-bold text-[10px] bg-red-50 px-2 py-1 rounded-lg hover:bg-red-100 transition-colors">Hapus</button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <input type="file" accept="image/*" onChange={(e) => setProfilePhoto2(e.target.files?.[0] || null)} className="block w-full text-[10px] text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:bg-blue-50 file:text-blue-600 cursor-pointer" />
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Kartu Pelajar 2 */}
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] font-bold text-slate-400 uppercase px-0.5">Kartu Pelajar</label>
+                            <div className="flex items-center gap-2">
+                              {n.student_card_url2 ? (
+                                <div className="flex justify-between items-center w-full">
+                                  <span className="text-[9px] text-slate-500 font-semibold truncate max-w-[200px]">Kartu_Pelajar_Anggota2.png</span>
+                                  <div className="flex gap-1 shrink-0">
+                                    <a href={n.student_card_url2} target="_blank" rel="noreferrer" className="text-indigo-600 font-bold text-[10px] bg-indigo-50 px-2 py-1 rounded-lg hover:bg-indigo-100 transition-colors">Lihat</a>
+                                    <button type="button" onClick={() => handleRemoveFile('student_card_url2')} className="text-red-600 font-bold text-[10px] bg-red-50 px-2 py-1 rounded-lg hover:bg-red-100 transition-colors">Hapus</button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <input type="file" accept="image/*" onChange={(e) => setStudentCard2(e.target.files?.[0] || null)} className="block w-full text-[10px] text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:bg-amber-50 file:text-amber-600 cursor-pointer" />
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Twibbon 2 */}
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] font-bold text-slate-400 uppercase px-0.5">Twibbon (Opsional)</label>
+                            <div className="flex items-center gap-2">
+                              {n.twibbon_url2 ? (
+                                <div className="flex justify-between items-center w-full">
+                                  <span className="text-[9px] text-slate-500 font-semibold truncate max-w-[200px]">Twibbon_Anggota2.png</span>
+                                  <div className="flex gap-1 shrink-0">
+                                    <a href={n.twibbon_url2} target="_blank" rel="noreferrer" className="text-indigo-600 font-bold text-[10px] bg-indigo-50 px-2 py-1 rounded-lg hover:bg-indigo-100 transition-colors">Lihat</a>
+                                    <button type="button" onClick={() => handleRemoveFile('twibbon_url2')} className="text-red-600 font-bold text-[10px] bg-red-50 px-2 py-1 rounded-lg hover:bg-red-100 transition-colors">Hapus</button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <input type="file" accept="image/*" onChange={(e) => setTwibbon2(e.target.files?.[0] || null)} className="block w-full text-[10px] text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:bg-purple-50 file:text-purple-600 cursor-pointer" />
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
+
+                {(profilePhoto || studentCard || twibbon || instagramFollow || profilePhoto2 || studentCard2 || twibbon2) && (
+                  <button 
+                    onClick={handleUploadProfileFiles} 
+                    disabled={isUploadingFiles} 
+                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 rounded-xl shadow-md mt-2 flex items-center justify-center gap-1.5"
+                  >
+                    {isUploadingFiles ? (
+                      <>
+                        <Loader2 size={13} className="animate-spin" />
+                        Mengunggah Berkas Baru...
+                      </>
+                    ) : (
+                      "Simpan Berkas Baru"
+                    )}
                   </button>
                 )}
               </div>

@@ -109,7 +109,11 @@ export default function UserDashboard() {
           return;
         }
         setCurrentUser(user);
-        setFormData(prev => ({ ...prev, full_name: user.user_metadata?.full_name || "" }));
+        setFormData(prev => ({ 
+          ...prev, 
+          full_name: user.user_metadata?.full_name || "",
+          school_name: user.user_metadata?.school || user.user_metadata?.school_name || ""
+        }));
 
         const { data: entries, error: entryError } = await supabase
           .from('competition_entries')
@@ -368,7 +372,7 @@ export default function UserDashboard() {
     };
   }, []); // Run exactly once on mount to prevent infinite fetch loop!
 
-  const handleSubmitEntry = async (localFormData: any) => {
+  const handleSubmitEntry = async (localFormData: any, files: { [key: string]: File | null }) => {
     setIsSubmitting(true);
     try {
       if (!currentUser) throw new Error("Sesi berakhir, silakan login kembali.");
@@ -387,11 +391,49 @@ export default function UserDashboard() {
         notesObj.custom_password = customPassword;
       }
 
+      // Helper function untuk upload berkas ke Supabase Storage
+      const uploadFile = async (file: File, typeLabel: string) => {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${currentUser.id}-${typeLabel}-${Math.random()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage.from('payment-proofs').upload(fileName, file);
+        if (uploadError) throw uploadError;
+        const { data: urlData } = supabase.storage.from('payment-proofs').getPublicUrl(fileName);
+        return urlData.publicUrl;
+      };
+
+      // Jalankan proses unggah berkas secara sekuensial
+      if (files.instagramFollow) {
+        notesObj.instagram_follow_url = await uploadFile(files.instagramFollow, "instagram");
+      }
+      if (files.formalPhoto1) {
+        notesObj.profile_photo_url = await uploadFile(files.formalPhoto1, "formal");
+      }
+      if (files.studentCard1) {
+        notesObj.student_card_url = await uploadFile(files.studentCard1, "card");
+      }
+      if (files.twibbon1) {
+        notesObj.twibbon_url = await uploadFile(files.twibbon1, "twibbon");
+      }
+
+      if (isTeam) {
+        if (files.formalPhoto2) {
+          notesObj.profile_photo_url2 = await uploadFile(files.formalPhoto2, "formal2");
+        }
+        if (files.studentCard2) {
+          notesObj.student_card_url2 = await uploadFile(files.studentCard2, "card2");
+        }
+        if (files.twibbon2) {
+          notesObj.twibbon_url2 = await uploadFile(files.twibbon2, "twibbon2");
+        }
+      }
+
+      const updatedNotes = JSON.stringify(notesObj);
+
       const { data: newEntries, error: dbError } = await supabase
         .from('competition_entries')
         .insert([{
           user_id: currentUser.id,
-          full_name: currentUser?.user_metadata?.full_name || "Peserta",
+          full_name: localFormData.full_name || currentUser?.user_metadata?.full_name || "Peserta",
           email: currentUser.email,
           school_name: localFormData.school_name,
           npsn: currentUser?.user_metadata?.npsn || null, // Simpan NPSN dari user metadata
@@ -404,7 +446,7 @@ export default function UserDashboard() {
           participant2_nisn: isTeam ? localFormData.participant2_nisn : null,
           payment_proof_url: null,
           payment_status: 'Unpaid',
-          notes: Object.keys(notesObj).length > 0 ? JSON.stringify(notesObj) : null
+          notes: Object.keys(notesObj).length > 0 ? updatedNotes : null
         }])
         .select('*');
 
@@ -414,7 +456,7 @@ export default function UserDashboard() {
       if (newEntries && newEntries.length > 0) {
         setUserEntry(newEntries[0]);
       } else {
-        setUserEntry({ ...localFormData, payment_status: 'Unpaid', id: 'new-entry-temp' });
+        setUserEntry({ ...localFormData, payment_status: 'Unpaid', id: 'new-entry-temp', notes: updatedNotes });
       }
       setTimeout(() => setShowForm(false), 1500); 
 
