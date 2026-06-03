@@ -2867,7 +2867,7 @@ function ModernHQDashboardContent() {
         <nav className="flex-1 px-4 space-y-2 mt-4">
           {[
             { id: "Dashboard", icon: <LayoutDashboard size={18} />, label: "Dashboard" },
-            { id: "Peserta", icon: <Users size={18} />, label: "Buku Peserta", count: realEntries.filter((e: any) => e.payment_status === 'Verified' || e.payment_status === 'success').length },
+            { id: "Peserta", icon: <Users size={18} />, label: "Buku Peserta", count: realEntries.length },
             { id: "BelumDaftar", icon: <AlertTriangle size={18} />, label: "Belum Pilih Lomba", count: unregisteredUsers.length },
             { id: "Verifikasi", icon: <CheckCircle size={18} />, label: "Verifikasi Berkas", count: realEntries.filter((e: any) => e.payment_status === 'Pending').length },
             { id: "Karya", icon: <FolderOpen size={18} />, label: "Pengumpulan Karya", count: realEntries.filter((e: any) => {
