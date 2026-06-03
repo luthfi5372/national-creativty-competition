@@ -31,8 +31,58 @@ export default function SchoolHub({ userEntry, currentUser }: SchoolHubProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
 
-  const activeSchool = userEntry?.school_name || userEntry?.school || currentUser?.user_metadata?.school || "";
-  const activeNpsn = userEntry?.npsn || currentUser?.user_metadata?.npsn || "";
+  const [canonicalSchool, setCanonicalSchool] = useState<string>("");
+  const [canonicalNpsn, setCanonicalNpsn] = useState<string>("");
+
+  // Ambil school_name CANONICAL langsung dari competition_entries via user_id
+  // Ini memastikan nama sekolah selalu sama dengan yang ada di database,
+  // tidak peduli apa yang user tulis di form registrasi
+  useEffect(() => {
+    const fetchCanonicalSchool = async () => {
+      if (!currentUser?.id) {
+        // Fallback ke userEntry jika tidak ada user_id
+        setCanonicalSchool(
+          (userEntry?.school_name || userEntry?.school || currentUser?.user_metadata?.school || "").trim()
+        );
+        setCanonicalNpsn((userEntry?.npsn || currentUser?.user_metadata?.npsn || "").trim());
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from("competition_entries")
+          .select("school_name, school, npsn")
+          .eq("user_id", currentUser.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (!error && data) {
+          const name = (data.school_name || data.school || "").trim();
+          const npsn = (data.npsn || "").trim();
+          setCanonicalSchool(name);
+          setCanonicalNpsn(npsn);
+        } else {
+          // Fallback ke userEntry prop jika query gagal
+          setCanonicalSchool(
+            (userEntry?.school_name || userEntry?.school || currentUser?.user_metadata?.school || "").trim()
+          );
+          setCanonicalNpsn((userEntry?.npsn || currentUser?.user_metadata?.npsn || "").trim());
+        }
+      } catch (err) {
+        setCanonicalSchool(
+          (userEntry?.school_name || userEntry?.school || currentUser?.user_metadata?.school || "").trim()
+        );
+        setCanonicalNpsn((userEntry?.npsn || currentUser?.user_metadata?.npsn || "").trim());
+      }
+    };
+
+    fetchCanonicalSchool();
+  }, [currentUser?.id, userEntry?.school_name, userEntry?.school, userEntry?.npsn]);
+
+  // Gunakan canonical values sebagai active school/npsn
+  const activeSchool = canonicalSchool;
+  const activeNpsn = canonicalNpsn;
 
   useEffect(() => {
     if (schoolmates.length > 0) {

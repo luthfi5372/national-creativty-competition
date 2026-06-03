@@ -2470,12 +2470,14 @@ function ModernHQDashboardContent() {
     const groups: Record<string, { schoolName: string; npsn: string; students: any[] }> = {};
     
     realEntries.forEach((entry: any) => {
-      const schoolName = entry.school_name || entry.school || "Sekolah Tanpa Nama";
-      const key = entry.npsn || schoolName;
+      const schoolName = (entry.school_name || entry.school || "Sekolah Tanpa Nama").trim();
+      // Gunakan normalized key (lowercase) agar "SMA 1" == "sma 1" tidak dibuat dua grup
+      const normalizedName = schoolName.toLowerCase();
+      const key = entry.npsn ? `npsn_${entry.npsn}` : `name_${normalizedName}`;
       
       if (!groups[key]) {
         groups[key] = {
-          schoolName,
+          schoolName,           // Simpan nama asli (dengan kapitalisasi original)
           npsn: entry.npsn || "",
           students: []
         };

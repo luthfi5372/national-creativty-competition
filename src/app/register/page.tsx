@@ -49,6 +49,7 @@ export default function RegisterPage() {
     const formData = new FormData();
     formData.append("username", email.split('@')[0]);
     formData.append("fullName", fullName);
+    formData.append("school", school);
     formData.append("email", email);
     formData.append("password", password);
 

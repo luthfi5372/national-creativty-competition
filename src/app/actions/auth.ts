@@ -18,6 +18,7 @@ export type AuthResult = {
 export async function registerLocalUser(formData: FormData): Promise<AuthResult> {
   const username = formData.get("username")?.toString().trim();
   const fullName = formData.get("fullName")?.toString().trim();
+  const school = formData.get("school")?.toString().trim() || "";
   const email = formData.get("email")?.toString().trim().toLowerCase();
   const password = formData.get("password")?.toString();
 
@@ -32,7 +33,7 @@ export async function registerLocalUser(formData: FormData): Promise<AuthResult>
   try {
     const supabase = await createClient();
 
-    // 1. Sign up to Supabase Auth
+    // 1. Sign up to Supabase Auth — simpan school ke metadata
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
@@ -40,7 +41,8 @@ export async function registerLocalUser(formData: FormData): Promise<AuthResult>
         data: {
           username: username,
           full_name: fullName,
-          custom_password: password, // Save custom password in auth metadata!
+          school: school,        // ← disimpan agar SchoolHub bisa fallback ke sini
+          custom_password: password,
         }
       }
     });
@@ -59,6 +61,7 @@ export async function registerLocalUser(formData: FormData): Promise<AuthResult>
           id: authData.user.id,
           username: username,
           full_name: fullName,
+          school: school || null,  // ← simpan school ke profiles juga
         });
 
       if (profileError) {
@@ -719,18 +722,42 @@ export async function getSchoolMessages(schoolName: string, npsn?: string) {
         })
       : createSupabaseClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "");
 
-    let query = client.from("school_messages").select("*");
-    if (npsn) {
-      query = query.or(`npsn.eq."${npsn}",school_name.eq."${schoolName}"`);
-    } else {
-      query = query.eq("school_name", schoolName);
+    let data: any[] = [];
+    let error: any = null;
+
+    if (schoolName) {
+      // Prioritas 1: case-insensitive school_name match (ilike)
+      const res = await client
+        .from("school_messages")
+        .select("*")
+        .ilike("school_name", schoolName.trim())
+        .order("created_at", { ascending: true })
+        .limit(150);
+      data = res.data || [];
+      error = res.error;
+
+      // Jika tidak ada hasil dan ada NPSN, coba juga dengan NPSN
+      if (!error && data.length === 0 && npsn) {
+        const res2 = await client
+          .from("school_messages")
+          .select("*")
+          .eq("npsn", String(npsn).trim())
+          .order("created_at", { ascending: true })
+          .limit(150);
+        if (!res2.error) data = res2.data || [];
+      }
+    } else if (npsn) {
+      const res = await client
+        .from("school_messages")
+        .select("*")
+        .eq("npsn", String(npsn).trim())
+        .order("created_at", { ascending: true })
+        .limit(150);
+      data = res.data || [];
+      error = res.error;
     }
 
-    const { data, error } = await query
-      .order("created_at", { ascending: true })
-      .limit(150);
-
-    return { data: data || [], error: error ? error.message : null };
+    return { data: data, error: error ? error.message : null };
   } catch (err: any) {
     console.error("[Server Action] Exception getSchoolMessages:", err);
     return { data: [], error: err.message || "Gagal mengambil pesan." };
