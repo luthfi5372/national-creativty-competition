@@ -524,15 +524,10 @@ export default function IntegratedLLMSDashboard() {
   ];
 
   return (
-    <div className="flex min-h-screen bg-slate-50/70 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-50/60 via-slate-50 to-slate-100/60 font-sans relative overflow-hidden">
-      
-      {/* Decorative Orbs for vibrant modern aesthetics */}
-      <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-indigo-200/15 rounded-full blur-3xl pointer-events-none -z-10"></div>
-      <div className="absolute bottom-[20%] right-[-10%] w-[40vw] h-[40vw] bg-violet-200/15 rounded-full blur-3xl pointer-events-none -z-10"></div>
-      <div className="absolute top-[40%] right-[30%] w-[30vw] h-[30vw] bg-pink-200/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
+    <div className="flex min-h-screen bg-slate-50 font-sans relative">
 
-      {/* ─── SIDEBAR (Glassmorphic) ─── */}
-      <aside className="hidden lg:flex w-60 bg-white/70 backdrop-blur-xl border-r border-slate-200/60 flex-col fixed h-full z-20 shadow-lg shadow-slate-200/20">
+      {/* ─── SIDEBAR (Clean & Minimalist) ─── */}
+      <aside className="hidden lg:flex w-60 bg-white border-r border-slate-200/60 flex-col fixed h-full z-20 shadow-sm">
         {/* Logo */}
         <div className="px-5 py-6">
           <div className="flex items-center gap-3">
@@ -593,7 +588,7 @@ export default function IntegratedLLMSDashboard() {
       <main className="flex-1 lg:ml-60 flex flex-col min-h-screen relative z-10">
 
         {/* TOP HEADER */}
-        <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 px-6 md:px-8 py-4 flex justify-between items-center shadow-sm shadow-slate-100/20">
+        <header className="sticky top-0 z-30 bg-white border-b border-slate-200/50 px-6 md:px-8 py-4 flex justify-between items-center shadow-sm">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_#10b981]"></span>
@@ -622,91 +617,81 @@ export default function IntegratedLLMSDashboard() {
 
         <div className="p-6 md:p-8 space-y-6 flex-1">
 
-          {/* ─── STAT CARDS (VIBRANT NEON GLOW GRID) ─── */}
+          {/* ─── STAT CARDS (CLEAN & MINIMALIST) ─── */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
 
             {/* Peserta Online */}
-            <div className="bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-3xl p-6 shadow-lg shadow-blue-500/10 border border-blue-400/20 hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-500/20 transition-all duration-300 relative overflow-hidden group">
-              <div className="absolute right-[-10%] top-[-10%] w-32 h-32 bg-white/5 rounded-full blur-xl pointer-events-none group-hover:scale-125 transition-transform duration-500"></div>
-              <div className="flex items-start justify-between relative z-10">
-                <div>
-                  <p className="text-[10px] font-bold text-blue-200/90 uppercase tracking-widest mb-2.5">Peserta Online</p>
-                  <p className="text-4xl font-black tracking-tight">{stats.onlineParticipants}</p>
-                  <div className="flex items-center gap-1.5 mt-4 bg-white/10 px-2.5 py-1 rounded-xl w-fit border border-white/5 backdrop-blur-md">
-                    <Activity className="w-3.5 h-3.5 text-blue-200 animate-pulse" />
-                    <span className="text-[10px] text-blue-200 font-bold tracking-wider uppercase">Live Sync</span>
-                  </div>
+            <div className="bg-white rounded-[24px] p-5 border border-slate-200/60 shadow-sm flex items-center justify-between transition-all duration-300 hover:shadow-md">
+              <div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Peserta Online</p>
+                <p className="text-3xl font-black text-slate-900 mt-1">{stats.onlineParticipants}</p>
+                <div className="flex items-center gap-1.5 mt-3 text-indigo-650 bg-indigo-50 border border-indigo-100/50 px-2.5 py-1 rounded-xl w-fit text-[9px] font-bold uppercase tracking-wider">
+                  <Activity className="w-3 h-3 text-indigo-500 animate-pulse" />
+                  <span>Live Sync</span>
                 </div>
-                <div className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center group-hover:bg-white/20 group-hover:rotate-6 transition-all duration-300 shadow-inner">
-                  <Users className="w-6 h-6 text-white" />
-                </div>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-500 flex items-center justify-center shadow-inner">
+                <Users className="w-5.5 h-5.5" />
               </div>
             </div>
 
             {/* Sesi Ujian */}
-            <div className="bg-gradient-to-br from-violet-600 to-indigo-700 text-white rounded-3xl p-6 shadow-lg shadow-indigo-500/10 border border-indigo-400/20 hover:scale-[1.02] hover:shadow-xl hover:shadow-indigo-500/20 transition-all duration-300 relative overflow-hidden group">
-              <div className="absolute right-[-10%] top-[-10%] w-32 h-32 bg-white/5 rounded-full blur-xl pointer-events-none group-hover:scale-125 transition-transform duration-500"></div>
-              <div className="flex items-start justify-between relative z-10">
-                <div>
-                  <p className="text-[10px] font-bold text-indigo-200/90 uppercase tracking-widest mb-2.5">Sesi Ujian</p>
-                  <p className="text-4xl font-black tracking-tight">{stats.activeSessions}</p>
-                  <div className="flex items-center gap-1.5 mt-4 bg-white/10 px-2.5 py-1 rounded-xl w-fit border border-white/5 backdrop-blur-md">
-                    <span className="w-2 h-2 bg-indigo-300 rounded-full animate-ping"></span>
-                    <span className="text-[10px] text-indigo-200 font-bold tracking-wider uppercase">Running</span>
-                  </div>
+            <div className="bg-white rounded-[24px] p-5 border border-slate-200/60 shadow-sm flex items-center justify-between transition-all duration-300 hover:shadow-md">
+              <div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sesi Ujian</p>
+                <p className="text-3xl font-black text-slate-900 mt-1">{stats.activeSessions}</p>
+                <div className="flex items-center gap-1.5 mt-3 text-violet-650 bg-violet-50 border border-violet-100/50 px-2.5 py-1 rounded-xl w-fit text-[9px] font-bold uppercase tracking-wider">
+                  <span className="w-1.5 h-1.5 bg-violet-500 rounded-full animate-ping"></span>
+                  <span>Running</span>
                 </div>
-                <div className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center group-hover:bg-white/20 group-hover:rotate-6 transition-all duration-300 shadow-inner">
-                  <Radio className="w-6 h-6 text-white" />
-                </div>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-violet-50 text-violet-500 flex items-center justify-center shadow-inner">
+                <Radio className="w-5.5 h-5.5" />
               </div>
             </div>
 
             {/* Bank Soal */}
-            <div className="bg-gradient-to-br from-emerald-500 to-teal-600 text-white rounded-3xl p-6 shadow-lg shadow-emerald-500/10 border border-emerald-400/20 hover:scale-[1.02] hover:shadow-xl hover:shadow-emerald-500/20 transition-all duration-300 relative overflow-hidden group">
-              <div className="absolute right-[-10%] top-[-10%] w-32 h-32 bg-white/5 rounded-full blur-xl pointer-events-none group-hover:scale-125 transition-transform duration-500"></div>
-              <div className="flex items-start justify-between relative z-10">
-                <div>
-                  <p className="text-[10px] font-bold text-emerald-200/90 uppercase tracking-widest mb-2.5">Bank Soal</p>
-                  <p className="text-4xl font-black tracking-tight">{stats.totalQuestions}</p>
-                  <div className="flex items-center gap-1.5 mt-4 bg-white/10 px-2.5 py-1 rounded-xl w-fit border border-white/5 backdrop-blur-md">
-                    <Zap className="w-3.5 h-3.5 text-emerald-200" />
-                    <span className="text-[10px] text-emerald-200 font-bold tracking-wider uppercase">Verified</span>
-                  </div>
+            <div className="bg-white rounded-[24px] p-5 border border-slate-200/60 shadow-sm flex items-center justify-between transition-all duration-300 hover:shadow-md">
+              <div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Bank Soal</p>
+                <p className="text-3xl font-black text-slate-900 mt-1">{stats.totalQuestions}</p>
+                <div className="flex items-center gap-1.5 mt-3 text-emerald-650 bg-emerald-50 border border-emerald-100/50 px-2.5 py-1 rounded-xl w-fit text-[9px] font-bold uppercase tracking-wider">
+                  <Zap className="w-3 h-3 text-emerald-500" />
+                  <span>Verified</span>
                 </div>
-                <div className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center group-hover:bg-white/20 group-hover:rotate-6 transition-all duration-300 shadow-inner">
-                  <FileText className="w-6 h-6 text-white" />
-                </div>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-inner">
+                <FileText className="w-5.5 h-5.5" />
               </div>
             </div>
 
             {/* Kecurangan */}
-            <div className={`text-white rounded-3xl p-6 hover:scale-[1.02] transition-all duration-300 relative overflow-hidden group ${
-              stats.totalViolations > 0 
-                ? 'bg-gradient-to-br from-rose-600 to-red-700 shadow-lg shadow-rose-500/25 border border-rose-500/30' 
-                : 'bg-gradient-to-br from-slate-800 to-slate-900 shadow-lg shadow-slate-950/20 border border-slate-700/40'
-            }`}>
-              <div className="absolute right-[-10%] top-[-10%] w-32 h-32 bg-white/5 rounded-full blur-xl pointer-events-none group-hover:scale-125 transition-transform duration-500"></div>
-              <div className="flex items-start justify-between relative z-10">
-                <div>
-                  <p className="text-[10px] font-bold text-slate-300/90 uppercase tracking-widest mb-2.5">Integritas Keamanan</p>
-                  <p className="text-4xl font-black tracking-tight">{stats.totalViolations}</p>
-                  <div className="flex items-center gap-1.5 mt-4 bg-white/10 px-2.5 py-1 rounded-xl w-fit border border-white/5 backdrop-blur-md">
-                    {stats.totalViolations > 0 ? (
-                      <>
-                        <span className="w-2 h-2 bg-rose-400 rounded-full animate-ping"></span>
-                        <span className="text-[10px] text-rose-200 font-bold tracking-wider uppercase">Terdeteksi</span>
-                      </>
-                    ) : (
-                      <>
-                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-300" />
-                        <span className="text-[10px] text-emerald-300 font-bold tracking-wider uppercase">Sangat Aman</span>
-                      </>
-                    )}
-                  </div>
+            <div className="bg-white rounded-[24px] p-5 border border-slate-200/60 shadow-sm flex items-center justify-between transition-all duration-300 hover:shadow-md">
+              <div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Integritas</p>
+                <p className="text-3xl font-black text-slate-900 mt-1">{stats.totalViolations}</p>
+                <div className={`flex items-center gap-1.5 mt-3 px-2.5 py-1 rounded-xl w-fit text-[9px] font-bold uppercase tracking-wider ${
+                  stats.totalViolations > 0 
+                    ? 'text-rose-650 bg-rose-50 border border-rose-100/50' 
+                    : 'text-slate-500 bg-slate-50 border border-slate-100/50'
+                }`}>
+                  {stats.totalViolations > 0 ? (
+                    <>
+                      <span className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-ping"></span>
+                      <span>Terdeteksi</span>
+                    </>
+                  ) : (
+                    <>
+                      <ShieldCheck className="w-3 h-3 text-emerald-500" />
+                      <span>Sangat Aman</span>
+                    </>
+                  )}
                 </div>
-                <div className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center group-hover:bg-white/20 group-hover:rotate-6 transition-all duration-300 shadow-inner">
-                  <ShieldAlert className="w-6 h-6 text-white" />
-                </div>
+              </div>
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-inner ${
+                stats.totalViolations > 0 ? 'bg-rose-50 text-rose-500' : 'bg-slate-50 text-slate-500'
+              }`}>
+                <ShieldAlert className="w-5.5 h-5.5" />
               </div>
             </div>
           </div>
