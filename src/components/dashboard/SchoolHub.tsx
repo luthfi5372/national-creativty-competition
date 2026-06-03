@@ -125,27 +125,54 @@ export default function SchoolHub({ userEntry, currentUser }: SchoolHubProps) {
       setIsLoadingChats(true);
       setChatError(null);
       try {
-        let query = supabase.from("school_messages").select("*");
-        
-        if (activeNpsn) {
-          query = query.or(`npsn.eq."${activeNpsn}",school_name.eq."${activeSchool}"`);
-        } else {
-          query = query.eq("school_name", activeSchool);
+        // Gunakan school_name (case-insensitive) sebagai identifier utama
+        // NPSN bisa dipakai sebagai fallback jika school_name ada yang tidak cocok
+        let data: any[] = [];
+        let error: any = null;
+
+        if (activeSchool) {
+          // Prioritas 1: Fetch berdasarkan school_name (case-insensitive)
+          const res = await supabase
+            .from("school_messages")
+            .select("*")
+            .ilike("school_name", activeSchool.trim())
+            .order("created_at", { ascending: true })
+            .limit(100);
+          data = res.data || [];
+          error = res.error;
+
+          // Jika tidak ada hasil dan ada NPSN, coba juga dengan NPSN
+          if (!error && data.length === 0 && activeNpsn) {
+            const res2 = await supabase
+              .from("school_messages")
+              .select("*")
+              .eq("npsn", String(activeNpsn).trim())
+              .order("created_at", { ascending: true })
+              .limit(100);
+            if (!res2.error && res2.data && res2.data.length > 0) {
+              data = res2.data;
+            }
+          }
+        } else if (activeNpsn) {
+          // Fallback: Hanya pakai NPSN jika tidak ada school_name
+          const res = await supabase
+            .from("school_messages")
+            .select("*")
+            .eq("npsn", String(activeNpsn).trim())
+            .order("created_at", { ascending: true })
+            .limit(100);
+          data = res.data || [];
+          error = res.error;
         }
 
-        const { data, error } = await query
-          .order("created_at", { ascending: true })
-          .limit(100);
-
         if (error) {
-          // If table doesn't exist yet, show a clean, friendly setup instruction
-          if (error.code === "PGRST116" || error.message.includes("does not exist")) {
+          if (error.code === "PGRST116" || error.message?.includes("does not exist")) {
             setChatError("TableNotCreated");
           } else {
             throw error;
           }
         } else {
-          setMessages(data || []);
+          setMessages(data);
         }
       } catch (err: any) {
         console.error("Failed to fetch school messages:", err);
@@ -182,8 +209,10 @@ export default function SchoolHub({ userEntry, currentUser }: SchoolHubProps) {
             const newOrOld = payload.new || payload.old;
             if (!newOrOld) return;
 
-            const matchesNpsn = activeNpsn && newOrOld.npsn === activeNpsn;
-            const matchesSchool = activeSchool && newOrOld.school_name?.toLowerCase() === activeSchool.toLowerCase();
+            const matchesNpsn = activeNpsn && newOrOld.npsn && 
+              String(newOrOld.npsn).trim() === String(activeNpsn).trim();
+            const matchesSchool = activeSchool && newOrOld.school_name && 
+              newOrOld.school_name.trim().toLowerCase() === activeSchool.trim().toLowerCase();
 
             if (matchesNpsn || matchesSchool) {
               if (payload.eventType === "INSERT") {
@@ -239,7 +268,7 @@ export default function SchoolHub({ userEntry, currentUser }: SchoolHubProps) {
     fetchSchoolmates();
   }, [activeSchool, activeNpsn]);
 
-  // Handle send message
+  // Handle send message with optimistic update
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim() || isSending || (!activeSchool && !activeNpsn)) return;
@@ -248,9 +277,22 @@ export default function SchoolHub({ userEntry, currentUser }: SchoolHubProps) {
     const messageText = inputText.trim();
     setInputText("");
 
+    // Optimistic update: tampilkan pesan langsung
+    const senderName = currentUser?.user_metadata?.full_name || currentUser?.email?.split("@")[0] || "Peserta NCC";
+    const optimisticId = `opt-${Date.now()}`;
+    const optimisticMsg = {
+      id: optimisticId,
+      school_name: activeSchool,
+      npsn: activeNpsn || null,
+      sender_id: currentUser?.id,
+      sender_name: senderName,
+      message: messageText,
+      created_at: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, optimisticMsg]);
+
     try {
-      const senderName = currentUser?.user_metadata?.full_name || currentUser?.email?.split("@")[0] || "Peserta NCC";
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("school_messages")
         .insert([
           {
@@ -260,12 +302,21 @@ export default function SchoolHub({ userEntry, currentUser }: SchoolHubProps) {
             sender_name: senderName,
             message: messageText,
           }
-        ]);
+        ])
+        .select()
+        .single();
 
       if (error) throw error;
+      // Ganti pesan optimistic dengan data asli dari server
+      if (data) {
+        setMessages((prev) => prev.map((m) => m.id === optimisticId ? data : m));
+      }
     } catch (err: any) {
+      // Rollback optimistic update jika gagal
+      setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
+      setInputText(messageText); // Kembalikan teks ke input
       console.error("Failed to send message:", err);
-      alert("Gagal mengirim pesan: Pastikan tabel SQL sudah di-setup dan Anda terdaftar di sekolah ini.");
+      alert("Gagal mengirim pesan: " + (err.message || "Periksa koneksi dan data sekolah Anda."));
     } finally {
       setIsSending(false);
     }
