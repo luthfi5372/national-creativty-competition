@@ -105,7 +105,8 @@ export default function UserDashboard() {
         }
         
         if (!user) {
-          setIsLoading(false);
+          console.log("[User Dashboard] No active session. Redirecting to login...");
+          router.push('/login');
           return;
         }
         setCurrentUser(user);

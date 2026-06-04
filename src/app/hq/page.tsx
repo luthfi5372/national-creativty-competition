@@ -2516,7 +2516,6 @@ function ModernHQDashboardContent() {
 
   // --- MESIN PENGUMPUL DATA & RADAR REAL-TIME ---
   useEffect(() => {
-    // 🚀 CLIENT-SIDE AUTH RECOVERY
     const ensureAdminSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -2524,48 +2523,12 @@ function ModernHQDashboardContent() {
         const currentEmail = session?.user?.email?.toLowerCase();
         
         if (!session || !adminEmails.includes(currentEmail || "")) {
-          console.log("[Admin HQ Client] No valid admin session. Recovering...");
-          
-          // Coba login langsung
-          const { error: loginError } = await supabase.auth.signInWithPassword({
-            email: 'admin1@ncc.id',
-            password: '123456'
-          });
-          
-          if (loginError) {
-            console.warn("[Admin HQ Client] Silent login failed. Attempting on-the-fly registration...");
-            // Jika akun belum terdaftar di Supabase Auth (misal reset DB), lakukan signUp langsung dari klien!
-            const { error: signUpError } = await supabase.auth.signUp({
-              email: 'admin1@ncc.id',
-              password: '123456',
-              options: {
-                data: {
-                  full_name: "NCC Admin Command",
-                  username: "admin1"
-                }
-              }
-            });
-            
-            if (!signUpError) {
-              console.log("[Admin HQ Client] On-the-fly registration succeeded. Retrying silent login...");
-              const { error: retryError } = await supabase.auth.signInWithPassword({
-                email: 'admin1@ncc.id',
-                password: '123456'
-              });
-              if (retryError) {
-                console.error("[Admin HQ Client] Silent retry login failed:", retryError);
-              } else {
-                console.log("[Admin HQ Client] Silent recovery succeeded after on-the-fly registration!");
-              }
-            } else {
-              console.error("[Admin HQ Client] On-the-fly registration failed:", signUpError);
-            }
-          } else {
-            console.log("[Admin HQ Client] Silent auth recovery succeeded!");
-          }
+          console.log("[Admin HQ Client] No valid admin session. Redirecting to login...");
+          router.push('/login');
         }
       } catch (err) {
-        console.error("[Admin HQ Client] Silent auth recovery error:", err);
+        console.error("[Admin HQ Client] Auth check error:", err);
+        router.push('/login');
       }
     };
 

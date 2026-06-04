@@ -192,7 +192,7 @@ export default function IntegratedLLMSDashboard() {
   };
 
   useEffect(() => {
-    // 🚀 CLIENT-SIDE AUTH RECOVERY
+    // 🚀 CLIENT-SIDE AUTH CHECK
     const ensureAdminSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -200,14 +200,12 @@ export default function IntegratedLLMSDashboard() {
         const currentEmail = session?.user?.email?.toLowerCase();
         
         if (!session || !adminEmails.includes(currentEmail || "")) {
-          console.log("[Admin HQ LLMS Client] No valid admin session. Recovering...");
-          await supabase.auth.signInWithPassword({
-            email: 'admin1@ncc.id',
-            password: '123456'
-          });
+          console.log("[Admin HQ LLMS Client] No valid admin session. Redirecting to login...");
+          router.push('/login');
         }
       } catch (err) {
-        console.error("[Admin HQ LLMS Client] Silent auth recovery error:", err);
+        console.error("[Admin HQ LLMS Client] Auth check error:", err);
+        router.push('/login');
       }
     };
 
