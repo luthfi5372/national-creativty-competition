@@ -2397,8 +2397,11 @@ function ModernHQDashboardContent() {
         province: newParticipant.province,
         city: newParticipant.city,
         competition_type: newParticipant.category,
-        mentor_name: combinedMentor,
-        phone_number: newParticipant.phone_number,
+        mentor_name: [
+          newParticipant.mentor_name?.trim(),
+          newParticipant.mentor_email?.trim(),
+          newParticipant.mentor_phone?.trim() || newParticipant.phone_number?.trim()
+        ].filter(Boolean).join(" | "),
         payment_status: 'Verified',
         notes: Object.keys(notesObj).length > 0 ? JSON.stringify(notesObj) : null
       };
@@ -2471,8 +2474,11 @@ function ModernHQDashboardContent() {
             province: row.provinsi || "-",
             city: row.kota || "-",
             competition_type: row.kategori_lomba || "-",
-            mentor_name: row.nama_pembina || "-",
-            phone_number: row.no_wa || "-",
+            mentor_name: [
+              row.nama_pembina || "-",
+              row.email_pembina || "",
+              row.no_wa || ""
+            ].filter(Boolean).join(" | ").replace(/ \| $/, "").replace(/^\|/, "").trim() || "-",
             payment_status: 'Verified',
             notes: notesString
           }));
