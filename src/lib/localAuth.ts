@@ -127,7 +127,7 @@ export function registerUser(data: {
     fullName: newUser.fullName,
     role: newUser.role,
   };
-  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
   return { success: true, user: session };
 }
 
@@ -145,7 +145,7 @@ export function loginUser(email: string, password: string): AuthResult {
       role: "admin",
     };
     if (typeof window !== "undefined") {
-      localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
     }
     return { success: true, user: session };
   }
@@ -165,18 +165,18 @@ export function loginUser(email: string, password: string): AuthResult {
     fullName: user.fullName,
     role: user.role,
   };
-  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
   return { success: true, user: session };
 }
 
 export function getSession(): LocalSession | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = localStorage.getItem(SESSION_KEY);
+    const raw = sessionStorage.getItem(SESSION_KEY);
     if (!raw) return null;
     const session = JSON.parse(raw) as LocalSession;
     if (session && session.email === "admin2@ncc.id") {
-      localStorage.removeItem(SESSION_KEY);
+      sessionStorage.removeItem(SESSION_KEY);
       return null;
     }
     return session;
@@ -187,7 +187,7 @@ export function getSession(): LocalSession | null {
 
 export function logout() {
   if (typeof window !== "undefined") {
-    localStorage.removeItem(SESSION_KEY);
+    sessionStorage.removeItem(SESSION_KEY);
   }
 }
 
@@ -203,7 +203,7 @@ export function updateUserProfile(email: string, data: { fullName?: string, scho
   const session = getSession();
   if (session && session.email === email.toLowerCase()) {
     const newSession = { ...session, fullName: users[index].fullName };
-    localStorage.setItem(SESSION_KEY, JSON.stringify(newSession));
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(newSession));
   }
 
   return { success: true };

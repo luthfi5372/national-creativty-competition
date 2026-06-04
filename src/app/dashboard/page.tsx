@@ -93,9 +93,9 @@ export default function UserDashboard() {
         const { data: authData } = await supabase.auth.getUser();
         let user = authData?.user;
         
-        // 🔄 FALLBACK: Jika Supabase Auth kosong, cek Local Storage (Bypass/Local Auth)
+        // 🔄 FALLBACK: Jika Supabase Auth kosong, cek Session Storage (Bypass/Local Auth)
         if (!user && typeof window !== 'undefined') {
-          const localSess = localStorage.getItem('ncc_local_session');
+          const localSess = sessionStorage.getItem('ncc_local_session');
           if (localSess) {
             try {
               const parsed = JSON.parse(localSess);
