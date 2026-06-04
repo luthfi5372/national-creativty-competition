@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { useParams } from 'next/navigation'; // 🔥 VAKSIN NEXT.JS
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { 
   ArrowLeftIcon,
@@ -12,11 +12,34 @@ import {
   ShieldExclamationIcon,
   ComputerDesktopIcon,
   LockClosedIcon,
-  LockOpenIcon
+  LockOpenIcon,
+  ArrowDownTrayIcon,
+  PaperAirplaneIcon,
+  FunnelIcon,
 } from '@heroicons/react/24/outline';
 
+type TabFilter = 'all' | 'active' | 'blocked' | 'done';
+
+interface ExamInfo {
+  title: string;
+  token: string;
+  duration_minutes: number;
+}
+
+interface Participant {
+  id: string;
+  user_id: string;
+  exam_id: string;
+  status?: string;
+  submitted_at?: string | null;
+  started_at?: string;
+  updated_at: string;
+  violations_count: number;
+  current_score?: number;
+  answers_json?: Record<string, string>;
+}
+
 export default function LiveMonitor() {
-  // 🔥 MENGAMBIL ID DENGAN AMAN
   const params = useParams();
   const examId = params?.exam_id as string;
 
@@ -24,330 +47,463 @@ export default function LiveMonitor() {
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  const [examInfo, setExamInfo] = useState({ title: 'Memuat Ruangan...', token: '...' });
-  const [participants, setParticipants] = useState<any[]>([]);
+  const [examInfo, setExamInfo] = useState<ExamInfo>({ title: 'Memuat...', token: '...', duration_minutes: 90 });
+  const [participants, setParticipants] = useState<Participant[]>([]);
   const [stats, setStats] = useState({ working: 0, submitted: 0, cheating: 0 });
   const [search, setSearch] = useState('');
+  const [activeTab, setActiveTab] = useState<TabFilter>('all');
+  const [now, setNow] = useState(new Date());
+
+  // Tick setiap detik untuk timer
+  useEffect(() => {
+    const tick = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(tick);
+  }, []);
+
+  const recalcStats = useCallback((list: Participant[]) => {
+    let w = 0, s = 0, c = 0;
+    list.forEach(p => {
+      if (p.submitted_at) s++; else w++;
+      if (p.violations_count >= 3) c++;
+    });
+    setStats({ working: w, submitted: s, cheating: c });
+  }, []);
 
   useEffect(() => {
-    // 🔥 CEGAH ERROR JIKA ID BELUM TERBACA
     if (!examId || examId === 'undefined') return;
 
-    // Ambil Nama Ujian dan Token
-    const loadTitle = async () => {
-      const { data } = await supabase.from('cbt_exams').select('title, token').eq('id', examId).maybeSingle();
+    const loadExam = async () => {
+      const { data } = await supabase
+        .from('cbt_exams')
+        .select('title, token, duration_minutes')
+        .eq('id', examId)
+        .maybeSingle();
       if (data) setExamInfo(data);
     };
-    loadTitle();
+    loadExam();
 
-    // Ambil Data Peserta (CCTV)
-    const fetchCCTVData = async () => {
-      try {
-        const { data } = await supabase
-          .from('cbt_attempts')
-          .select('*')
-          .eq('exam_id', examId)
-          .order('updated_at', { ascending: false });
-
-        if (data) {
-          setParticipants(data);
-          let w = 0, s = 0, c = 0;
-          data.forEach(p => {
-            if (p.submitted_at) s++; else w++;
-            if (p.violations_count > 0) c++;
-          });
-          setStats({ working: w, submitted: s, cheating: c });
-        }
-      } catch (err) {
-        console.error('Error fetching CCTV:', err);
+    const fetchData = async () => {
+      const { data } = await supabase
+        .from('cbt_attempts')
+        .select('*')
+        .eq('exam_id', examId)
+        .order('updated_at', { ascending: false });
+      if (data) {
+        setParticipants(data);
+        recalcStats(data);
       }
     };
+    fetchData();
 
-    fetchCCTVData();
-
-    // 📡 ANTENA RADAR REAL-TIME SUPABASE (Optimasi Bebas Lag & Tanpa Loop Query)
-    const channel = supabase.channel('live-cctv')
+    const channel = supabase.channel('live-cctv-v2')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'cbt_attempts' }, (payload) => {
         if (payload.new && (payload.new as any).exam_id === examId) {
-          setParticipants((prev) => {
-            let nextList = [...prev];
-            const updated = payload.new as any;
-            
-            const idx = nextList.findIndex(p => p.user_id === updated.user_id);
-            if (idx !== -1) {
-              nextList[idx] = updated;
-            } else {
-              nextList.push(updated);
-            }
-            
-            // Urutkan ulang berdasarkan updated_at DESC agar urutannya konsisten
-            nextList.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
-            
-            // Hitung ulang statistik secara lokal (tanpa kueri jaringan!)
-            let w = 0, s = 0, c = 0;
-            nextList.forEach(p => {
-              if (p.submitted_at) s++; else w++;
-              if (p.violations_count > 0) c++;
-            });
-            setStats({ working: w, submitted: s, cheating: c });
-            
-            return nextList;
+          setParticipants(prev => {
+            const updated = payload.new as Participant;
+            let next = [...prev];
+            const idx = next.findIndex(p => p.user_id === updated.user_id);
+            if (idx !== -1) next[idx] = updated; else next.push(updated);
+            next.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+            recalcStats(next);
+            return next;
           });
         }
       })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [examId]);
+  }, [examId, recalcStats]);
 
-  // State untuk Custom Modal Unblock & Toast
+  // ── Modal & Toast state ──
   const [unlockUserId, setUnlockUserId] = useState<string | null>(null);
-  const [isUnlocking, setIsUnlocking] = useState(false);
-  const [toast, setToast] = useState<{ show: boolean; message: string; type: 'success' | 'error' }>({
-    show: false,
-    message: '',
-    type: 'success'
-  });
+  const [forceSubmitUserId, setForceSubmitUserId] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [toast, setToast] = useState<{ show: boolean; message: string; type: 'success' | 'error' }>({ show: false, message: '', type: 'success' });
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ show: true, message, type });
-    setTimeout(() => {
-      setToast(prev => ({ ...prev, show: false }));
-    }, 4000);
+    setTimeout(() => setToast(prev => ({ ...prev, show: false })), 4000);
   };
 
-  // FITUR UNBLOCK PESERTA (Memicu Modal)
-  const handleUnlockAccess = (userId: string) => {
-    setUnlockUserId(userId);
-  };
-
-  // Konfirmasi Eksekusi Unblock dari Modal Custom
-  const confirmUnlockAccess = async () => {
+  // ── Unblock ──
+  const confirmUnlock = async () => {
     if (!unlockUserId) return;
-    setIsUnlocking(true);
-
+    setIsProcessing(true);
     try {
-      const { error } = await supabase.from('cbt_attempts').update({
-        violations_count: 0,
-        updated_at: new Date().toISOString()
-      }).eq('user_id', unlockUserId).eq('exam_id', examId);
-
+      const { error } = await supabase.from('cbt_attempts')
+        .update({ violations_count: 0, updated_at: new Date().toISOString() })
+        .eq('user_id', unlockUserId).eq('exam_id', examId);
       if (error) throw error;
-      showToast(`Akses untuk ${unlockUserId} berhasil dibuka! Arahkan peserta untuk me-refresh layarnya.`, 'success');
+      showToast(`Akses ${unlockUserId} berhasil dibuka! Minta peserta refresh layar.`, 'success');
     } catch (err: any) {
-      showToast("Terjadi kesalahan: " + err.message, 'error');
+      showToast('Gagal: ' + err.message, 'error');
     } finally {
-      setIsUnlocking(false);
+      setIsProcessing(false);
       setUnlockUserId(null);
     }
   };
 
-  const filteredParticipants = participants.filter(p => {
-    const uidString = p.user_id ? String(p.user_id).toLowerCase() : '';
-    return uidString.includes(search.toLowerCase());
+  // ── Force Submit ──
+  const confirmForceSubmit = async () => {
+    if (!forceSubmitUserId) return;
+    setIsProcessing(true);
+    try {
+      const { error } = await supabase.from('cbt_attempts')
+        .update({ submitted_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+        .eq('user_id', forceSubmitUserId).eq('exam_id', examId);
+      if (error) throw error;
+      showToast(`Jawaban ${forceSubmitUserId} berhasil dipaksa dikumpulkan!`, 'success');
+    } catch (err: any) {
+      showToast('Gagal: ' + err.message, 'error');
+    } finally {
+      setIsProcessing(false);
+      setForceSubmitUserId(null);
+    }
+  };
+
+  // ── Export CSV ──
+  const exportCSV = () => {
+    const rows = [
+      ['ID Peserta', 'Status', 'Pelanggaran', 'Mulai', 'Submit', 'Skor'],
+      ...participants.map(p => [
+        p.user_id,
+        p.submitted_at ? 'Selesai' : p.violations_count >= 3 ? 'Diblokir' : 'Aktif',
+        p.violations_count,
+        p.started_at ? new Date(p.started_at).toLocaleTimeString() : '-',
+        p.submitted_at ? new Date(p.submitted_at).toLocaleTimeString() : '-',
+        p.current_score ?? '-',
+      ])
+    ];
+    const csv = rows.map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `monitor_${examInfo.token}_${new Date().toLocaleDateString('id')}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Data berhasil diexport ke CSV!', 'success');
+  };
+
+  // ── Helpers ──
+  const getRemainingTime = (startedAt?: string) => {
+    if (!startedAt) return null;
+    const elapsed = (now.getTime() - new Date(startedAt).getTime()) / 1000;
+    const total = examInfo.duration_minutes * 60;
+    const remaining = Math.max(0, total - elapsed);
+    const m = Math.floor(remaining / 60);
+    const s = Math.floor(remaining % 60);
+    const pct = Math.min(100, (elapsed / total) * 100);
+    return { m, s, pct, isAlmostDone: remaining < 300, isDone: remaining === 0 };
+  };
+
+  // ── Filter logic ──
+  const tabs: { key: TabFilter; label: string }[] = [
+    { key: 'all', label: 'Semua' },
+    { key: 'active', label: 'Aktif' },
+    { key: 'blocked', label: 'Diblokir' },
+    { key: 'done', label: 'Selesai' },
+  ];
+
+  const filtered = participants.filter(p => {
+    const matchSearch = (p.user_id || '').toLowerCase().includes(search.toLowerCase());
+    const isBlocked = p.violations_count >= 3 && !p.submitted_at;
+    const isDone = !!p.submitted_at;
+    const isActive = !isDone && !isBlocked;
+    if (!matchSearch) return false;
+    if (activeTab === 'active') return isActive;
+    if (activeTab === 'blocked') return isBlocked;
+    if (activeTab === 'done') return isDone;
+    return true;
   });
+
+  const tabCount = (key: TabFilter) => {
+    return participants.filter(p => {
+      const isBlocked = p.violations_count >= 3 && !p.submitted_at;
+      const isDone = !!p.submitted_at;
+      const isActive = !isDone && !isBlocked;
+      if (key === 'active') return isActive;
+      if (key === 'blocked') return isBlocked;
+      if (key === 'done') return isDone;
+      return true;
+    }).length;
+  };
 
   return (
     <div className="min-h-screen bg-[#f4f7fe] p-6 md:p-8 font-sans text-gray-800">
       <div className="max-w-7xl mx-auto space-y-6">
-        
+
         {/* HEADER */}
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="flex items-center space-x-4">
-            <Link href="/hq/llms" className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-gray-500 hover:text-[#5145cd] shadow-sm transition-colors border border-gray-100">
-              <ArrowLeftIcon className="w-5 h-5" />
+            <Link href="/hq/llms" className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-gray-400 hover:text-[#5145cd] shadow-sm transition-colors border border-gray-100">
+              <ArrowLeftIcon className="w-4 h-4" />
             </Link>
             <div>
-              <h1 className="text-2xl font-black text-gray-900 tracking-tight">CCTV: {examInfo.title}</h1>
+              <h1 className="text-xl font-black text-gray-900 tracking-tight">CCTV: {examInfo.title}</h1>
               <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">
-                Sesi aktif dengan TOKEN: <span className="text-[#5145cd]">{examInfo.token}</span>
+                Token: <span className="text-[#5145cd]">{examInfo.token}</span>
+                <span className="ml-3 text-gray-300">|</span>
+                <span className="ml-3">Durasi: {examInfo.duration_minutes} menit</span>
               </p>
             </div>
           </div>
 
-          <div className="flex items-center space-x-4 w-full md:w-auto">
-            <div className="relative w-full md:w-64">
-              <MagnifyingGlassIcon className="w-4 h-4 absolute left-4 top-3 text-gray-400" />
-              <input 
-                type="text" 
-                placeholder="Cari ID Peserta..." 
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            {/* Search */}
+            <div className="relative flex-1 md:w-56">
+              <MagnifyingGlassIcon className="w-3.5 h-3.5 absolute left-3.5 top-3 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Cari ID Peserta..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-full text-xs font-bold focus:outline-none focus:border-[#5145cd] shadow-sm"
+                onChange={e => setSearch(e.target.value)}
+                className="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-full text-xs font-bold focus:outline-none focus:border-[#5145cd] shadow-sm"
               />
             </div>
-            <div className="px-4 py-2 bg-rose-50 text-rose-600 rounded-full flex items-center shadow-sm border border-rose-100 flex-shrink-0">
-               <span className="w-2 h-2 bg-rose-500 rounded-full animate-pulse mr-2"></span>
-               <span className="text-[10px] font-black tracking-widest uppercase">LIVE</span>
+            {/* Export */}
+            <button
+              onClick={exportCSV}
+              title="Export ke CSV"
+              className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-600 hover:border-[#5145cd] hover:text-[#5145cd] rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm transition-all"
+            >
+              <ArrowDownTrayIcon className="w-4 h-4" />
+              <span className="hidden md:inline">Export CSV</span>
+            </button>
+            {/* Live badge */}
+            <div className="px-3 py-2.5 bg-rose-50 text-rose-600 rounded-full flex items-center border border-rose-100 flex-shrink-0">
+              <span className="w-2 h-2 bg-rose-500 rounded-full animate-pulse mr-2" />
+              <span className="text-[10px] font-black tracking-widest uppercase">LIVE</span>
             </div>
           </div>
         </div>
 
-        {/* METRIK STATISTIK */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white p-6 rounded-[24px] shadow-sm border border-gray-100 flex items-center justify-between">
+        {/* STATISTIK */}
+        <div className="grid grid-cols-3 gap-4">
+          <div className="bg-white p-5 rounded-[20px] shadow-sm border border-gray-100 flex items-center justify-between">
             <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Sedang Aktif</p>
-              <h3 className="text-4xl font-black mt-1 text-gray-800">{stats.working}</h3>
+              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Sedang Aktif</p>
+              <h3 className="text-3xl font-black mt-1 text-gray-800">{stats.working}</h3>
             </div>
-            <div className="w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center text-[#5145cd]"><ClockIcon className="w-6 h-6" /></div>
+            <div className="w-10 h-10 bg-indigo-50 rounded-full flex items-center justify-center text-[#5145cd]">
+              <ClockIcon className="w-5 h-5" />
+            </div>
           </div>
-          <div className="bg-white p-6 rounded-[24px] shadow-sm border border-gray-100 flex items-center justify-between">
+          <div className="bg-white p-5 rounded-[20px] shadow-sm border border-gray-100 flex items-center justify-between">
             <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Telah Submit</p>
-              <h3 className="text-4xl font-black mt-1 text-gray-800">{stats.submitted}</h3>
+              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Telah Submit</p>
+              <h3 className="text-3xl font-black mt-1 text-gray-800">{stats.submitted}</h3>
             </div>
-            <div className="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-500"><CheckBadgeIcon className="w-6 h-6" /></div>
+            <div className="w-10 h-10 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-500">
+              <CheckBadgeIcon className="w-5 h-5" />
+            </div>
           </div>
-          <div className="bg-white p-6 rounded-[24px] shadow-sm border border-rose-100 flex items-center justify-between bg-rose-50/30">
+          <div className={`p-5 rounded-[20px] shadow-sm border flex items-center justify-between transition-colors ${stats.cheating > 0 ? 'bg-rose-50 border-rose-200' : 'bg-white border-gray-100'}`}>
             <div>
-              <p className="text-[10px] font-black text-rose-800 uppercase tracking-widest">Pelanggaran</p>
-              <h3 className="text-4xl font-black mt-1 text-rose-600">{stats.cheating}</h3>
+              <p className={`text-[9px] font-black uppercase tracking-widest ${stats.cheating > 0 ? 'text-rose-500' : 'text-gray-400'}`}>Pelanggaran</p>
+              <h3 className={`text-3xl font-black mt-1 ${stats.cheating > 0 ? 'text-rose-600' : 'text-gray-800'}`}>{stats.cheating}</h3>
             </div>
-            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${stats.cheating > 0 ? 'bg-rose-500 text-white animate-pulse shadow-lg shadow-rose-200' : 'bg-rose-100 text-rose-400'}`}>
-              <ShieldExclamationIcon className="w-6 h-6" />
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${stats.cheating > 0 ? 'bg-rose-500 text-white animate-pulse' : 'bg-rose-50 text-rose-300'}`}>
+              <ShieldExclamationIcon className="w-5 h-5" />
             </div>
           </div>
         </div>
 
-        {/* LAYAR CCTV GRID */}
-        <div className="bg-white p-6 md:p-8 rounded-[32px] shadow-sm border border-gray-100 min-h-[500px]">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-base font-black text-gray-800">Layar Perangkat Peserta</h2>
-            <span className="px-3 py-1 bg-indigo-50 text-[#5145cd] text-[9px] font-black uppercase tracking-widest rounded-full">Sync: {new Date().toLocaleTimeString()}</span>
+        {/* MAIN PANEL */}
+        <div className="bg-white rounded-[28px] shadow-sm border border-gray-100">
+          {/* Tab Bar */}
+          <div className="flex items-center justify-between px-6 pt-5 pb-0 border-b border-gray-100">
+            <div className="flex gap-1">
+              {tabs.map(tab => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`flex items-center gap-2 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-t-lg transition-all border-b-2 -mb-px ${
+                    activeTab === tab.key
+                      ? 'border-[#5145cd] text-[#5145cd]'
+                      : 'border-transparent text-gray-400 hover:text-gray-600'
+                  }`}
+                >
+                  <FunnelIcon className="w-3 h-3" />
+                  {tab.label}
+                  <span className={`px-1.5 py-0.5 rounded-full text-[9px] ${
+                    activeTab === tab.key ? 'bg-indigo-100 text-[#5145cd]' : 'bg-gray-100 text-gray-400'
+                  }`}>
+                    {tabCount(tab.key)}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <span className="text-[9px] text-gray-400 font-bold pb-3">
+              Sync: {now.toLocaleTimeString()}
+            </span>
           </div>
 
-          {filteredParticipants.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-64 text-gray-400">
-              <ComputerDesktopIcon className="w-16 h-16 mb-4 text-gray-200" />
-              <p className="text-[10px] font-black uppercase tracking-widest">BELUM ADA PESERTA AKTIF</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {filteredParticipants.map(p => {
-                const isBlocked = p.violations_count >= 3;
-                const isWarning = p.violations_count > 0 && !isBlocked;
-                const isDone = !!p.submitted_at;
+          {/* Grid Peserta */}
+          <div className="p-6">
+            {filtered.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-48 text-gray-300">
+                <ComputerDesktopIcon className="w-14 h-14 mb-3" />
+                <p className="text-[10px] font-black uppercase tracking-widest">Tidak Ada Data</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                {filtered.map(p => {
+                  const isBlocked = p.violations_count >= 3 && !p.submitted_at;
+                  const isWarning = p.violations_count > 0 && p.violations_count < 3 && !p.submitted_at;
+                  const isDone = !!p.submitted_at;
+                  const timer = !isDone ? getRemainingTime(p.started_at) : null;
 
-                return (
-                  <div key={p.user_id} className={`p-5 rounded-[24px] border-2 flex flex-col justify-between transition-all relative overflow-hidden
-                    ${isBlocked ? 'bg-rose-50 border-rose-500 shadow-md shadow-rose-100' : 
-                      isWarning ? 'bg-amber-50 border-amber-400' : 
-                      isDone ? 'bg-emerald-50 border-emerald-200' : 'bg-gray-50 border-gray-100'}`}
-                  >
-                    {isWarning && <div className="absolute top-0 left-0 w-full h-1 bg-amber-500 animate-pulse"></div>}
-                    {isBlocked && <div className="absolute top-0 left-0 w-full h-1 bg-rose-600"></div>}
+                  return (
+                    <div key={p.user_id} className={`relative p-4 rounded-[18px] border-2 flex flex-col gap-3 transition-all
+                      ${isBlocked ? 'bg-rose-50 border-rose-400' :
+                        isWarning ? 'bg-amber-50 border-amber-300' :
+                        isDone ? 'bg-emerald-50 border-emerald-200' :
+                        'bg-gray-50 border-gray-150 hover:border-indigo-200'}`}
+                    >
+                      {/* Top bar accent */}
+                      <div className={`absolute top-0 left-0 right-0 h-1 rounded-t-[16px]
+                        ${isBlocked ? 'bg-rose-500' : isWarning ? 'bg-amber-400 animate-pulse' : isDone ? 'bg-emerald-400' : 'bg-indigo-300'}`}
+                      />
 
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <p className="text-sm font-black text-gray-900">{p.user_id}</p>
-                        <p className={`text-[9px] font-bold uppercase tracking-widest mt-1
-                          ${isBlocked ? 'text-rose-600' : isWarning ? 'text-amber-600' : isDone ? 'text-emerald-600' : 'text-gray-500'}`}>
-                          {isBlocked ? 'DIBLOKIR' : isDone ? 'SELESAI' : 'MENGERJAKAN'}
-                        </p>
+                      {/* ID + Status */}
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="text-xs font-black text-gray-900 leading-tight">{p.user_id}</p>
+                          <p className={`text-[8px] font-bold uppercase tracking-widest mt-0.5
+                            ${isBlocked ? 'text-rose-600' : isWarning ? 'text-amber-600' : isDone ? 'text-emerald-600' : 'text-indigo-500'}`}
+                          >
+                            {isBlocked ? '🔒 Diblokir' : isWarning ? '⚠️ Peringatan' : isDone ? '✅ Selesai' : '🟢 Aktif'}
+                          </p>
+                        </div>
+                        {/* Action icon */}
+                        {isBlocked ? (
+                          <button onClick={() => setUnlockUserId(p.user_id)} title="Buka Blokir"
+                            className="p-1.5 rounded-lg bg-rose-500 text-white hover:bg-emerald-500 transition-colors">
+                            <LockClosedIcon className="w-4 h-4" />
+                          </button>
+                        ) : isDone ? (
+                          <div className="p-1.5 rounded-lg bg-emerald-100 text-emerald-500">
+                            <CheckBadgeIcon className="w-4 h-4" />
+                          </div>
+                        ) : (
+                          <div className="p-1.5 rounded-lg bg-indigo-50 text-indigo-400">
+                            <ComputerDesktopIcon className="w-4 h-4" />
+                          </div>
+                        )}
                       </div>
-                      
-                      {isBlocked ? (
-                        <button 
-                          onClick={() => handleUnlockAccess(p.user_id)}
-                          title="Klik untuk membuka blokir peserta ini"
-                          className="p-2 rounded-xl bg-rose-500 text-white hover:bg-emerald-500 hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer group"
-                        >
-                          <LockClosedIcon className="w-5 h-5 block group-hover:hidden" />
-                          <LockOpenIcon className="w-5 h-5 hidden group-hover:block" />
-                        </button>
-                      ) : (
-                        <div className={`p-2 rounded-xl 
-                          ${isWarning ? 'bg-amber-100 text-amber-600' : 
-                            isDone ? 'bg-emerald-100 text-emerald-600' : 'bg-white text-gray-400 shadow-sm'}`}>
-                          {isWarning ? <ShieldExclamationIcon className="w-5 h-5" /> :
-                           isDone ? <CheckBadgeIcon className="w-5 h-5" /> :
-                           <ComputerDesktopIcon className="w-5 h-5" />}
+
+                      {/* Timer bar (hanya jika belum selesai) */}
+                      {timer && (
+                        <div>
+                          <div className="flex justify-between mb-1">
+                            <span className={`text-[8px] font-bold ${timer.isAlmostDone ? 'text-rose-500' : 'text-gray-400'}`}>
+                              Sisa Waktu
+                            </span>
+                            <span className={`text-[9px] font-black tabular-nums ${timer.isAlmostDone ? 'text-rose-600' : 'text-gray-700'}`}>
+                              {String(timer.m).padStart(2, '0')}:{String(timer.s).padStart(2, '0')}
+                            </span>
+                          </div>
+                          <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all duration-1000 ${
+                                timer.pct > 80 ? 'bg-rose-500' : timer.pct > 60 ? 'bg-amber-400' : 'bg-indigo-500'
+                              }`}
+                              style={{ width: `${timer.pct}%` }}
+                            />
+                          </div>
                         </div>
                       )}
-                    </div>
 
-                    <div className="pt-3 border-t border-black/5 flex justify-between items-center">
-                      <p className="text-[9px] font-bold text-gray-400 flex items-center">
-                        <ClockIcon className="w-3 h-3 mr-1" />
-                        {new Date(p.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                      </p>
-                      
+                      {/* Pelanggaran badge */}
                       {p.violations_count > 0 && (
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-black
-                          ${isBlocked ? 'bg-rose-200 text-rose-800' : 'bg-amber-200 text-amber-800'}`}>
-                          {p.violations_count}x Curang
-                        </span>
+                        <div className={`text-center text-[9px] font-black py-0.5 rounded-lg
+                          ${isBlocked ? 'bg-rose-200 text-rose-800' : 'bg-amber-200 text-amber-800'}`}
+                        >
+                          {p.violations_count}× Curang
+                        </div>
+                      )}
+
+                      {/* Footer: Force Submit (hanya jika aktif) */}
+                      {!isDone && (
+                        <button
+                          onClick={() => setForceSubmitUserId(p.user_id)}
+                          className="w-full flex items-center justify-center gap-1.5 py-1.5 bg-white border border-gray-200 text-gray-500 hover:border-rose-300 hover:text-rose-600 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all"
+                        >
+                          <PaperAirplaneIcon className="w-3 h-3" />
+                          Paksa Submit
+                        </button>
+                      )}
+
+                      {/* Waktu selesai jika done */}
+                      {isDone && p.submitted_at && (
+                        <p className="text-center text-[8px] text-emerald-600 font-bold">
+                          ✓ Submit {new Date(p.submitted_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </p>
                       )}
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* ── CUSTOM TOAST NOTIFICATION ── */}
+        {/* ── TOAST ── */}
         {toast.show && (
-          <div className="fixed bottom-6 right-6 z-[10000] animate-in slide-in-from-bottom-5 fade-in duration-300">
-            <div className={`px-5 py-4 rounded-2xl shadow-xl flex items-center border text-white backdrop-blur-md
-              ${toast.type === 'success' 
-                ? 'bg-emerald-600/95 border-emerald-500 shadow-emerald-100/50' 
-                : 'bg-rose-600/95 border-rose-500 shadow-rose-100/50'}`}
-            >
-              {toast.type === 'success' ? (
-                <CheckBadgeIcon className="w-5 h-5 mr-3 shrink-0" />
-              ) : (
-                <ShieldExclamationIcon className="w-5 h-5 mr-3 shrink-0" />
-              )}
-              <p className="text-xs font-black tracking-wide leading-relaxed">{toast.message}</p>
+          <div className="fixed bottom-6 right-6 z-[10000] animate-in slide-in-from-bottom-4 fade-in duration-200">
+            <div className={`px-5 py-3.5 rounded-2xl shadow-xl flex items-center gap-3 border text-white text-xs font-black
+              ${toast.type === 'success' ? 'bg-emerald-600 border-emerald-500' : 'bg-rose-600 border-rose-500'}`}>
+              {toast.type === 'success' ? <CheckBadgeIcon className="w-4 h-4 shrink-0" /> : <ShieldExclamationIcon className="w-4 h-4 shrink-0" />}
+              {toast.message}
             </div>
           </div>
         )}
 
-        {/* ── CUSTOM MODAL UNBLOCK ── */}
+        {/* ── MODAL UNBLOCK ── */}
         {unlockUserId && (
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-            <div className="bg-white rounded-[32px] p-8 md:p-10 max-w-sm w-full shadow-2xl text-center transform scale-100 animate-in zoom-in-95 duration-200 border border-gray-100 relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400" />
-              
-              <div className="w-20 h-20 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner relative group">
-                <div className="absolute inset-0 bg-emerald-100 rounded-full scale-105 animate-ping opacity-30" />
-                <LockOpenIcon className="w-10 h-10 relative z-10" />
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+            <div className="bg-white rounded-[28px] p-8 max-w-sm w-full shadow-2xl text-center border border-gray-100">
+              <div className="w-16 h-16 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-5">
+                <LockOpenIcon className="w-8 h-8" />
               </div>
-              
-              <h2 className="text-xl font-black text-gray-900 tracking-tight">Buka Blokir Peserta?</h2>
-              <p className="text-xs font-semibold text-gray-500 mt-3 leading-relaxed">
-                Apakah Anda yakin ingin membuka kembali akses pengerjaan CBT untuk peserta dengan ID:
-                <span className="block mt-2 font-mono font-black text-indigo-600 text-sm bg-indigo-50 px-3 py-1.5 rounded-full select-all tracking-wider border border-indigo-100 w-fit mx-auto">
-                  {unlockUserId}
-                </span>
+              <h2 className="text-lg font-black text-gray-900">Buka Blokir Peserta?</h2>
+              <p className="text-xs text-gray-500 mt-2 leading-relaxed">
+                Pelanggaran peserta <span className="font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">{unlockUserId}</span> akan direset ke 0.
               </p>
-              
-              <div className="mt-8 flex space-x-3">
-                <button 
-                  onClick={() => setUnlockUserId(null)}
-                  disabled={isUnlocking}
-                  className="flex-1 py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-600 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
+              <div className="mt-6 flex gap-3">
+                <button onClick={() => setUnlockUserId(null)} disabled={isProcessing}
+                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 text-[10px] font-black uppercase rounded-xl transition-all disabled:opacity-50">
                   Batal
                 </button>
-                <button 
-                  onClick={confirmUnlockAccess}
-                  disabled={isUnlocking}
-                  className="flex-1 py-3.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-emerald-100/50 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isUnlocking ? (
-                    <>
-                      <svg className="animate-spin h-4.5 w-4.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      <span>Memproses...</span>
-                    </>
-                  ) : (
-                    <span>Buka Akses</span>
-                  )}
+                <button onClick={confirmUnlock} disabled={isProcessing}
+                  className="flex-1 py-3 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-black uppercase rounded-xl transition-all shadow-md shadow-emerald-100 disabled:opacity-50">
+                  {isProcessing ? 'Memproses...' : 'Buka Akses'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── MODAL FORCE SUBMIT ── */}
+        {forceSubmitUserId && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+            <div className="bg-white rounded-[28px] p-8 max-w-sm w-full shadow-2xl text-center border border-gray-100">
+              <div className="w-16 h-16 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-5">
+                <PaperAirplaneIcon className="w-8 h-8" />
+              </div>
+              <h2 className="text-lg font-black text-gray-900">Paksa Kumpulkan?</h2>
+              <p className="text-xs text-gray-500 mt-2 leading-relaxed">
+                Jawaban peserta <span className="font-black text-amber-600 bg-amber-50 px-2 py-0.5 rounded">{forceSubmitUserId}</span> akan langsung dikumpulkan. Tindakan ini <span className="font-black text-rose-600">tidak bisa dibatalkan</span>.
+              </p>
+              <div className="mt-6 flex gap-3">
+                <button onClick={() => setForceSubmitUserId(null)} disabled={isProcessing}
+                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 text-[10px] font-black uppercase rounded-xl transition-all disabled:opacity-50">
+                  Batal
+                </button>
+                <button onClick={confirmForceSubmit} disabled={isProcessing}
+                  className="flex-1 py-3 bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-black uppercase rounded-xl transition-all shadow-md shadow-amber-100 disabled:opacity-50">
+                  {isProcessing ? 'Memproses...' : 'Ya, Kumpulkan'}
                 </button>
               </div>
             </div>
