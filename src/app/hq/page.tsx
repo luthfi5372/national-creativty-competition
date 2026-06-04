@@ -1438,6 +1438,34 @@ function ModernHQDashboardContent() {
   const [waves, setWaves] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>(DEFAULT_CATEGORIES);
 
+  // Modal konfirmasi hapus gelombang
+  const [deleteWaveConfirm, setDeleteWaveConfirm] = useState<{ id: number; name: string } | null>(null);
+  const [isDeletingWave, setIsDeletingWave] = useState(false);
+
+  const confirmDeleteWave = async () => {
+    if (!deleteWaveConfirm) return;
+    setIsDeletingWave(true);
+    try {
+      // Hapus data competition_entries yang terkait dengan gelombang ini
+      // (cek apakah ada kolom registration_wave atau wave_name di tabel)
+      await supabase
+        .from('competition_entries')
+        .delete()
+        .ilike('registration_wave', `%${deleteWaveConfirm.name}%`);
+
+      // Hapus dari state (auto-sync ke DB via debounced effect)
+      setWaves(prev => prev.filter(w => w.id !== deleteWaveConfirm.id));
+      showToast(`Gelombang "${deleteWaveConfirm.name}" dan semua datanya berhasil dihapus.`, 'error');
+    } catch (err: any) {
+      // Kalau kolom tidak ada, tetap hapus dari state saja
+      setWaves(prev => prev.filter(w => w.id !== deleteWaveConfirm.id));
+      showToast(`Gelombang "${deleteWaveConfirm.name}" berhasil dihapus.`, 'error');
+    } finally {
+      setIsDeletingWave(false);
+      setDeleteWaveConfirm(null);
+    }
+  };
+
   const toggleWaveStatus = (id: number) => {
     setWaves(prev => prev.map(w => {
       if (w.id === id) {
@@ -4970,11 +4998,9 @@ function ModernHQDashboardContent() {
                           </td>
                           <td className="py-2.5 text-center">
                             <button 
-                              onClick={() => {
-                                setWaves(prev => prev.filter(w => w.id !== wave.id));
-                                showToast(`${wave.name} dihapus.`, 'error');
-                              }}
+                              onClick={() => setDeleteWaveConfirm({ id: wave.id, name: wave.name })}
                               className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-all active:scale-95"
+                              title="Hapus gelombang"
                             >
                               <Trash2 size={13} />
                             </button>
@@ -7076,6 +7102,101 @@ function ModernHQDashboardContent() {
               Membersihkan sesi administrasi secara aman. Sampai jumpa kembali, Komandan!
             </p>
           </div>
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════
+          🗑️ MODAL KONFIRMASI HAPUS GELOMBANG
+      ═══════════════════════════════════════════════════ */}
+      {deleteWaveConfirm && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4"
+          style={{ animation: 'fadeIn 0.15s ease-out' }}>
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            onClick={() => !isDeletingWave && setDeleteWaveConfirm(null)}
+          />
+
+          {/* Modal Card */}
+          <div className="relative bg-white rounded-[28px] shadow-2xl w-full max-w-md overflow-hidden"
+            style={{ animation: 'scaleIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+
+            {/* Red top danger bar */}
+            <div className="h-1.5 w-full bg-gradient-to-r from-rose-500 via-red-500 to-orange-500" />
+
+            <div className="p-8">
+              {/* Icon */}
+              <div className="flex justify-center mb-5">
+                <div className="relative">
+                  <div className="w-20 h-20 bg-rose-50 rounded-full flex items-center justify-center">
+                    <Trash2 size={36} className="text-rose-500" />
+                  </div>
+                  <div className="absolute -top-1 -right-1 w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs font-black">!</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Title */}
+              <h2 className="text-xl font-black text-slate-900 text-center tracking-tight">
+                Hapus Gelombang?
+              </h2>
+              <p className="text-sm text-slate-500 text-center mt-2 leading-relaxed">
+                Anda akan menghapus gelombang:
+              </p>
+
+              {/* Wave Name Badge */}
+              <div className="mt-3 mx-auto w-fit px-5 py-2.5 bg-rose-50 border-2 border-rose-200 rounded-2xl text-center">
+                <p className="text-sm font-black text-rose-700">{deleteWaveConfirm.name}</p>
+              </div>
+
+              {/* Warning Box */}
+              <div className="mt-5 p-4 bg-amber-50 border border-amber-200 rounded-2xl space-y-1.5">
+                <p className="text-[11px] font-black text-amber-700 uppercase tracking-wider">⚠️ Peringatan</p>
+                <ul className="text-[11px] text-amber-600 font-semibold space-y-1 list-disc list-inside">
+                  <li>Semua data pendaftaran dalam gelombang ini akan ikut terhapus</li>
+                  <li>Konfigurasi gelombang akan dihapus permanen dari sistem</li>
+                  <li>Tindakan ini <span className="font-black text-rose-600">tidak dapat dibatalkan</span></li>
+                </ul>
+              </div>
+
+              {/* Buttons */}
+              <div className="mt-6 flex gap-3">
+                <button
+                  onClick={() => setDeleteWaveConfirm(null)}
+                  disabled={isDeletingWave}
+                  className="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[11px] font-black uppercase tracking-widest rounded-2xl transition-all disabled:opacity-50"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={confirmDeleteWave}
+                  disabled={isDeletingWave}
+                  className="flex-1 py-3.5 bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-black uppercase tracking-widest rounded-2xl transition-all shadow-lg shadow-rose-200 flex items-center justify-center gap-2 disabled:opacity-60 active:scale-95"
+                >
+                  {isDeletingWave ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                      </svg>
+                      Menghapus...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 size={14} />
+                      Ya, Hapus
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <style>{`
+            @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+            @keyframes scaleIn { from { opacity: 0; transform: scale(0.85) translateY(20px) } to { opacity: 1; transform: scale(1) translateY(0) } }
+          `}</style>
         </div>
       )}
     </div>
