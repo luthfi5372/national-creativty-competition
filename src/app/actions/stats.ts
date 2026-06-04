@@ -41,7 +41,7 @@ const getCachedEntries = unstable_cache(
     return supabaseEntries || [];
   },
   ['global-stats-entries'],
-  { revalidate: 60 }
+  { revalidate: 10 }
 );
 
 export async function getLiveStatsAction(): Promise<GlobalStats> {
@@ -62,8 +62,9 @@ export async function getLiveStatsAction(): Promise<GlobalStats> {
       return defaultStats;
     }
 
-    // Filter to only verified entries
-    const allEntries = supabaseEntries.filter(e => e.payment_status === 'Verified');
+    // Hitung SEMUA pendaftar (termasuk Pending, Verified, dll) - jangan filter berdasarkan payment_status
+    // Hanya exclude yang Rejected saja
+    const allEntries = supabaseEntries.filter(e => e.payment_status !== 'Rejected');
 
     const breakdown = { "Olimpiade MIPA": 0, "Speech Contest": 0, "LKTI Nasional": 0, "MTQ Nasional": 0 };
     const regionStats = { "Sumatera": 0, "Jawa": 0, "Kalimantan": 0, "Sulawesi": 0, "Papua": 0, "Bali & Nusa Tenggara": 0 };
