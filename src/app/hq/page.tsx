@@ -3814,7 +3814,8 @@ function ModernHQDashboardContent() {
 
         {/* 🎛️ KONTEN TAB: PENGUMPULAN KARYA */}
         {activeTab === "Karya" && (
-          <div className="bg-white border border-slate-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.02)] rounded-2xl overflow-hidden flex flex-col">
+          <div className="space-y-6 animate-in fade-in duration-300">
+            <div className="bg-white border border-slate-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.02)] rounded-2xl overflow-hidden flex flex-col">
             <div className="p-6 border-b border-slate-100">
               <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
                 <div>
@@ -4115,6 +4116,66 @@ function ModernHQDashboardContent() {
                   })()}
                 </tbody>
               </table>
+            </div>
+          </div>
+
+          {/* 3. KAWALAN PENGUMPULAN FAIL PER TAHAP */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-sm border border-white/60">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-4 border-b border-slate-100">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-blue-100 text-blue-600 rounded-xl">
+                    <FileText size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black text-slate-800">Akses Pengumpulan Fail Per Tahap</h3>
+                    <p className="text-xs text-slate-500 font-medium">Atur pembukaan akses upload karya secara dinamis per tahap kompetisi.</p>
+                  </div>
+                </div>
+                <button
+                  onClick={addPhase}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-md shadow-blue-200 transition-all active:scale-95 flex items-center justify-center gap-1.5 shrink-0 self-start md:self-auto"
+                >
+                  <Plus size={14} />
+                  Tambah Tahap
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-5">
+                {phaseStatus.map((phase) => (
+                  <div key={phase.id} className={`flex flex-col justify-between p-6 rounded-2xl border-2 transition-all duration-300 ${phase.isOpen ? 'border-blue-400 bg-blue-50/40 shadow-sm' : 'border-slate-100 bg-slate-50/50 hover:border-slate-200'}`}>
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex-1 mr-2">
+                        <input 
+                          type="text"
+                          value={phase.name}
+                          onChange={(e) => updatePhaseName(phase.id, e.target.value)}
+                          className="font-bold text-slate-800 bg-transparent border-b border-transparent hover:border-indigo-300 focus:border-indigo-500 focus:bg-white/90 p-1 rounded-lg transition-all outline-none text-sm w-full font-sans"
+                        />
+                        <p className={`text-[10px] font-bold tracking-widest uppercase mt-1 ${phase.isOpen ? 'text-blue-600' : 'text-slate-400'}`}>
+                          {phase.isOpen ? '● Tahap Aktif' : '○ Tahap Terkunci'}
+                        </p>
+                      </div>
+                      <button 
+                        onClick={() => deletePhase(phase.id)}
+                        className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition-all shrink-0"
+                        title="Hapus Tahap"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                    
+                    <button 
+                      onClick={() => {
+                        togglePhase(phase.id);
+                        showToast(`${phase.name} ${!phase.isOpen ? 'Akses Dibuka' : 'Akses Ditutup'}`, !phase.isOpen ? 'success' : 'error');
+                      }}
+                      className={`w-full py-2.5 rounded-xl font-bold text-xs transition-all active:scale-95 flex items-center justify-center gap-2 ${phase.isOpen ? 'bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200'}`}
+                    >
+                      {phase.isOpen ? <><X size={14}/> Tutup Tahap</> : <><FileCheck size={14}/> Buka Tahap</>}
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
