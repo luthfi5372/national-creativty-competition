@@ -93,17 +93,6 @@ export default function UserDashboard() {
         const { data: authData } = await supabase.auth.getUser();
         let user = authData?.user;
         
-        // 🔄 FALLBACK: Jika Supabase Auth kosong, cek Session Storage (Bypass/Local Auth)
-        if (!user && typeof window !== 'undefined') {
-          const localSess = sessionStorage.getItem('ncc_local_session');
-          if (localSess) {
-            try {
-              const parsed = JSON.parse(localSess);
-              user = { id: parsed.id, email: parsed.email, user_metadata: { full_name: parsed.fullName } } as any;
-            } catch (e) {}
-          }
-        }
-        
         if (!user) {
           console.log("[User Dashboard] No active session. Redirecting to login...");
           router.push('/login');

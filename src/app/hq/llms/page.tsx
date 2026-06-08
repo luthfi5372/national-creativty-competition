@@ -223,13 +223,8 @@ export default function IntegratedLLMSDashboard() {
           if (attempt < 3) { await new Promise(r => setTimeout(r, 1500)); continue; }
         }
       }
-      
-      if (!hasAdminCookie) {
-        console.log("[Admin LLMS] Tidak ada sesi valid setelah 3 percobaan. Redirect ke login.");
-        router.push('/login');
-      } else {
-        console.warn("[Admin LLMS] Cookie admin ada tapi sesi Supabase tidak valid. Tetap di halaman.");
-      }
+      console.log("[Admin LLMS] Tidak ada sesi valid setelah 3 percobaan. Redirect ke login.");
+      router.push('/login');
     };
 
     // Jalankan pengecekan sesi hanya sekali saat halaman pertama dibuka

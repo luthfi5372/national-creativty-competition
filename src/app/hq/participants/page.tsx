@@ -54,13 +54,8 @@ export default function ParticipantsBook() {
           if (attempt < 3) { await new Promise(r => setTimeout(r, 1500)); continue; }
         }
       }
-      
-      if (!hasAdminCookie) {
-        console.log("[Admin Participants] Tidak ada sesi valid setelah 3 percobaan. Redirect ke login.");
-        router.push('/login');
-      } else {
-        console.warn("[Admin Participants] Cookie admin ada tapi sesi Supabase tidak valid. Tetap di halaman.");
-      }
+      console.log("[Admin Participants] Tidak ada sesi valid setelah 3 percobaan. Redirect ke login.");
+      router.push('/login');
     };
 
     const fetchParticipants = async () => {

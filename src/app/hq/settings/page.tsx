@@ -80,13 +80,8 @@ export default function SettingsDashboard() {
           if (attempt < 3) { await new Promise(r => setTimeout(r, 1500)); continue; }
         }
       }
-      
-      if (!hasAdminCookie) {
-        console.log("[Admin Settings] Tidak ada sesi valid setelah 3 percobaan. Redirect ke login.");
-        router.push('/login');
-      } else {
-        console.warn("[Admin Settings] Cookie admin ada tapi sesi Supabase tidak valid. Tetap di halaman.");
-      }
+      console.log("[Admin Settings] Tidak ada sesi valid setelah 3 percobaan. Redirect ke login.");
+      router.push('/login');
     };
 
     const fetchSettings = async () => {

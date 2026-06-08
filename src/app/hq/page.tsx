@@ -2627,14 +2627,8 @@ function ModernHQDashboardContent() {
           }
         }
       }
-      
-      // Setelah 3 kali percobaan gagal dan tidak ada cookie admin → redirect
-      if (!hasAdminCookie) {
-        console.log("[Admin HQ] Tidak ada sesi valid setelah 3 percobaan. Redirect ke login.");
-        router.push('/login');
-      } else {
-        console.warn("[Admin HQ] Cookie admin ada tapi sesi Supabase tidak valid. Tetap di halaman.");
-      }
+      console.log("[Admin HQ] Tidak ada sesi valid setelah 3 percobaan. Redirect ke login.");
+      router.push('/login');
     };
 
 
