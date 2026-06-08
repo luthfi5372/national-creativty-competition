@@ -399,11 +399,45 @@ export default function SettingsDashboard() {
     setEditingWaveName({ id: wave.id, value: wave.name });
   };
 
-  const saveEditName = (waveId: number) => {
+  const saveEditName = async (waveId: number) => {
     const trimmed = editingWaveName.value.trim();
     if (!trimmed) return;
-    setWaves(prev => prev.map(w => w.id === waveId ? { ...w, name: trimmed } : w));
+    const updatedWaves = waves.map(w => w.id === waveId ? { ...w, name: trimmed } : w);
+    setWaves(updatedWaves);
     setEditingWaveName({ id: null, value: '' });
+    // Persist to database immediately
+    try {
+      let activeId = portalSettingsData?.id;
+      let activeContent = portalSettingsData?.content;
+      if (!activeId) {
+        const { data: existing } = await supabase.from('announcements').select('id, content').eq('title', 'SYS_PORTAL_SETTINGS').maybeSingle();
+        if (existing) { activeId = existing.id; activeContent = existing.content; }
+      }
+      let parsed: any = { isRegistrationOpen, waves: updatedWaves, paymentRequirementStage };
+      if (activeContent) {
+        try { parsed = { ...parsed, ...JSON.parse(activeContent) }; parsed.waves = updatedWaves; } catch (e) {}
+      }
+      if (activeId) {
+        const { data: uData } = await supabase.from('announcements').update({ content: JSON.stringify(parsed) }).eq('id', activeId).select().single();
+        if (uData) setPortalSettingsData(uData);
+        setToastMessage(`Nama gelombang berhasil diubah menjadi "${trimmed}"!`);
+        setTimeout(() => setToastMessage(''), 3000);
+      }
+    } catch (e: any) {
+      setToastMessage(`Gagal menyimpan nama gelombang: ${e.message}`);
+      setTimeout(() => setToastMessage(''), 4000);
+    }
+  };
+
+  const addWave = async () => {
+    const newId = (waves.length > 0 ? Math.max(...waves.map((w: any) => w.id)) : 0) + 1;
+    const romanNumerals = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
+    const newName = `Gelombang ${romanNumerals[newId] || newId}`;
+    const newWave = { id: newId, name: newName, status: 'Tutup', startDate: '', endDate: '' };
+    const updatedWaves = [...waves, newWave];
+    setWaves(updatedWaves);
+    setToastMessage(`Gelombang "${newName}" berhasil ditambahkan! Klik Simpan Perubahan untuk menyimpan ke database.`);
+    setTimeout(() => setToastMessage(''), 4000);
   };
 
 
@@ -725,6 +759,124 @@ export default function SettingsDashboard() {
           </div>
 
 
+
+          {/* ── MANAJEMEN GELOMBANG PENDAFTARAN ─────────────────────────── */}
+          <div className="bg-white rounded-[24px] p-8 shadow-sm border border-gray-100">
+            <div className="flex items-start justify-between mb-6">
+              <div>
+                <h3 className="text-xl font-black text-slate-800">Manajemen Gelombang Pendaftaran</h3>
+                <p className="text-sm text-slate-500 mt-1">Edit nama gelombang pendaftaran. Perubahan nama akan tersinkronisasi ke seluruh sistem secara real-time.</p>
+              </div>
+              <button
+                onClick={addWave}
+                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-700 transition-all shadow-sm shrink-0"
+              >
+                <Plus size={14} /> Tambah Gelombang
+              </button>
+            </div>
+
+            {isLoadingSettings ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-indigo-500" />
+              </div>
+            ) : waves.length === 0 ? (
+              <div className="text-center py-10 border-2 border-dashed border-gray-200 rounded-2xl">
+                <div className="text-4xl mb-3">🌊</div>
+                <p className="font-bold text-gray-500">Belum ada gelombang pendaftaran.</p>
+                <p className="text-xs text-gray-400 mt-1">Klik tombol "Tambah Gelombang" untuk memulai.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {waves.map((wave: any) => (
+                  <div key={wave.id} className="flex items-center gap-4 p-4 rounded-2xl border border-gray-100 bg-gray-50/50 group hover:bg-white hover:border-indigo-100 hover:shadow-sm transition-all">
+                    {/* Wave ID Badge */}
+                    <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-700 font-black text-sm flex items-center justify-center shrink-0">
+                      {wave.id}
+                    </div>
+
+                    {/* Wave Name - Editable */}
+                    <div className="flex-1 min-w-0">
+                      {editingWaveName.id === wave.id ? (
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={editingWaveName.value}
+                            onChange={(e) => setEditingWaveName({ id: wave.id, value: e.target.value })}
+                            onKeyDown={(e) => { if (e.key === 'Enter') saveEditName(wave.id); if (e.key === 'Escape') setEditingWaveName({ id: null, value: '' }); }}
+                            className="flex-1 px-3 py-1.5 text-sm font-bold border-2 border-indigo-400 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 bg-white"
+                            autoFocus
+                          />
+                          <button onClick={() => saveEditName(wave.id)} className="p-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all">
+                            <Save size={14} />
+                          </button>
+                          <button onClick={() => setEditingWaveName({ id: null, value: '' })} className="p-2 bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300 transition-all">
+                            <X size={14} />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-gray-900 text-sm">{wave.name}</span>
+                          <button
+                            onClick={() => startEditName(wave)}
+                            className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                            title="Edit nama gelombang"
+                          >
+                            <Pencil size={12} />
+                          </button>
+                        </div>
+                      )}
+                      {wave.startDate && wave.endDate && (
+                        <p className="text-[10px] text-gray-400 mt-0.5">
+                          {new Date(wave.startDate).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })} – {new Date(wave.endDate).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Status Badge */}
+                    <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shrink-0 ${
+                      wave.status === 'Aktif' 
+                        ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' 
+                        : 'bg-gray-100 text-gray-500 border border-gray-200'
+                    }`}>
+                      <div className={`w-1.5 h-1.5 rounded-full ${wave.status === 'Aktif' ? 'bg-emerald-500 animate-pulse' : 'bg-gray-400'}`} />
+                      {wave.status === 'Aktif' ? 'Aktif' : 'Tutup'}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => toggleWaveStatus(wave.id)}
+                        title={wave.status === 'Aktif' ? 'Tutup gelombang' : 'Aktifkan gelombang'}
+                        className={`p-2 rounded-lg text-xs font-bold transition-all ${
+                          wave.status === 'Aktif'
+                            ? 'bg-rose-50 text-rose-500 hover:bg-rose-100'
+                            : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
+                        }`}
+                      >
+                        {wave.status === 'Aktif' ? <XCircle size={14} /> : <CheckCircle2 size={14} />}
+                      </button>
+                      <button
+                        onClick={() => confirmDeleteWave(wave)}
+                        className="p-2 rounded-lg text-gray-400 hover:bg-rose-50 hover:text-rose-500 transition-all"
+                        title="Hapus gelombang"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {waves.length > 0 && (
+              <div className="mt-4 p-3 bg-amber-50 border border-amber-100 rounded-xl flex items-start gap-2">
+                <AlertCircle size={14} className="text-amber-500 mt-0.5 shrink-0" />
+                <p className="text-[11px] text-amber-700">
+                  <strong>Tips:</strong> Edit nama gelombang langsung tersimpan ke database. Perubahan status gelombang (Aktif/Tutup) akan disimpan saat Anda klik tombol <strong>"Simpan Perubahan"</strong> di bagian atas.
+                </p>
+              </div>
+            )}
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Bagian Keamanan CBT */}
