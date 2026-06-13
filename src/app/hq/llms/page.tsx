@@ -35,7 +35,7 @@ export default function IntegratedLLMSDashboard() {
   const [isSaving, setIsSaving] = useState(false);
   const [newSession, setNewSession] = useState({
     title: "", token: "", duration_minutes: 90, scoring_system: "Fixed",
-    correct_point: 4, penalty_point: 0, empty_point: 0
+    correct_point: 4, penalty_point: 0, empty_point: 0, is_active: false
   });
 
   const [showEditModal, setShowEditModal] = useState(false);
@@ -168,7 +168,17 @@ export default function IntegratedLLMSDashboard() {
         });
       }
       setSecurityLogs(logs.slice(0, 3));
-      setStats({ onlineParticipants: onlineCount, activeSessions: examsData?.length || 0, totalQuestions: questionCount || 0, totalViolations: violationSum });
+      
+      // Hitung akumulasi soal dari sesi yang sedang aktif
+      const activeExams = examsData?.filter((s: any) => s.is_active) || [];
+      const activeQuestionsCount = activeExams.reduce((sum: number, exam: any) => sum + (exam.question_count || 0), 0);
+
+      setStats({ 
+        onlineParticipants: onlineCount, 
+        activeSessions: examsData?.length || 0, 
+        totalQuestions: activeQuestionsCount, 
+        totalViolations: violationSum 
+      });
       if (examsData) setSessions(examsData);
     } catch (err) { console.error(err); } finally { setLoading(false); setTimeout(() => setRefreshing(false), 500); }
   };
@@ -282,13 +292,13 @@ export default function IntegratedLLMSDashboard() {
         correct_point: newSession.correct_point,
         penalty_point: newSession.penalty_point,
         empty_point: newSession.empty_point,
-        is_active: false,
+        is_active: (newSession as any).is_active ?? false,
       }]);
       if (error) throw error;
       setShowAddModal(false);
-      setNewSession({ title: '', token: '', duration_minutes: 90, scoring_system: 'Fixed', correct_point: 4, penalty_point: 0, empty_point: 0 });
+      setNewSession({ title: '', token: '', duration_minutes: 90, scoring_system: 'Fixed', correct_point: 4, penalty_point: 0, empty_point: 0, is_active: false });
       fetchTelemetryData();
-      showToast('Sesi ujian baru berhasil dibuat!', 'success');
+      showToast((newSession as any).is_active ? 'Sesi ujian baru langsung aktif!' : 'Sesi ujian baru berhasil dibuat!', 'success');
     } catch (err: any) {
       showToast('Gagal membuat sesi: ' + (err?.message || 'Unknown error'), 'error');
     } finally {
@@ -366,39 +376,45 @@ export default function IntegratedLLMSDashboard() {
           </div>
 
           {/* Durasi dengan dotted border & Tooltip Gelap (Hover) */}
-          <div className="relative group/tooltip mt-1 cursor-help">
-            <span className="text-[10px] text-slate-400 font-extrabold border-b border-dashed border-slate-300 pb-0.5 transition-colors group-hover/tooltip:border-slate-500 group-hover/tooltip:text-slate-600">
-              Duration: {session.duration_minutes || 90} mins
-            </span>
-            
-            {/* Popover Tooltip */}
-            <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 hidden group-hover/tooltip:block bg-slate-950/95 backdrop-blur-md text-white text-[11px] rounded-[20px] p-4 shadow-2xl z-50 border border-slate-800 w-56 animate-in fade-in slide-in-from-bottom-2 duration-200">
-              <div className="space-y-2.5 text-left font-sans">
-                <div className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full shrink-0"></span>
-                  <div>
-                    <p className="text-[9px] text-slate-400 font-black uppercase leading-none tracking-wide">Tanggal Pembuatan</p>
-                    <p className="font-extrabold text-slate-100 mt-0.5">
-                      {new Date(session.created_at || Date.now()).toLocaleDateString("id-ID", {
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric"
-                      })}
-                    </p>
+          <div className="flex items-center gap-1.5 mt-1.5">
+            <div className="relative group/tooltip cursor-help">
+              <span className="text-[10px] text-slate-400 font-extrabold border-b border-dashed border-slate-300 pb-0.5 transition-colors group-hover/tooltip:border-slate-500 group-hover/tooltip:text-slate-600">
+                Duration: {session.duration_minutes || 90} mins
+              </span>
+              
+              {/* Popover Tooltip */}
+              <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 hidden group-hover/tooltip:block bg-slate-950/95 backdrop-blur-md text-white text-[11px] rounded-[20px] p-4 shadow-2xl z-50 border border-slate-800 w-56 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                <div className="space-y-2.5 text-left font-sans">
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full shrink-0"></span>
+                    <div>
+                      <p className="text-[9px] text-slate-400 font-black uppercase leading-none tracking-wide">Tanggal Pembuatan</p>
+                      <p className="font-extrabold text-slate-100 mt-0.5">
+                        {new Date(session.created_at || Date.now()).toLocaleDateString("id-ID", {
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric"
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 border-t border-slate-800/80 pt-2">
+                    <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full shrink-0"></span>
+                    <div>
+                      <p className="text-[9px] text-slate-400 font-black uppercase leading-none tracking-wide">Poin Penilaian</p>
+                      <p className="font-extrabold text-slate-100 mt-0.5">
+                        Benar: +{session.correct_point || 4} · Salah: {session.penalty_point || 0} · Kosong: {session.empty_point || 0}
+                      </p>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 border-t border-slate-800/80 pt-2">
-                  <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full shrink-0"></span>
-                  <div>
-                    <p className="text-[9px] text-slate-400 font-black uppercase leading-none tracking-wide">Poin Penilaian</p>
-                    <p className="font-extrabold text-slate-100 mt-0.5">
-                      Benar: +{session.correct_point || 4} · Salah: {session.penalty_point || 0} · Kosong: {session.empty_point || 0}
-                    </p>
-                  </div>
-                </div>
+                <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-950"></div>
               </div>
-              <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-950"></div>
             </div>
+            <span className="text-slate-300 text-[10px] font-bold">·</span>
+            <span className="text-[10px] text-indigo-650 bg-indigo-50/50 border border-indigo-100/30 px-1.5 py-0.5 rounded-md font-bold">
+              {session.question_count || 0} Soal
+            </span>
           </div>
         </div>
 
@@ -982,8 +998,8 @@ export default function IntegratedLLMSDashboard() {
 
       {/* ─── MODAL ADD ─── */}
       {showAddModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/40 backdrop-blur-md">
-          <div className="bg-white/95 backdrop-blur-xl border border-white w-full max-w-xl rounded-[32px] p-8 shadow-2xl shadow-slate-950/20 relative animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-md overflow-y-auto">
+          <div className="bg-white/95 backdrop-blur-xl border border-white w-full max-w-xl rounded-[32px] p-8 shadow-2xl shadow-slate-950/20 relative animate-in fade-in zoom-in-95 duration-200 my-4">
             <div className="flex justify-between items-center mb-6">
               <div>
                 <h2 className="text-lg font-black text-slate-900 uppercase tracking-wider">Buat Sesi Ujian Baru</h2>
@@ -994,12 +1010,16 @@ export default function IntegratedLLMSDashboard() {
               </button>
             </div>
             <div className="space-y-5">
+
+              {/* Judul Sesi */}
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Judul Sesi</label>
                 <input type="text" value={newSession.title} onChange={(e) => setNewSession({...newSession, title: e.target.value})}
                   className="w-full bg-slate-50 border border-slate-200/80 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 rounded-2xl px-4 py-3.5 text-sm font-semibold text-slate-800 outline-none transition-all duration-200 placeholder-slate-300"
-                  placeholder="Contoh: Matematika Dasar – Sesi Awal" />
+                  placeholder="Contoh: Try Out MIPA – Sesi Pagi" />
               </div>
+
+              {/* Token & Durasi */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Token Akses (opsional)</label>
@@ -1013,6 +1033,72 @@ export default function IntegratedLLMSDashboard() {
                     className="w-full bg-slate-50 border border-slate-200/80 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 rounded-2xl px-4 py-3.5 text-sm font-semibold text-slate-800 outline-none transition-all duration-200" />
                 </div>
               </div>
+
+              {/* Status Sesi */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Status Sesi Setelah Dibuat</label>
+                <button
+                  onClick={() => setNewSession({...newSession, is_active: !(newSession as any).is_active})}
+                  className={`w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all duration-300 border-2 ${
+                    (newSession as any).is_active
+                      ? 'bg-gradient-to-r from-emerald-500 to-teal-500 border-transparent text-white shadow-md shadow-emerald-200/60'
+                      : 'bg-slate-50 border-slate-200/80 text-slate-500'
+                  }`}
+                >
+                  {(newSession as any).is_active
+                    ? <><ToggleRight className="w-5 h-5 animate-pulse" /> Langsung Aktif (ON)</>
+                    : <><ToggleLeft className="w-5 h-5" /> Simpan sebagai Draft (OFF)</>
+                  }
+                </button>
+                <p className="text-[9px] text-slate-400 font-bold px-1">
+                  {(newSession as any).is_active
+                    ? '⚡ Sesi langsung bisa diikuti peserta setelah dibuat.'
+                    : '📋 Sesi disimpan sebagai draft, aktifkan nanti dari dashboard.'}
+                </p>
+              </div>
+
+              {/* Konfigurasi Poin */}
+              <div className="p-5 bg-indigo-500/5 border border-indigo-100/50 rounded-2xl shadow-inner">
+                <p className="text-[10px] font-black uppercase text-indigo-500 tracking-widest mb-3 flex items-center gap-1.5">
+                  <span>⚙️</span> Konfigurasi Poin Penilaian
+                </p>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black uppercase tracking-widest text-emerald-600">✓ Benar</label>
+                    <input type="number" value={newSession.correct_point ?? 4}
+                      onChange={(e) => setNewSession({...newSession, correct_point: parseInt(e.target.value) || 0})}
+                      className="w-full bg-white border border-emerald-200 rounded-xl px-3 py-2.5 text-sm font-black text-slate-700 outline-none text-center focus:ring-4 focus:ring-emerald-100" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black uppercase tracking-widest text-rose-500">✗ Salah</label>
+                    <input type="number" value={newSession.penalty_point ?? 0}
+                      onChange={(e) => setNewSession({...newSession, penalty_point: parseInt(e.target.value) || 0})}
+                      className="w-full bg-white border border-rose-200 rounded-xl px-3 py-2.5 text-sm font-black text-slate-700 outline-none text-center focus:ring-4 focus:ring-rose-100" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">— Kosong</label>
+                    <input type="number" value={newSession.empty_point ?? 0}
+                      onChange={(e) => setNewSession({...newSession, empty_point: parseInt(e.target.value) || 0})}
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-black text-slate-700 outline-none text-center focus:ring-4 focus:ring-slate-100" />
+                  </div>
+                </div>
+                <p className="text-[9px] text-indigo-400 font-bold mt-2 text-center">Standard UTBK: Benar = 4, Salah = -1, Kosong = 0</p>
+              </div>
+
+              {/* Info Isolasi */}
+              <div className="flex items-start gap-3 p-4 bg-violet-50 border border-violet-100 rounded-2xl">
+                <div className="w-8 h-8 bg-violet-100 rounded-xl flex items-center justify-center shrink-0">
+                  <span className="text-sm">🔒</span>
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-violet-700 uppercase tracking-widest">Sesi Terisolasi Penuh</p>
+                  <p className="text-[10px] text-violet-500 font-semibold mt-0.5 leading-relaxed">
+                    Sesi ini mendapat ID unik, token akses sendiri, dan bank soal kosong yang terpisah dari sesi lain.
+                    Beberapa sesi dapat berjalan bersamaan secara independen.
+                  </p>
+                </div>
+              </div>
+
               <button onClick={handleAddSession} disabled={isSaving}
                 className="w-full bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-700 hover:via-purple-700 hover:to-pink-700 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/35 hover:scale-[1.01] active:scale-95 transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50">
                 {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Plus size={16} className="stroke-[3px]" /> Buat Sesi Sekarang</>}
@@ -1021,6 +1107,7 @@ export default function IntegratedLLMSDashboard() {
           </div>
         </div>
       )}
+
 
       {/* ➕ FLOATING ACTIONS BUTTON (Seperti Gambar Referensi) */}
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40">

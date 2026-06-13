@@ -59,8 +59,15 @@ export default function ExamRoom() {
 
     const loadExamData = async () => {
       try {
-        // 1. Ambil durasi
-        const { data: examData } = await supabase.from('cbt_exams').select('duration, duration_minutes').eq('id', examId).maybeSingle();
+        // 1. Ambil durasi dan status aktif
+        const { data: examData } = await supabase.from('cbt_exams').select('duration, duration_minutes, is_active').eq('id', examId).maybeSingle();
+        
+        if (!examData || !examData.is_active) {
+          localStorage.removeItem('ncc_user');
+          router.replace('/ujian/login');
+          return;
+        }
+
         if (examData) {
           const duration = examData.duration_minutes || examData.duration;
           if (duration) setTimeLeft(duration * 60);

@@ -105,8 +105,15 @@ export default function StudentDashboard() {
 
     const fetchAll = async () => {
       if (parsedUser.active_exam_id) {
-        const { data: exData } = await supabase
-          .from('cbt_exams').select('duration').eq('id', parsedUser.active_exam_id).single();
+        const { data: exData, error: exError } = await supabase
+          .from('cbt_exams').select('duration, is_active').eq('id', parsedUser.active_exam_id).single();
+        
+        if (exError || !exData || !exData.is_active) {
+          localStorage.removeItem('ncc_user');
+          router.push('/ujian/login');
+          return;
+        }
+
         if (exData) setExamDetail(exData);
 
         const { count } = await supabase

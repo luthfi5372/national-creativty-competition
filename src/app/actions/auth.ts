@@ -640,13 +640,25 @@ export async function getLLMSTelemetryData() {
         })
       : createSupabaseClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "");
 
-    // Ambil data cbt_questions count
-    const { count: questionCount, error: qError } = await client
+    // Ambil data cbt_questions dengan select exam_id untuk menghitung jumlah soal per sesi
+    const { data: questionsData, error: qError } = await client
       .from('cbt_questions')
-      .select('*', { count: 'exact', head: true });
+      .select('exam_id');
 
     if (qError) {
       console.warn("[LLMS Telemetry] cbt_questions query failed:", qError.message);
+    }
+
+    const questionCount = questionsData?.length || 0;
+
+    // Kelompokkan jumlah soal berdasarkan exam_id
+    const questionCounts: Record<string, number> = {};
+    if (questionsData) {
+      questionsData.forEach((q: any) => {
+        if (q.exam_id) {
+          questionCounts[q.exam_id] = (questionCounts[q.exam_id] || 0) + 1;
+        }
+      });
     }
 
     // Ambil data cbt_exams
@@ -659,6 +671,12 @@ export async function getLLMSTelemetryData() {
       console.warn("[LLMS Telemetry] cbt_exams query failed:", eError.message);
     }
 
+    // Petakan properti question_count ke masing-masing ujian
+    const examsWithCounts = (examsData || []).map((exam: any) => ({
+      ...exam,
+      question_count: questionCounts[exam.id] || 0
+    }));
+
     // Ambil data cbt_attempts
     const { data: attemptsData, error: aError } = await client
       .from('cbt_attempts')
@@ -670,8 +688,8 @@ export async function getLLMSTelemetryData() {
     }
 
     return {
-      questionCount: questionCount || 0,
-      examsData: examsData || [],
+      questionCount: questionCount,
+      examsData: examsWithCounts,
       attemptsData: attemptsData || [],
       error: null
     };
