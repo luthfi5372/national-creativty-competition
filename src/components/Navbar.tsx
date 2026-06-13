@@ -32,6 +32,7 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeItem, setActiveItem] = useState("Beranda");
   const [user, setUser] = useState<any>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [settings, setSettings] = useState<any>(null);
   const router = useRouter();
 
@@ -64,6 +65,8 @@ export default function Navbar() {
       } catch (err) {
         console.error("Auth check failed:", err);
         setUser(null);
+      } finally {
+        setAuthLoading(false);
       }
     };
     checkAuth();
@@ -137,7 +140,10 @@ export default function Navbar() {
 
           {/* Auth buttons */}
           <div className="flex items-center gap-2 ml-2 pl-2 border-l border-slate-100">
-            {user ? (
+            {authLoading ? (
+              // Skeleton saat auth belum selesai dicek
+              <div className="w-28 h-9 rounded-full bg-slate-100 animate-pulse" />
+            ) : user ? (
                <MagneticWrapper>
                 <Link
                   href="/dashboard"

@@ -1,20 +1,31 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
+// ─── Daftar email yang berhak masuk sebagai Admin / HQ ───────────────────────
+const ADMIN_EMAILS = ["admin@ncc.id", "admin1@ncc.id", "halo.ncc@gmail.com"];
+const JURY_EMAILS  = ["juri1@ncc.id", "juri2@ncc.id", "juri3@ncc.id"];
+
+/** Tambahkan security headers ke setiap response */
+function addSecurityHeaders(res: NextResponse): NextResponse {
+  res.headers.set('X-Frame-Options', 'DENY');
+  res.headers.set('X-Content-Type-Options', 'nosniff');
+  res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  return res;
+}
+
 export async function middleware(request: NextRequest) {
   // 1. Inisialisasi response dasar
   let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
+    request: { headers: request.headers },
   });
 
-  // 2. Cegah crash jika Environment Variables kosong di Vercel
+  // 2. Cegah crash jika Environment Variables belum terset (misal saat build awal)
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    return response;
+    return addSecurityHeaders(response);
   }
 
-  // 3. Bangun jembatan ke Supabase
+  // 3. Bangun koneksi Supabase melalui cookie (server-side)
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
@@ -25,9 +36,7 @@ export async function middleware(request: NextRequest) {
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          response = NextResponse.next({
-            request,
-          });
+          response = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options)
           );
@@ -36,64 +45,57 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // 4. Ambil data user yang sedang login dengan aman
+  // 4. Ambil user yang sedang aktif (validasi token server-side)
   const { data: { user } } = await supabase.auth.getUser();
 
-  // 5. 🚦 LOGIKA POLISI LALU LINTAS (ROUTING)
   const pathname = request.nextUrl.pathname;
+  const loginUrl = new URL('/login', request.url);
+  const dashUrl  = new URL('/dashboard', request.url);
 
-  // Proteksi Area Admin & Markas Besar (/hq)
+  // Helpers pengecekan peran
+  const isAdmin = !!(user && (
+    (user.email && ADMIN_EMAILS.includes(user.email.toLowerCase())) ||
+    user.user_metadata?.role === 'admin'
+  ));
+  const isJury = !!(user && (
+    (user.email && JURY_EMAILS.includes(user.email.toLowerCase())) ||
+    user.user_metadata?.role === 'juri'
+  ));
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // 5. 🚦 ROUTING GUARD — semua area sensitif dijaga di sini
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // ── /hq/* — khusus Admin HQ ──────────────────────────────────────────────
   if (pathname.startsWith('/hq')) {
-    if (!user) {
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
-    
-    // Cek apakah dia benar-benar Admin (Email atau Metadata)
-    const adminEmails = ["admin@ncc.id", "admin1@ncc.id", "halo.ncc@gmail.com"];
-    const isAdmin = (user.email && adminEmails.includes(user.email.toLowerCase())) || user.user_metadata?.role === 'admin';
-    
-    if (!isAdmin) {
-      return NextResponse.redirect(new URL('/dashboard', request.url));
-    }
+    if (!user)    return addSecurityHeaders(NextResponse.redirect(loginUrl));
+    if (!isAdmin) return addSecurityHeaders(NextResponse.redirect(dashUrl));
   }
 
-  // Proteksi Area Juri (/juri)
+  // ── /admin/* — khusus Admin ──────────────────────────────────────────────
+  if (pathname.startsWith('/admin')) {
+    if (!user)    return addSecurityHeaders(NextResponse.redirect(loginUrl));
+    if (!isAdmin) return addSecurityHeaders(NextResponse.redirect(dashUrl));
+  }
+
+  // ── /juri/* — Admin atau Juri ────────────────────────────────────────────
   if (pathname.startsWith('/juri')) {
-    if (!user) {
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
-    
-    const adminEmails = ["admin@ncc.id", "admin1@ncc.id", "halo.ncc@gmail.com"];
-    const juryEmails = ["juri1@ncc.id", "juri2@ncc.id", "juri3@ncc.id"];
-    
-    const isAdmin = (user.email && adminEmails.includes(user.email.toLowerCase())) || user.user_metadata?.role === 'admin';
-    const isJury = (user.email && juryEmails.includes(user.email.toLowerCase())) || user.user_metadata?.role === 'juri';
-    
-    if (!isAdmin && !isJury) {
-      return NextResponse.redirect(new URL('/dashboard', request.url));
-    }
+    if (!user)               return addSecurityHeaders(NextResponse.redirect(loginUrl));
+    if (!isAdmin && !isJury) return addSecurityHeaders(NextResponse.redirect(dashUrl));
   }
 
-  // Proteksi Dashboard Peserta (/dashboard)
+  // ── /dashboard/* — semua user yang sudah login ───────────────────────────
   if (pathname.startsWith('/dashboard')) {
-    if (!user) {
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
+    if (!user) return addSecurityHeaders(NextResponse.redirect(loginUrl));
   }
 
-  return response;
+  // 6. Lolos semua guard → lanjutkan dengan security headers
+  return addSecurityHeaders(response);
 }
 
-// 6. Tentukan rute mana saja yang dijaga oleh Middleware ini
+// 7. Terapkan middleware ke semua rute kecuali aset statis
 export const config = {
   matcher: [
-    /*
-     * Cocokkan semua request path kecuali:
-     * - _next/static (file statis)
-     * - _next/image (optimasi gambar)
-     * - favicon.ico (ikon browser)
-     * - Gambar dan aset publik lainnya (.svg, .png, dsb)
-     */
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };

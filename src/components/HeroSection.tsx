@@ -13,7 +13,8 @@ import MagneticWrapper from "./ui/MagneticWrapper";
 
 // Remove unused imports introduced previously
 export default function HeroSection() {
-    const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<any>(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
     // Audit: Sync with Supabase Session safely from browser
@@ -34,6 +35,8 @@ export default function HeroSection() {
         }
       } catch (err) {
         setUser(null);
+      } finally {
+        setAuthLoading(false);
       }
     };
     checkAuth();
@@ -92,14 +95,22 @@ export default function HeroSection() {
             {/* Primary CTA */}
             <MagneticWrapper>
               <Link
-                href={user ? "/dashboard" : "/daftar"}
-                className="group flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-semibold text-sm text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200"
+                href={authLoading ? '#' : (user ? "/dashboard" : "/daftar")}
+                className={`group flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-semibold text-sm text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200 ${
+                  authLoading ? 'opacity-70 pointer-events-none' : ''
+                }`}
               >
-                {user ? "Buka Dashboard" : "Daftar Tim Sekarang"}
-                <ArrowRight
-                  size={16}
-                  className="transition-transform group-hover:translate-x-1"
-                />
+                {authLoading ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Memuat...
+                  </>
+                ) : (
+                  <>
+                    {user ? "Buka Dashboard" : "Daftar Tim Sekarang"}
+                    <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
+                  </>
+                )}
               </Link>
             </MagneticWrapper>
 
