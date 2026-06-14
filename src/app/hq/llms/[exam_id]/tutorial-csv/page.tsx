@@ -5,197 +5,355 @@ import { useParams } from 'next/navigation';
 import { 
   ArrowLeft, 
   FileDown, 
-  Info, 
+  AlertTriangle,
   Table,
   CheckCircle,
   XCircle,
   FileCheck,
-  ChevronRight,
-  Monitor,
-  Settings
+  Info,
+  BookOpen,
+  Lightbulb,
+  ShieldAlert,
+  Copy
 } from 'lucide-react';
+import { useState } from 'react';
 
 export default function TutorialCSV() {
   const params = useParams();
   const examId = params.exam_id as string;
+  const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
+
+  const handleCopy = (text: string, idx: number) => {
+    navigator.clipboard.writeText(text);
+    setCopiedIdx(idx);
+    setTimeout(() => setCopiedIdx(null), 2000);
+  };
 
   const downloadTemplate = () => {
-    const headers = ['Soal', 'Opsi A', 'Opsi B', 'Opsi C', 'Opsi D', 'Opsi E', 'Kunci Jawaban', 'Tingkat Kesulitan'];
-    const sampleRow = ['Siapakah penemu mesin uap?', 'James Watt', 'Isaac Newton', 'Albert Einstein', 'Nikola Tesla', 'Thomas Edison', 'A', 'MUDAH'];
-    
-    const csvContent = "data:text/csv;charset=utf-8," 
-      + headers.join(',') + "\n" 
-      + sampleRow.join(',');
-
-    const encodedUri = encodeURI(csvContent);
+    // Template dengan kutip ganda agar aman untuk semua teks
+    const lines = [
+      `"Soal","Opsi A","Opsi B","Opsi C","Opsi D","Opsi E","Kunci Jawaban","Tingkat Kesulitan"`,
+      `"Siapakah penemu bola lampu?","Thomas Edison","Isaac Newton","Albert Einstein","Nikola Tesla","James Watt","A","MUDAH"`,
+      `"Jika semua kucing adalah hewan dan Milo adalah kucing, maka...","Milo adalah hewan","Milo bukan hewan","Milo adalah manusia","Semua hewan adalah kucing","Tidak bisa disimpulkan","A","SEDANG"`,
+      `"Berapakah hasil dari $2x + 3 = 7$, nilai x adalah...","1","2","3","4","5","B","MUDAH"`,
+    ];
+    const csvContent = "data:text/csv;charset=utf-8," + lines.join('\n');
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "Template_Soal_NCC13.csv");
+    link.setAttribute("href", encodeURI(csvContent));
+    link.setAttribute("download", "Template_Soal_NCC13_v2.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
+  const correctExample = `"Soal","Opsi A","Opsi B","Opsi C","Opsi D","Opsi E","Kunci Jawaban","Tingkat Kesulitan"
+"Jika x > y dan y > z, manakah yang pasti benar?","x < z","x = z","x > z","x + y = z","Tidak dapat ditentukan","C","SEDANG"
+"Siapakah penemu mesin uap?","James Watt","Isaac Newton","Albert Einstein","Nikola Tesla","Thomas Edison","A","MUDAH"`;
+
+  const wrongExample1 = `Soal,Opsi A,Opsi B,Opsi C,Opsi D,Opsi E,Kunci Jawaban,Tingkat Kesulitan
+Jika x > y dan y > z, manakah yang pasti benar?,x < z,x = z,x > z,x + y = z,Tidak dapat ditentukan,C,SEDANG`;
+
+  const wrongExample2 = `"Soal";"Opsi A";"Opsi B";"Kunci";"Kesulitan"
+"Berapa 1+1?";"Dua";"Tiga";"A";"MUDAH"`;
+
+  const wrongExample3 = `"Soal","Opsi A","Opsi B","Kunci"
+"Jika benar, maka salah. Pilih yang tepat!","Benar","Salah","A"`;
+
   return (
-    <div className="min-h-screen bg-[#f8fafc] p-6 md:p-8 font-sans selection:bg-indigo-100">
+    <div className="min-h-screen bg-[#f8fafc] p-4 md:p-8 font-sans selection:bg-indigo-100">
       <div className="max-w-5xl mx-auto space-y-8 text-left">
-        
-        {/* 🧼 HEADER BAR */}
+
+        {/* ─── HEADER ─── */}
         <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center space-x-4">
-            <Link href={`/hq/llms/${examId}/questions`} className="p-2.5 bg-indigo-50/50 text-indigo-600 rounded-xl hover:bg-indigo-100 transition-colors">
+            <Link href={`/hq/llms/${examId}/questions`} className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-100 transition-colors">
               <ArrowLeft className="w-5 h-5" />
             </Link>
-            <div className="text-left">
+            <div>
               <h1 className="text-xl font-bold text-gray-800 flex items-center tracking-tight">
-                <Table className="w-6 h-6 text-indigo-500 mr-2" />
-                Panduan Visual Import CSV
+                <Table className="w-6 h-6 text-indigo-500 mr-2" /> Panduan Lengkap Import CSV
               </h1>
-              <p className="text-xs text-gray-500 mt-0.5">Pelajari cara memasukkan ribuan soal sekaligus tanpa error.</p>
+              <p className="text-xs text-gray-500 mt-0.5">Baca seluruh panduan ini sebelum mengimpor soal agar tidak ada data yang rusak.</p>
             </div>
           </div>
-          <button 
+          <button
             onClick={downloadTemplate}
-            className="flex items-center px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all shadow-xl shadow-indigo-100 active:scale-95"
+            className="flex items-center px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all shadow-xl shadow-indigo-100 active:scale-95 whitespace-nowrap"
           >
-            <FileDown className="w-5 h-5 mr-2" />
-            Unduh Template
+            <FileDown className="w-5 h-5 mr-2" /> Unduh Template v2
           </button>
         </div>
 
-        {/* 🚀 SECTION 1: LANGKAH-LANGKAH VISUAL */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Langkah 1 */}
-          <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden group text-left">
-            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-              <FileDown className="w-32 h-32 text-indigo-900" />
-            </div>
-            <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center font-black text-xl mb-6 shadow-inner">1</div>
-            <h3 className="font-bold text-gray-800 mb-3 text-left">Unduh Template</h3>
-            <p className="text-xs text-gray-500 leading-relaxed text-left">
-              Gunakan tombol di atas untuk mendapatkan file <code className="bg-gray-100 px-1.5 py-0.5 rounded text-indigo-600 font-mono">.csv</code> yang sudah memiliki struktur header valid.
-            </p>
+        {/* ─── PERINGATAN UTAMA ─── */}
+        <div className="flex items-start gap-4 p-5 bg-rose-50 border-2 border-rose-200 rounded-3xl">
+          <div className="w-10 h-10 bg-rose-100 rounded-2xl flex items-center justify-center shrink-0">
+            <ShieldAlert className="w-5 h-5 text-rose-600" />
           </div>
-
-          {/* Langkah 2 */}
-          <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden group text-left">
-            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-              <Monitor className="w-32 h-32 text-emerald-900" />
-            </div>
-            <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center font-black text-xl mb-6 shadow-inner">2</div>
-            <h3 className="font-bold text-gray-800 mb-3 text-left">Isi di Excel / Sheets</h3>
-            <p className="text-xs text-gray-500 leading-relaxed text-left">
-              Buka file tersebut. Masukkan butir soal, opsi A-E, dan kunci jawaban. Pastikan tidak ada kolom yang bergeser.
-            </p>
-          </div>
-
-          {/* Langkah 3 */}
-          <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden group text-left">
-            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-              <FileCheck className="w-32 h-32 text-amber-900" />
-            </div>
-            <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center font-black text-xl mb-6 shadow-inner">3</div>
-            <h3 className="font-bold text-gray-800 mb-3 text-left">Save As Comma Delimited</h3>
-            <p className="text-xs text-gray-500 leading-relaxed text-left">
-              Saat menyimpan, pastikan memilih format <span className="font-bold text-gray-700 underline decoration-amber-300">CSV (Comma Delimited)</span> agar sistem bisa membaca data Anda.
+          <div>
+            <p className="text-sm font-black text-rose-700 uppercase tracking-widest">⚠️ Aturan Paling Penting — WAJIB Dibaca</p>
+            <p className="text-sm font-bold text-rose-600 mt-1 leading-relaxed">
+              Setiap teks yang mengandung <span className="bg-rose-100 px-1.5 py-0.5 rounded font-mono">koma ( , )</span>, <span className="bg-rose-100 px-1.5 py-0.5 rounded font-mono">tanda kutip ( " )</span>, atau <span className="bg-rose-100 px-1.5 py-0.5 rounded font-mono">baris baru</span>{' '}
+              HARUS dibungkus dengan tanda kutip ganda <span className="bg-rose-100 px-1.5 py-0.5 rounded font-mono">"..."</span>.{' '}
+              Jika tidak, data kolom akan <strong>bergeser dan rusak</strong> — itulah yang menyebabkan soal tidak bisa disimpan kunci jawabannya.
             </p>
           </div>
         </div>
 
-        {/* ⚠️ SECTION 2: ILUSTRASI DELIMITER KOMA VS TITIK KOMA */}
-        <div className="bg-white p-8 md:p-10 rounded-[3rem] border border-gray-100 shadow-sm text-left">
-          <div className="flex items-start mb-8 text-left">
-            <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center shrink-0 mr-4">
-              <Info className="w-6 h-6 text-amber-500" />
-            </div>
-            <div className="text-left">
-              <h2 className="text-lg font-bold text-gray-800">Kenapa Harus Comma Delimited?</h2>
-              <p className="text-xs text-gray-500 mt-2 leading-relaxed">
-                Sistem database NCC membutuhkan pemisah antar kolom berupa <strong>koma ( , )</strong>. Jika komputer Anda menggunakan regional Indonesia, Excel sering secara otomatis menggunakan titik koma ( ; ). Perhatikan perbedaannya:
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Visual Salah */}
-            <div className="p-6 bg-rose-50/40 border border-rose-100 rounded-[2rem] text-left">
-              <div className="flex items-center text-rose-600 font-black text-[10px] uppercase tracking-widest mb-4">
-                <XCircle className="w-4 h-4 mr-2" /> FORMAT SALAH (Pakai Titik Koma)
+        {/* ─── LANGKAH-LANGKAH ─── */}
+        <div>
+          <h2 className="text-base font-black text-gray-700 uppercase tracking-widest mb-4 flex items-center gap-2">
+            <BookOpen className="w-5 h-5 text-indigo-500" /> Langkah Demi Langkah
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {[
+              { num: '1', color: 'indigo', icon: <FileDown className="w-6 h-6" />, title: 'Unduh Template', desc: 'Klik tombol "Unduh Template v2" di atas. Template sudah menggunakan format kutip ganda yang aman.' },
+              { num: '2', color: 'emerald', icon: <Table className="w-6 h-6" />, title: 'Isi di Google Sheets', desc: 'Buka file CSV di Google Sheets (lebih aman dari Excel). Isi per kolom — satu baris = satu soal.' },
+              { num: '3', color: 'amber', icon: <FileCheck className="w-6 h-6" />, title: 'Download sebagai CSV', desc: 'Di Google Sheets: File → Unduh → Comma Separated Values (.csv). Jangan ubah format ke Excel.' },
+            ].map((s) => (
+              <div key={s.num} className={`bg-white p-7 rounded-3xl border border-gray-100 shadow-sm text-left`}>
+                <div className={`w-11 h-11 bg-${s.color}-50 text-${s.color}-600 rounded-2xl flex items-center justify-center font-black text-xl mb-5`}>{s.num}</div>
+                <h3 className="font-bold text-gray-800 mb-2">{s.title}</h3>
+                <p className="text-xs text-gray-500 leading-relaxed">{s.desc}</p>
               </div>
-              <div className="font-mono text-[10px] text-gray-600 bg-white p-4 rounded-2xl border border-rose-100 shadow-sm overflow-x-auto whitespace-nowrap leading-loose">
-                Soal<span className="text-rose-500 font-bold bg-rose-50 px-0.5">;</span>Opsi A<span className="text-rose-500 font-bold bg-rose-50 px-0.5">;</span>Opsi B<span className="text-rose-500 font-bold bg-rose-50 px-0.5">;</span>Kunci<br/>
-                Berapa 1+1?<span className="text-rose-500 font-bold bg-rose-50 px-0.5">;</span>Dua<span className="text-rose-500 font-bold bg-rose-50 px-0.5">;</span>Tiga<span className="text-rose-500 font-bold bg-rose-50 px-0.5">;</span>A
-              </div>
-            </div>
-
-            {/* Visual Benar */}
-            <div className="p-6 bg-emerald-50/40 border border-emerald-100 rounded-[2rem] text-left">
-              <div className="flex items-center text-emerald-600 font-black text-[10px] uppercase tracking-widest mb-4">
-                <CheckCircle className="w-4 h-4 mr-2" /> FORMAT BENAR (Pakai Koma)
-              </div>
-              <div className="font-mono text-[10px] text-gray-600 bg-white p-4 rounded-2xl border border-emerald-100 shadow-sm overflow-x-auto whitespace-nowrap leading-loose">
-                Soal<span className="text-emerald-500 font-bold bg-emerald-50 px-0.5">,</span>Opsi A<span className="text-emerald-500 font-bold bg-emerald-50 px-0.5">,</span>Opsi B<span className="text-emerald-500 font-bold bg-emerald-50 px-0.5">,</span>Kunci<br/>
-                "Berapa 1+1?"<span className="text-emerald-500 font-bold bg-emerald-50 px-0.5">,</span>"Dua"<span className="text-emerald-500 font-bold bg-emerald-50 px-0.5">,</span>"Tiga"<span className="text-emerald-500 font-bold bg-emerald-50 px-0.5">,</span>"A"
-              </div>
-            </div>
+            ))}
           </div>
         </div>
 
-        {/* 📋 SECTION 3: TABEL REFERENSI */}
-        <div className="bg-white rounded-[3rem] border border-gray-100 shadow-sm overflow-hidden text-left">
-          <div className="p-8 border-b border-gray-100 bg-gray-50/30 text-left">
-            <h2 className="text-lg font-bold text-gray-800">Aturan Pengisian Kolom</h2>
-            <p className="text-xs text-gray-500 mt-1">Detail teknis pengisian setiap kolom pada file CSV.</p>
+        {/* ─── STRUKTUR KOLOM ─── */}
+        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="p-7 border-b border-gray-100 bg-gray-50/50">
+            <h2 className="text-base font-black text-gray-800">Struktur Kolom (8 Kolom Wajib Berurutan)</h2>
+            <p className="text-xs text-gray-500 mt-1">Kolom TIDAK boleh dikurangi, ditambah, atau ditukar urutannya.</p>
           </div>
-          
-          <div className="overflow-x-auto p-4 text-left">
-            <table className="w-full text-left border-collapse">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] border-b border-gray-100">
-                  <th className="py-5 px-6 w-24 text-center">Kolom</th>
-                  <th className="py-5 px-6">Nama Header</th>
-                  <th className="py-5 px-6">Aturan & Contoh Pengisian</th>
+                <tr className="text-gray-400 text-[10px] font-black uppercase tracking-widest border-b border-gray-100 bg-gray-50/30">
+                  <th className="py-4 px-5 text-center w-16">Kolom</th>
+                  <th className="py-4 px-5 w-32">Header</th>
+                  <th className="py-4 px-5 w-28">Wajib?</th>
+                  <th className="py-4 px-5">Aturan & Nilai yang Diizinkan</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50 text-left text-xs">
-                <tr className="hover:bg-indigo-50/30 transition-colors group">
-                  <td className="py-6 px-6 text-center">
-                    <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 font-black font-mono shadow-sm group-hover:scale-110 transition-transform">A</span>
-                  </td>
-                  <td className="py-6 px-6 font-bold text-gray-800">Soal</td>
-                  <td className="py-6 px-6 leading-relaxed text-gray-600">
-                    Isi dengan pertanyaan. Dukungan LaTeX: <code className="bg-slate-100 text-rose-500 px-2 py-1 rounded font-mono font-bold">$$...$$</code> untuk rumus matematika.
-                  </td>
-                </tr>
-                <tr className="hover:bg-indigo-50/30 transition-colors group">
-                  <td className="py-6 px-6 text-center">
-                    <span className="inline-flex items-center justify-center px-4 h-10 rounded-xl bg-slate-50 text-slate-500 font-black font-mono shadow-sm group-hover:scale-110 transition-transform">B-F</span>
-                  </td>
-                  <td className="py-6 px-6 font-bold text-gray-800">Opsi A - E</td>
-                  <td className="py-6 px-6 leading-relaxed text-gray-500">
-                    Isi dengan teks pilihan ganda. Jangan biarkan kolom ini kosong.
-                  </td>
-                </tr>
-                <tr className="hover:bg-emerald-50/30 transition-colors bg-emerald-50/5 group">
-                  <td className="py-6 px-6 text-center">
-                    <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 font-black font-mono shadow-sm group-hover:scale-110 transition-transform">G</span>
-                  </td>
-                  <td className="py-6 px-6 font-bold text-gray-800">Kunci Jawaban</td>
-                  <td className="py-6 px-6 leading-relaxed">
-                    Hanya 1 huruf kapital: <span className="font-black text-emerald-600 bg-emerald-100 px-2 py-1 rounded">A, B, C, D, atau E</span>.
-                  </td>
-                </tr>
-                <tr className="hover:bg-amber-50/30 transition-colors group">
-                  <td className="py-6 px-6 text-center">
-                    <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-amber-50 text-amber-600 font-black font-mono shadow-sm group-hover:scale-110 transition-transform">H</span>
-                  </td>
-                  <td className="py-6 px-6 font-bold text-gray-800">Kesulitan</td>
-                  <td className="py-6 px-6 leading-relaxed">
-                    Gunakan kapital: <span className="font-bold text-gray-400">MUDAH</span>, <span className="font-bold text-amber-500">SEDANG</span>, atau <span className="font-bold text-rose-500">SULIT</span>.
-                  </td>
-                </tr>
+              <tbody className="divide-y divide-gray-50">
+                {[
+                  { col: '1', header: 'Soal', wajib: true, color: 'indigo', rule: 'Teks pertanyaan. Jika ada koma atau tanda kutip di dalam teks, bungkus seluruh teks dengan "...". Mendukung formula LaTeX: $...$' },
+                  { col: '2', header: 'Opsi A', wajib: true, color: 'slate', rule: 'Teks pilihan A. Wajib diisi. Bungkus dengan "..." jika terdapat koma.' },
+                  { col: '3', header: 'Opsi B', wajib: true, color: 'slate', rule: 'Teks pilihan B. Wajib diisi.' },
+                  { col: '4', header: 'Opsi C', wajib: false, color: 'slate', rule: 'Teks pilihan C. Bisa dikosongkan jika hanya 2 pilihan (isi dengan teks kosong "").' },
+                  { col: '5', header: 'Opsi D', wajib: false, color: 'slate', rule: 'Teks pilihan D. Bisa dikosongkan.' },
+                  { col: '6', header: 'Opsi E', wajib: false, color: 'slate', rule: 'Teks pilihan E. Bisa dikosongkan.' },
+                  { col: '7', header: 'Kunci Jawaban', wajib: true, color: 'emerald', rule: 'HANYA 1 huruf kapital: A, B, C, D, atau E. Tidak boleh berisi teks panjang, angka, atau lebih dari 1 karakter.' },
+                  { col: '8', header: 'Tingkat Kesulitan', wajib: true, color: 'amber', rule: 'Salah satu dari: Easy, Medium, atau Hard (bisa huruf besar/kecil, sistem akan sesuaikan otomatis).' },
+                ].map((row) => (
+                  <tr key={row.col} className="hover:bg-indigo-50/20 transition-colors">
+                    <td className="py-5 px-5 text-center">
+                      <span className={`inline-flex items-center justify-center w-9 h-9 rounded-xl bg-${row.color}-50 text-${row.color}-600 font-black font-mono text-sm`}>{row.col}</span>
+                    </td>
+                    <td className="py-5 px-5 font-bold text-gray-800 whitespace-nowrap">{row.header}</td>
+                    <td className="py-5 px-5">
+                      {row.wajib
+                        ? <span className="px-2 py-1 bg-rose-50 text-rose-600 text-[10px] font-black uppercase rounded-full border border-rose-100">Wajib</span>
+                        : <span className="px-2 py-1 bg-gray-50 text-gray-400 text-[10px] font-black uppercase rounded-full border border-gray-100">Opsional</span>
+                      }
+                    </td>
+                    <td className="py-5 px-5 text-gray-500 leading-relaxed">{row.rule}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
+          </div>
+        </div>
+
+        {/* ─── CONTOH BENAR ─── */}
+        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="p-7 border-b border-gray-100 bg-emerald-50/40 flex items-center gap-3">
+            <CheckCircle className="w-6 h-6 text-emerald-500 shrink-0" />
+            <div>
+              <h2 className="text-sm font-black text-emerald-700 uppercase tracking-widest">✅ Contoh Format yang BENAR</h2>
+              <p className="text-xs text-emerald-600 mt-0.5">Semua teks dibungkus kutip ganda — aman dari masalah koma di dalam teks.</p>
+            </div>
+          </div>
+          <div className="p-5 relative">
+            <button
+              onClick={() => handleCopy(correctExample, 0)}
+              className="absolute top-4 right-4 flex items-center gap-1.5 text-[10px] font-black uppercase text-gray-400 hover:text-indigo-600 bg-gray-50 hover:bg-indigo-50 border border-gray-200 px-3 py-1.5 rounded-full transition-colors"
+            >
+              <Copy className="w-3 h-3" /> {copiedIdx === 0 ? 'Disalin!' : 'Salin'}
+            </button>
+            <pre className="font-mono text-[11px] text-gray-700 bg-gray-50 border border-gray-100 rounded-2xl p-5 overflow-x-auto whitespace-pre leading-6">
+{`"Soal","Opsi A","Opsi B","Opsi C","Opsi D","Opsi E","Kunci Jawaban","Tingkat Kesulitan"
+"Jika x > y dan y > z, manakah yang pasti benar?","x < z","x = z","x > z","x + y = z","Tidak dapat ditentukan","C","SEDANG"
+"Siapakah penemu mesin uap?","James Watt","Isaac Newton","Albert Einstein","Nikola Tesla","Thomas Edison","A","MUDAH"
+"Semua siswa rajin. Budi adalah siswa. Maka...","Budi rajin","Budi malas","Budi bukan siswa","Budi adalah guru","Tidak dapat disimpulkan","A","SEDANG"`}
+            </pre>
+          </div>
+        </div>
+
+        {/* ─── 3 CONTOH SALAH ─── */}
+        <div>
+          <h2 className="text-base font-black text-gray-700 uppercase tracking-widest mb-4 flex items-center gap-2">
+            <XCircle className="w-5 h-5 text-rose-500" /> Kesalahan yang Sering Terjadi
+          </h2>
+          <div className="space-y-5">
+
+            {/* Kesalahan 1 */}
+            <div className="bg-white rounded-3xl border-2 border-rose-100 overflow-hidden">
+              <div className="p-5 bg-rose-50/50 border-b border-rose-100 flex items-start gap-3">
+                <span className="w-7 h-7 bg-rose-500 text-white rounded-full flex items-center justify-center font-black text-sm shrink-0">1</span>
+                <div>
+                  <p className="text-sm font-black text-rose-700">Teks soal punya koma tapi tidak dibungkus kutip ganda</p>
+                  <p className="text-xs text-rose-500 mt-0.5">Ini penyebab utama soal rusak dan kunci jawaban tidak bisa disimpan!</p>
+                </div>
+              </div>
+              <div className="p-5 grid md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-2">❌ Salah — Tanpa Kutip</p>
+                  <pre className="font-mono text-[10px] bg-rose-50 border border-rose-100 rounded-xl p-4 overflow-x-auto whitespace-pre leading-5 text-gray-600">
+{`Soal,Opsi A,Opsi B,Opsi C,Opsi D,Opsi E,Kunci,Kesulitan
+Jika x > y dan y > z, mana yang benar?,x<z,x=z,x>z,x+y=z,Tidak tentu,C,SEDANG
+↑ koma setelah "z" membuat sistem berpikir soal selesai di sini
+↑ kolom bergeser → "mana yang benar?" masuk ke Opsi A
+↑ kunci jawaban berisi teks panjang bukan "C"`}
+                  </pre>
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-2">✅ Benar — Dengan Kutip</p>
+                  <pre className="font-mono text-[10px] bg-emerald-50 border border-emerald-100 rounded-xl p-4 overflow-x-auto whitespace-pre leading-5 text-gray-600">
+{`"Soal","Opsi A","Opsi B","Opsi C","Opsi D","Opsi E","Kunci","Kesulitan"
+"Jika x > y dan y > z, mana yang benar?","x<z","x=z","x>z","x+y=z","Tidak tentu","C","SEDANG"
+↑ koma di dalam teks soal aman karena dibungkus "..."
+↑ sistem baca 8 kolom dengan tepat
+↑ kunci jawaban = "C" ✓`}
+                  </pre>
+                </div>
+              </div>
+            </div>
+
+            {/* Kesalahan 2 */}
+            <div className="bg-white rounded-3xl border-2 border-rose-100 overflow-hidden">
+              <div className="p-5 bg-rose-50/50 border-b border-rose-100 flex items-start gap-3">
+                <span className="w-7 h-7 bg-rose-500 text-white rounded-full flex items-center justify-center font-black text-sm shrink-0">2</span>
+                <div>
+                  <p className="text-sm font-black text-rose-700">Menggunakan titik koma ( ; ) sebagai pemisah kolom</p>
+                  <p className="text-xs text-rose-500 mt-0.5">Excel regional Indonesia sering memakai titik koma secara default — sistem NCC hanya baca koma.</p>
+                </div>
+              </div>
+              <div className="p-5 grid md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-2">❌ Salah — Titik Koma</p>
+                  <pre className="font-mono text-[10px] bg-rose-50 border border-rose-100 rounded-xl p-4 overflow-x-auto whitespace-pre leading-5 text-gray-600">
+{`"Soal";"Opsi A";"Opsi B";"Opsi C";"Opsi D";"Opsi E";"Kunci";"Kesulitan"
+"Berapa 1+1?";"Dua";"Tiga";"Empat";"Lima";"Enam";"A";"MUDAH"`}
+                  </pre>
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-2">✅ Benar — Koma</p>
+                  <pre className="font-mono text-[10px] bg-emerald-50 border border-emerald-100 rounded-xl p-4 overflow-x-auto whitespace-pre leading-5 text-gray-600">
+{`"Soal","Opsi A","Opsi B","Opsi C","Opsi D","Opsi E","Kunci","Kesulitan"
+"Berapa 1+1?","Dua","Tiga","Empat","Lima","Enam","A","MUDAH"`}
+                  </pre>
+                </div>
+              </div>
+            </div>
+
+            {/* Kesalahan 3 */}
+            <div className="bg-white rounded-3xl border-2 border-rose-100 overflow-hidden">
+              <div className="p-5 bg-rose-50/50 border-b border-rose-100 flex items-start gap-3">
+                <span className="w-7 h-7 bg-rose-500 text-white rounded-full flex items-center justify-center font-black text-sm shrink-0">3</span>
+                <div>
+                  <p className="text-sm font-black text-rose-700">Kolom Kunci Jawaban berisi teks panjang, bukan 1 huruf</p>
+                  <p className="text-xs text-rose-500 mt-0.5">Kolom ke-7 hanya boleh berisi: A, B, C, D, atau E — satu karakter saja.</p>
+                </div>
+              </div>
+              <div className="p-5 grid md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-2">❌ Salah — Teks Panjang di Kunci</p>
+                  <pre className="font-mono text-[10px] bg-rose-50 border border-rose-100 rounded-xl p-4 overflow-x-auto whitespace-pre leading-5 text-gray-600">
+{`"Soal","Opsi A","Opsi B","Kunci Jawaban"
+"Berapa 2+2?","3","4","Empat"      ← salah, bukan huruf
+"Berapa 3x3?","9","8","jawaban A"  ← salah, harus cukup "A"
+"Ibu kota RI?","Jakarta","Surabaya","A. Jakarta" ← salah`}
+                  </pre>
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-2">✅ Benar — 1 Huruf Saja</p>
+                  <pre className="font-mono text-[10px] bg-emerald-50 border border-emerald-100 rounded-xl p-4 overflow-x-auto whitespace-pre leading-5 text-gray-600">
+{`"Soal","Opsi A","Opsi B","Kunci Jawaban"
+"Berapa 2+2?","3","4","B"      ← benar
+"Berapa 3x3?","9","8","A"      ← benar
+"Ibu kota RI?","Jakarta","Surabaya","A" ← benar`}
+                  </pre>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        {/* ─── ATURAN LENGKAP ─── */}
+        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="p-7 border-b border-gray-100 bg-indigo-50/30 flex items-center gap-3">
+            <Info className="w-6 h-6 text-indigo-500 shrink-0" />
+            <h2 className="text-sm font-black text-gray-800 uppercase tracking-widest">Aturan Lengkap yang Harus Dipatuhi</h2>
+          </div>
+          <div className="p-7 grid md:grid-cols-2 gap-6">
+            {[
+              { icon: '📌', title: 'Baris pertama = header', desc: 'Baris pertama HARUS berisi nama kolom persis seperti template. Jangan diubah.' },
+              { icon: '🔤', title: 'Kunci jawaban = 1 huruf', desc: 'Kolom ke-7 hanya boleh A, B, C, D, atau E. Huruf kapital maupun kecil diterima — sistem otomatis konversi ke kapital.' },
+              { icon: '📝', title: 'Minimal 2 opsi terisi', desc: 'Opsi A dan B wajib diisi. Opsi C, D, E boleh dikosongkan dengan menulis "" (dua kutip tanpa spasi).' },
+              { icon: '🚫', title: 'Jangan merge sel di Excel', desc: 'Merge cell akan merusak struktur CSV. Pastikan setiap sel berdiri sendiri.' },
+              { icon: '💬', title: 'Teks berkoma = wajib dikutip', desc: 'Jika teks soal/opsi mengandung koma, bungkus seluruh teks dengan tanda kutip ganda: "Jika A, maka B".' },
+              { icon: '🔢', title: 'Angka dalam teks = aman', desc: 'Angka seperti 100, 3.14, atau -5 tidak perlu dikutip asalkan tidak mengandung koma.' },
+              { icon: '📐', title: 'Rumus matematika', desc: 'Gunakan $...$ untuk inline dan $$...$$ untuk display. Contoh: "$x^2 + y^2 = z^2$".' },
+              { icon: '🌐', title: 'Gunakan Google Sheets', desc: 'Lebih aman dari Excel. Export via File → Unduh → CSV. Encoding otomatis UTF-8.' },
+            ].map((rule, i) => (
+              <div key={i} className="flex items-start gap-3 p-4 bg-gray-50 rounded-2xl">
+                <span className="text-xl shrink-0">{rule.icon}</span>
+                <div>
+                  <p className="text-xs font-black text-gray-800">{rule.title}</p>
+                  <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{rule.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ─── TIPS GOOGLE SHEETS ─── */}
+        <div className="flex items-start gap-4 p-6 bg-amber-50 border-2 border-amber-200 rounded-3xl">
+          <Lightbulb className="w-6 h-6 text-amber-500 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-black text-amber-700 mb-2">💡 Tips: Cara Export CSV yang Benar dari Google Sheets</p>
+            <ol className="text-xs text-amber-700 font-semibold space-y-1 list-decimal list-inside leading-relaxed">
+              <li>Buka file di Google Sheets</li>
+              <li>Klik menu <strong>File</strong> → <strong>Unduh</strong> → <strong>Nilai yang Dipisahkan Koma (.csv)</strong></li>
+              <li>File akan terunduh otomatis dengan format koma (bukan titik koma)</li>
+              <li>Upload file tersebut langsung ke tombol Import CSV di halaman bank soal</li>
+              <li><strong>Jangan buka file CSV hasil download di Excel</strong> — bisa mengubah format secara otomatis</li>
+            </ol>
+          </div>
+        </div>
+
+        {/* ─── CHECKLIST ─── */}
+        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-7">
+          <h2 className="text-sm font-black text-gray-800 uppercase tracking-widest mb-5 flex items-center gap-2">
+            <CheckCircle className="w-5 h-5 text-emerald-500" /> Checklist Sebelum Import
+          </h2>
+          <div className="space-y-3">
+            {[
+              'Baris pertama berisi header yang benar (8 kolom sesuai urutan)',
+              'Semua teks soal dan opsi yang mengandung koma sudah dibungkus kutip ganda "..."',
+              'Kolom Kunci Jawaban hanya berisi satu huruf: A, B, C, D, atau E',
+              'Kolom Tingkat Kesulitan hanya berisi: Easy, Medium, atau Hard',
+              'Tidak ada baris yang kosong di tengah-tengah data',
+              'File disimpan dalam format CSV, bukan .xlsx atau .xls',
+              'Pemisah kolom adalah koma (,) bukan titik koma (;)',
+            ].map((item, i) => (
+              <div key={i} className="flex items-start gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors">
+                <div className="w-5 h-5 rounded border-2 border-gray-200 shrink-0 mt-0.5" />
+                <p className="text-xs text-gray-600 font-medium leading-relaxed">{item}</p>
+              </div>
+            ))}
           </div>
         </div>
 

@@ -208,7 +208,7 @@ export default function EditorBankSoal() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // 📥 5. BULK IMPORT CSV MASSAL (SISTEM TANPA LIBRARY TAMBAHAN)
+  // 📥 5. BULK IMPORT CSV MASSAL — PARSER RFC 4180 (AMAN UNTUK TEKS BERKOMA)
   const handleBulkImportCSV = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -216,33 +216,94 @@ export default function EditorBankSoal() {
     if (!confirm("Apakah Anda yakin ingin mengimpor data massal melalui file CSV ini?")) return;
     setIsImporting(true);
 
+    // ── Parser CSV yang benar: mengerti kutip ganda ───────────────────────────
+    const parseCSVLine = (line: string): string[] => {
+      const result: string[] = [];
+      let current = '';
+      let insideQuote = false;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === '"') {
+          if (insideQuote && line[i + 1] === '"') {
+            // Kutip ganda escaped ("") → satu kutip literal
+            current += '"';
+            i++;
+          } else {
+            insideQuote = !insideQuote;
+          }
+        } else if (ch === ',' && !insideQuote) {
+          result.push(current.trim());
+          current = '';
+        } else {
+          current += ch;
+        }
+      }
+      result.push(current.trim());
+      return result;
+    };
+    // ─────────────────────────────────────────────────────────────────────────
+
     const reader = new FileReader();
     reader.onload = async (event) => {
       try {
         const text = event.target?.result as string;
-        const baris = text.split('\n');
+        // Normalkan line ending (Windows \r\n → \n)
+        const baris = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
         const dataInsert: any[] = [];
+        let skippedCount = 0;
+        let errorRows: number[] = [];
 
-        // Skip baris 0 jika itu merupakan header kolom (Soal, A, B, C, D, E, Kunci, Kesulitan)
+        // Skip baris 0 (header)
         for (let i = 1; i < baris.length; i++) {
           if (!baris[i].trim()) continue;
-          
-          // Split kolom menggunakan koma
-          const kolom = baris[i].split(',');
-          
+
+          const kolom = parseCSVLine(baris[i]);
+
+          const soalText      = kolom[0] || '';
+          const opsiA         = kolom[1] || '';
+          const opsiB         = kolom[2] || '';
+          const opsiC         = kolom[3] || '';
+          const opsiD         = kolom[4] || '';
+          const opsiE         = kolom[5] || '';
+          const rawKunci      = (kolom[6] || '').trim().toUpperCase();
+          const rawDifficulty = (kolom[7] || '').trim();
+
+          // Validasi: kunci jawaban harus tepat 1 huruf A-E
+          const validKunci = ['A','B','C','D','E'].includes(rawKunci) ? rawKunci : null;
+          if (!validKunci) {
+            errorRows.push(i);
+            skippedCount++;
+            continue; // Lewati baris ini, jangan impor
+          }
+
+          // Validasi: soal dan opsi A tidak boleh kosong
+          if (!soalText || !opsiA) {
+            skippedCount++;
+            continue;
+          }
+
+          // Normalisasi tingkat kesulitan
+          const diffMap: Record<string, string> = {
+            'mudah': 'Easy', 'easy': 'Easy',
+            'sedang': 'Medium', 'medium': 'Medium',
+            'sulit': 'Hard', 'hard': 'Hard',
+          };
+          const difficulty = diffMap[rawDifficulty.toLowerCase()] || 'Medium';
+
           dataInsert.push({
             exam_id: examId,
-            question_text: kolom[0]?.replace(/"/g, '').trim(),
+            question_text: soalText,
             options: {
-              A: kolom[1]?.trim(),
-              B: kolom[2]?.trim(),
-              C: kolom[3]?.trim(),
-              D: kolom[4]?.trim(),
-              E: kolom[5]?.trim() || null,
+              A: opsiA,
+              B: opsiB,
+              C: opsiC || null,
+              D: opsiD || null,
+              E: opsiE || null,
             },
-            correct_answer: kolom[6]?.trim().toUpperCase() || 'A',
-            difficulty: kolom[7]?.trim() || 'Medium',
-            weight: 1, // Standard weight
+            correct_answer: validKunci,
+            difficulty,
+            weight: 1,
+
             status: 'Published'
           });
         }
@@ -250,9 +311,20 @@ export default function EditorBankSoal() {
         if (dataInsert.length > 0) {
           const { error } = await supabase.from('cbt_questions').insert(dataInsert);
           if (error) throw error;
-          showToast(`Sukses mengimpor ${dataInsert.length} soal secara massal!`, "success");
           fetchSoalTersimpan();
+
+          if (skippedCount > 0) {
+            showToast(
+              `✅ ${dataInsert.length} soal berhasil diimpor. ⚠️ ${skippedCount} baris dilewati (kunci jawaban tidak valid atau format salah — baris: ${errorRows.slice(0,5).join(', ')}${errorRows.length > 5 ? '...' : ''}). Cek panduan CSV.`,
+              'error'
+            );
+          } else {
+            showToast(`✅ Sukses mengimpor ${dataInsert.length} soal! Semua data valid.`, 'success');
+          }
+        } else if (skippedCount > 0) {
+          showToast(`❌ Tidak ada soal yang berhasil diimpor. ${skippedCount} baris dilewati karena format tidak valid. Pastikan kolom Kunci Jawaban hanya berisi A/B/C/D/E.`, 'error');
         }
+
       } catch (err: any) {
         showToast(`Gagal memproses file CSV: ${err.message}`, "error");
       } finally {
