@@ -106,7 +106,7 @@ export default function StudentDashboard() {
     const fetchAll = async () => {
       if (parsedUser.active_exam_id) {
         const { data: exData, error: exError } = await supabase
-          .from('cbt_exams').select('duration, is_active').eq('id', parsedUser.active_exam_id).single();
+          .from('cbt_exams').select('duration, duration_minutes, is_active').eq('id', parsedUser.active_exam_id).single();
         
         if (exError || !exData || !exData.is_active) {
           localStorage.removeItem('ncc_user');
@@ -366,7 +366,7 @@ export default function StudentDashboard() {
                   <h3 className="text-2xl font-black text-gray-900 mt-3 tracking-tight">{student.active_exam_title || 'Sesi Ujian'}</h3>
                   <div className="flex items-center space-x-4 mt-2">
                     <p className="text-xs font-bold text-gray-400 flex items-center">
-                      <ClockIcon className="w-4 h-4 mr-1 text-[#5145cd]" /> {examDetail?.duration || 90} Menit
+                      <ClockIcon className="w-4 h-4 mr-1 text-[#5145cd]" /> {examDetail?.duration_minutes || examDetail?.duration || 90} Menit
                     </p>
                     <p className="text-xs font-bold text-gray-400">— {questionCount} Soal</p>
                   </div>
