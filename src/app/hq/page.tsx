@@ -960,7 +960,13 @@ function ModernHQDashboardContent() {
   useEffect(() => {
     const fetchTimeline = async () => {
       try {
-        const { data: timelineConfig } = await getTimelineConfig();
+        const { data: timelineConfig, error } = await getTimelineConfig();
+        if (error) {
+          console.error("Gagal fetch timeline:", error);
+          showToast("Koneksi gagal: Timeline kegiatan tidak dapat dimuat. Silakan muat ulang halaman.", "error");
+          return;
+        }
+
         if (timelineConfig && timelineConfig.content) {
           try {
             const rawData = JSON.parse(timelineConfig.content);
@@ -983,14 +989,19 @@ function ModernHQDashboardContent() {
               }))
             }));
             setTimelineData(migratedData);
+            setIsTimelineLoaded(true);
           } catch (e) {
             console.error("Gagal migrasi data:", e);
+            showToast("Gagal membaca format data timeline dari database.", "error");
           }
+        } else {
+          // Jika data timeline belum ada sama sekali di database:
+          // Kita izinkan isTimelineLoaded = true agar default timeline disinkronkan ke DB
+          setIsTimelineLoaded(true);
         }
       } catch (err) {
         console.error("Gagal fetch timeline:", err);
-      } finally {
-        setIsTimelineLoaded(true);
+        showToast("Terjadi kesalahan saat memuat timeline.", "error");
       }
     };
     fetchTimeline();
@@ -2711,7 +2722,13 @@ function ModernHQDashboardContent() {
 
     const fetchPortalSettings = async () => {
       try {
-        const { data: existing } = await getPortalSettings();
+        const { data: existing, error } = await getPortalSettings();
+
+        if (error) {
+          console.error("Gagal menarik status portal:", error);
+          showToast("Koneksi gagal: Pengaturan portal tidak dapat dimuat. Silakan muat ulang halaman.", "error");
+          return;
+        }
 
         if (existing) {
           const parsed = JSON.parse(existing.content);
@@ -2721,11 +2738,17 @@ function ModernHQDashboardContent() {
           if (parsed.phaseStatus) setPhaseStatus(parsed.phaseStatus);
           if (parsed.dashboardAssets) setDashboardAssets(parsed.dashboardAssets);
           if (parsed.isRegistrationOpen !== undefined) setIsRegistrationOpen(parsed.isRegistrationOpen);
+        } else {
+          // Inisialisasi default waves jika belum ada data di database
+          setWaves([
+            { id: 1, name: "Gelombang 1", status: "Aktif", startDate: "", endDate: "" },
+            { id: 2, name: "Gelombang 2", status: "Tutup", startDate: "", endDate: "" }
+          ]);
         }
+        setIsPortalLoaded(true);
       } catch (err) {
         console.error("Gagal menarik status portal:", err);
-      } finally {
-        setIsPortalLoaded(true);
+        showToast("Terjadi kesalahan saat memuat pengaturan portal.", "error");
       }
     };
 
@@ -2743,8 +2766,6 @@ function ModernHQDashboardContent() {
     // Safety Guard: Force end loading after 5 seconds
     const safetyTimer = setTimeout(() => {
       setIsLoading(false);
-      setIsPortalLoaded(true);
-      setIsTimelineLoaded(true);
       console.warn("Safety timeout triggered: forcing loader closure.");
     }, 5000);
 
