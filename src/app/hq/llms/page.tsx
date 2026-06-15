@@ -147,6 +147,7 @@ export default function IntegratedLLMSDashboard() {
 
       if (error) {
         console.error("Gagal menarik data telemetri LLMS:", error);
+        showToast(`Gagal memuat data: ${error}`, "error");
       }
 
       let onlineCount = 0;

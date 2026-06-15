@@ -683,15 +683,17 @@ export async function getLLMSTelemetryData() {
       .select('warnings_count, submitted_at, user_id, updated_at')
       .order('updated_at', { ascending: false });
 
-    if (aError) {
-      console.warn("[LLMS Telemetry] cbt_attempts query failed:", aError.message);
-    }
+    const errorMsg = [
+      qError && `Questions: ${qError.message}`,
+      eError && `Exams: ${eError.message}`,
+      aError && `Attempts: ${aError.message}`
+    ].filter(Boolean).join(" | ");
 
     return {
       questionCount: questionCount,
       examsData: examsWithCounts,
       attemptsData: attemptsData || [],
-      error: null
+      error: errorMsg || null
     };
   } catch (err: any) {
     console.error("[Server Action] Exception getLLMSTelemetryData:", err);
