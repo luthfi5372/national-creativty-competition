@@ -2478,6 +2478,45 @@ function ModernHQDashboardContent() {
     }
   };
 
+  // --- PINDAHKAN GELOMBANG PESERTA ---
+  const moveParticipantWave = async (id: number, newWaveName: string) => {
+    try {
+      const entry = realEntries.find(e => e.id === id);
+      if (!entry) return;
+
+      let notesObj: any = {};
+      if (entry.notes) {
+        try {
+          notesObj = JSON.parse(entry.notes);
+        } catch (e) {}
+      }
+
+      notesObj.registered_wave = newWaveName;
+      const updatedNotes = JSON.stringify(notesObj);
+
+      const { error } = await supabase
+        .from('competition_entries')
+        .update({ notes: updatedNotes })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // Update state lokal
+      setRealEntries(prev => prev.map(e => 
+        e.id === id ? { ...e, notes: updatedNotes } : e
+      ));
+
+      // Update selected participant jika sedang dibuka
+      if (selectedParticipant && selectedParticipant.id === id) {
+        setSelectedParticipant((prev: any) => ({ ...prev, notes: updatedNotes }));
+      }
+
+      showToast(`Peserta berhasil dipindahkan ke ${newWaveName.split(" (")[0]}!`, "success");
+    } catch (err: any) {
+      console.error("Gagal memindahkan gelombang peserta:", err);
+      showToast(`Gagal memindahkan gelombang: ${err.message || err}`, "error");
+    }
+  };
   const handleAddParticipant = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsAdding(true);
@@ -6442,6 +6481,50 @@ function ModernHQDashboardContent() {
                             <XCircle size={11} />
                             GAGAL TAHAP 2
                           </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* SECTION BARU: PINDAHKAN GELOMBANG */}
+                <div className="mt-4 pt-4 border-t border-slate-200/50">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="p-1.5 bg-blue-100 text-blue-600 rounded-lg">
+                      <Calendar size={14} />
+                    </div>
+                    <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">Pindahkan Gelombang</h4>
+                  </div>
+                  
+                  <div className="bg-slate-50/80 rounded-2xl p-4 border border-slate-100">
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center justify-between px-2">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Gelombang Saat Ini:</span>
+                        <span className="text-[10px] font-black text-slate-700 bg-slate-200/50 px-2 py-0.5 rounded-lg">
+                          {getParticipantWave(selectedParticipant).split(" (")[0]}
+                        </span>
+                      </div>
+                      
+                      <div className="mt-2 pt-2 border-t border-slate-200/30 flex flex-col gap-2">
+                        <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider px-2">Pilih Gelombang Tujuan:</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {waves.map((w) => {
+                            const isCurrent = getParticipantWave(selectedParticipant) === w.name;
+                            return (
+                              <button
+                                key={w.id}
+                                disabled={isCurrent}
+                                onClick={() => moveParticipantWave(selectedParticipant.id, w.name)}
+                                className={`py-2 px-3 rounded-xl text-[10px] font-black transition-all border flex items-center justify-center gap-1 ${
+                                  isCurrent
+                                    ? 'bg-blue-50 border-blue-100 text-blue-500 opacity-60 cursor-not-allowed'
+                                    : 'bg-white border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600'
+                                }`}
+                              >
+                                {w.name.split(" (")[0]}
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
                     </div>
