@@ -448,6 +448,7 @@ function ModernHQDashboardContent() {
   const searchParams = useSearchParams();
   const supabase = createClient();
   const [isLoading, setIsLoading] = useState(true);
+  const [currentAdmin, setCurrentAdmin] = useState<any>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [realEntries, setRealEntries] = useState<any[]>([]);
   const [unregisteredUsers, setUnregisteredUsers] = useState<any[]>([]);
@@ -2744,7 +2745,8 @@ function ModernHQDashboardContent() {
           if (user && adminEmails.includes(currentEmail || "")) {
             // ✅ Sesi valid — hentikan loop
             console.log(`[Admin HQ] Sesi admin valid: ${currentEmail} (percobaan ${attempt})`);
-            return;
+            setCurrentAdmin(user);
+            return true;
           }
           
           if (error) {
@@ -2776,6 +2778,7 @@ function ModernHQDashboardContent() {
       }
       console.log("[Admin HQ] Tidak ada sesi valid setelah 3 percobaan. Redirect ke login.");
       router.push('/login');
+      return false;
     };
 
 
@@ -2866,7 +2869,8 @@ function ModernHQDashboardContent() {
 
     // Orchestrate session assurance before fetching data
     const initializeData = async () => {
-      await ensureAdminSession();
+      const isValid = await ensureAdminSession();
+      if (!isValid) return;
       await fetchRealData();
       fetchPortalSettings();
       fetchBroadcasts();
@@ -3192,6 +3196,17 @@ function ModernHQDashboardContent() {
   }, [unregisteredUsers, searchUnregisteredQuery]);
 
   const totalUnreadCount = Object.values(unreadCounts).reduce((sum, count) => sum + count, 0);
+
+  if (isLoading || !currentAdmin) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-[#f8fafc]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-2">Memuat Command Center...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-slate-50 text-slate-800 font-sans overflow-hidden relative">

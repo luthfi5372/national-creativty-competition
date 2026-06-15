@@ -252,6 +252,7 @@ export default function UserDashboard() {
         
       } catch (error) {
         console.error("Gagal menarik data:", error);
+        router.push('/login');
       } finally {
         setIsLoading(false);
       }
@@ -487,65 +488,15 @@ export default function UserDashboard() {
 
   const progress = calculateProgress();
 
-  if (isLoading) {
+  if (isLoading || !currentUser) {
     return (
       <div className="min-h-screen bg-slate-50 text-slate-800 font-sans p-6 md:p-12 relative overflow-hidden animate-in fade-in duration-300">
         <div className="absolute top-[-5%] left-[-5%] w-64 h-64 bg-blue-400/10 rounded-full pointer-events-none"></div>
         <div className="absolute bottom-[-5%] right-[-2%] w-64 h-64 bg-indigo-400/10 rounded-full pointer-events-none"></div>
         
-        <div className="max-w-5xl mx-auto relative z-10 space-y-8">
-          {/* Header Skeleton */}
-          <div className="w-full bg-white border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.02)] rounded-[2.5rem] p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 animate-pulse">
-            <div className="space-y-3">
-              <div className="h-7 w-56 bg-slate-200 rounded-xl" />
-              <div className="h-4 w-72 bg-slate-100 rounded-lg" />
-            </div>
-            <div className="flex items-center gap-4 w-full md:w-auto">
-              <div className="h-10 w-28 bg-slate-200 rounded-xl" />
-              <div className="h-10 w-10 bg-slate-200 rounded-xl" />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Column Skeleton */}
-            <div className="space-y-6 animate-pulse">
-              <div className="bg-white border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.02)] rounded-3xl p-6 h-[220px] flex flex-col justify-between">
-                <div className="space-y-3">
-                  <div className="h-5 w-36 bg-slate-200 rounded-lg" />
-                  <div className="h-3 w-full bg-slate-100 rounded-md" />
-                  <div className="h-3 w-4/5 bg-slate-100 rounded-md" />
-                </div>
-                <div className="h-12 w-full bg-slate-200 rounded-xl" />
-              </div>
-              <div className="bg-white border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.02)] rounded-3xl p-6 h-[260px] flex flex-col justify-between">
-                <div className="space-y-3">
-                  <div className="h-5 w-40 bg-slate-200 rounded-lg" />
-                  <div className="h-3 w-full bg-slate-100 rounded-md" />
-                </div>
-                <div className="h-12 w-full bg-slate-200 rounded-xl" />
-              </div>
-            </div>
-
-            {/* Right Column Skeleton */}
-            <div className="lg:col-span-2 space-y-6 animate-pulse">
-              <div className="bg-white border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.02)] rounded-3xl p-6 h-[200px] flex flex-col justify-between">
-                <div className="space-y-3">
-                  <div className="h-5 w-44 bg-slate-200 rounded-lg" />
-                  <div className="h-3 w-full bg-slate-100 rounded-md" />
-                  <div className="h-3 w-5/6 bg-slate-100 rounded-md" />
-                </div>
-                <div className="h-10 w-full bg-slate-100 rounded-xl" />
-              </div>
-              <div className="bg-white border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.02)] rounded-3xl p-6 h-[280px] flex flex-col justify-between">
-                <div className="space-y-3">
-                  <div className="h-5 w-32 bg-slate-200 rounded-lg" />
-                  <div className="h-3 w-full bg-slate-100 rounded-md" />
-                  <div className="h-3 w-2/3 bg-slate-100 rounded-md" />
-                </div>
-                <div className="h-12 w-full bg-slate-200 rounded-xl" />
-              </div>
-            </div>
-          </div>
+        <div className="max-w-5xl mx-auto relative z-10 space-y-8 flex flex-col items-center justify-center min-h-[60vh]">
+          <div className="w-12 h-12 rounded-full border-4 border-slate-200 border-t-indigo-600 animate-spin mb-4" />
+          <p className="text-sm text-slate-500 font-medium animate-pulse">Memuat Sesi...</p>
         </div>
       </div>
     );
