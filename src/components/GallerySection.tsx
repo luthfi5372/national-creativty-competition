@@ -699,34 +699,32 @@ export default function GallerySection() {
                   className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 />
 
-                {/* Focus Overlay */}
-                <div className={cn(
-                  "absolute inset-0 bg-black/40 flex flex-col items-center justify-end p-8 transition-opacity duration-500",
-                  hovered === item.id ? "opacity-100" : "opacity-0"
-                )}>
-                  <div className="absolute top-6 right-6">
-                    <div className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30 transform -translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                      <Trophy size={18} className="text-white" />
-                    </div>
-                  </div>
+                {/* Dark Gradient Overlay for readability - Always visible */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-85 group-hover:opacity-95 transition-opacity duration-300 pointer-events-none z-10" />
 
-                  <div className="w-full transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                    <span className="inline-block px-3 py-1 rounded-lg bg-white/20 backdrop-blur-md text-[10px] font-bold tracking-[0.2em] text-white uppercase mb-3 border border-white/20">
-                      {item.category}
-                    </span>
-                    <h4 className="text-xl md:text-2xl font-bold text-white leading-tight drop-shadow-md">
-                      {item.label}
-                    </h4>
-                    {item.description && (
-                      <p className="text-xs text-white/80 mt-1 leading-snug drop-shadow-sm font-medium">
-                        {item.description}
-                      </p>
-                    )}
+                {/* Trophy Badge - Floating top-right */}
+                <div className="absolute top-4 right-4 z-20">
+                  <div className="w-9 h-9 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/25 transform scale-90 group-hover:scale-100 transition-all duration-300 shadow-md">
+                    <Trophy size={15} className="text-yellow-400 drop-shadow" />
                   </div>
                 </div>
 
-                {/* Subtle Gradient Shadow (Bottom) */}
-                <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/60 to-transparent opacity-60 pointer-events-none" />
+                {/* Content Overlay */}
+                <div className="absolute inset-x-0 bottom-0 p-5 sm:p-6 z-20 flex flex-col justify-end transform transition-transform duration-300">
+                  <span className="inline-block px-2.5 py-0.5 rounded bg-white/10 backdrop-blur-md text-[9px] font-bold tracking-[0.15em] text-white uppercase border border-white/20 w-fit mb-2">
+                    {item.category}
+                  </span>
+                  
+                  <h4 className="text-base sm:text-lg font-bold text-white leading-tight drop-shadow-md">
+                    {item.label}
+                  </h4>
+                  
+                  {item.description && (
+                    <p className="text-[11px] sm:text-xs text-white/80 mt-2 leading-relaxed drop-shadow-sm font-medium max-h-0 opacity-0 group-hover:max-h-[80px] group-hover:opacity-100 transition-all duration-500 ease-in-out overflow-hidden">
+                      {item.description}
+                    </p>
+                  )}
+                </div>
               </motion.div>
             ))}
           </AnimatePresence>
