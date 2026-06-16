@@ -31,6 +31,7 @@ const SpeedMonitor = dynamic(() => import("@/components/SpeedMonitor"), { ssr: f
 // Standard interactive components
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
+import SponsorsSection from "@/components/SponsorsSection";
 import FeatureGrid from "@/components/FeatureGrid";
 import CategoryCards from "@/components/CategoryCards";
 import PricingSection from "@/components/PricingSection";
@@ -52,6 +53,8 @@ export default function Home() {
           <section id="beranda" className="min-h-screen w-full flex items-center justify-center">
             <HeroSection />
           </section>
+
+          <SponsorsSection />
 
           <section className="min-h-screen w-full py-24 flex items-center justify-center">
             <FeatureGrid />
