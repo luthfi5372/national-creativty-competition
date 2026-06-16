@@ -76,7 +76,10 @@ export default function FeatureGrid() {
           const dbBenefits = data.filter((d: any) => d.category === 'benefit');
           
           if (dbAbouts.length > 0) {
-            setAbouts(dbAbouts);
+            const uniqueAbouts = dbAbouts.filter((item, index, self) =>
+              self.findIndex(t => (t.title || t.content) === (item.title || item.content)) === index
+            );
+            setAbouts(uniqueAbouts);
           }
           if (dbBenefits.length > 0) {
             const colorSchemes: Record<string, any> = {
