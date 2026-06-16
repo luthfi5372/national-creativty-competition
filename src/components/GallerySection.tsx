@@ -671,7 +671,7 @@ export default function GallerySection() {
           <p className="text-xs text-slate-400 mt-1">Momen dokumentasi acara akan muncul setelah ditambahkan oleh admin.</p>
         </div>
       ) : (
-        <div className="w-full max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 auto-rows-[240px] gap-4">
+        <div className="w-full max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 auto-rows-[240px] gap-4 grid-flow-row-dense">
           <AnimatePresence mode="popLayout">
             {filteredItems.map((item) => (
               <motion.div
