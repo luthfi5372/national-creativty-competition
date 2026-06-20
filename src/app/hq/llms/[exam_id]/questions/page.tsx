@@ -33,6 +33,13 @@ const renderMath = (text: string) => {
   return html;
 };
 
+const isCorrectAnswerValid = (item: any) => {
+  if (!item || !item.correct_answer) return false;
+  const letters = String(item.correct_answer).toUpperCase().split('');
+  if (letters.length === 0) return false;
+  return letters.every((l: string) => item.options?.[l] !== undefined);
+};
+
 export default function EditorBankSoal() {
   const supabase = createClient();
   const params = useParams();
@@ -42,7 +49,19 @@ export default function EditorBankSoal() {
   const [soal, setSoal] = useState('');
   const [opsi, setOpsi] = useState({ A: '', B: '', C: '', D: '', E: '' });
   const [kunciJawaban, setKunciJawaban] = useState('A');
+  const [optionPoints, setOptionPoints] = useState<Record<string, number>>({ A: 4, B: 0, C: 0, D: 0, E: 0 });
   const [difficulty, setDifficulty] = useState('Medium');
+
+  const toggleKunciJawaban = (huruf: string) => {
+    let current = kunciJawaban ? kunciJawaban.toUpperCase() : '';
+    if (current.includes(huruf)) {
+      current = current.replace(huruf, '');
+    } else {
+      current += huruf;
+    }
+    const sorted = current.split('').sort().join('');
+    setKunciJawaban(sorted);
+  };
   
   // State Mode Edit & Gambar
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -97,8 +116,14 @@ export default function EditorBankSoal() {
     if (!opsi.A || !opsi.B) return alert("Opsi jawaban A dan B minimal harus diisi!");
     
     // Validasi: pastikan opsi yang dipilih sebagai kunci jawaban tidak kosong
-    if (!opsi[kunciJawaban as keyof typeof opsi]) {
-      return alert(`Opsi ${kunciJawaban} yang dipilih sebagai kunci jawaban masih kosong! Isi terlebih dahulu teks untuk opsi ${kunciJawaban}.`);
+    const correctLetters = (kunciJawaban || '').split('');
+    if (correctLetters.length === 0) {
+      return alert("Pilih minimal satu kunci jawaban!");
+    }
+    for (const letter of correctLetters) {
+      if (!opsi[letter as keyof typeof opsi]) {
+        return alert(`Opsi ${letter} yang dipilih sebagai kunci jawaban masih kosong! Isi terlebih dahulu teks untuk opsi ${letter}.`);
+      }
     }
 
     setIsSubmitting(true);
@@ -132,7 +157,8 @@ export default function EditorBankSoal() {
           B: opsi.B,
           C: opsi.C,
           D: opsi.D,
-          E: opsi.E
+          E: opsi.E,
+          points: optionPoints
         },
         correct_answer: kunciJawaban,
         difficulty: difficulty,
@@ -175,16 +201,17 @@ export default function EditorBankSoal() {
   const pemicuEditSoal = (item: any) => {
     setEditingId(item.id);
     
-    // Deteksi apakah data rusak dari CSV (correct_answer bukan huruf tunggal A-E)
+    // Deteksi apakah data rusak dari CSV (correct_answer berisi karakter selain A-E atau kunci tidak valid)
     const isDataRusak = !item.correct_answer || 
-      !['A','B','C','D','E'].includes(String(item.correct_answer).trim().toUpperCase()) ||
-      !item.options?.[item.correct_answer];
+      /[^A-E]/i.test(item.correct_answer) ||
+      !isCorrectAnswerValid(item);
 
     if (isDataRusak) {
       // Data rusak: muat teks soal saja, kosongkan semua opsi & kunci agar admin bisa isi ulang
       setSoal(item.question_text || '');
       setOpsi({ A: '', B: '', C: '', D: '', E: '' });
       setKunciJawaban('A');
+      setOptionPoints({ A: 4, B: 0, C: 0, D: 0, E: 0 });
       setDifficulty(item.difficulty || 'Medium');
       setImagePreviewUrl(item.image_url || null);
       setImageFile(null);
@@ -204,6 +231,26 @@ export default function EditorBankSoal() {
       setDifficulty(item.difficulty || 'Medium');
       setImagePreviewUrl(item.image_url || null);
       setImageFile(null);
+
+      // Load custom points if present, otherwise set default points based on correct_answer
+      if (item.options?.points) {
+        setOptionPoints({
+          A: Number(item.options.points.A ?? 0),
+          B: Number(item.options.points.B ?? 0),
+          C: Number(item.options.points.C ?? 0),
+          D: Number(item.options.points.D ?? 0),
+          E: Number(item.options.points.E ?? 0),
+        });
+      } else {
+        const defaultPoints: Record<string, number> = { A: 0, B: 0, C: 0, D: 0, E: 0 };
+        const correctLetters = (item.correct_answer || '').toUpperCase().split('');
+        correctLetters.forEach((l: string) => {
+          if (defaultPoints[l] !== undefined) {
+            defaultPoints[l] = 4; // Default to 4 points for correct answers
+          }
+        });
+        setOptionPoints(defaultPoints);
+      }
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -347,6 +394,7 @@ export default function EditorBankSoal() {
     setSoal('');
     setOpsi({ A: '', B: '', C: '', D: '', E: '' });
     setKunciJawaban('A');
+    setOptionPoints({ A: 4, B: 0, C: 0, D: 0, E: 0 });
     setDifficulty('Medium');
     setEditingId(null);
     setImageFile(null);
@@ -443,20 +491,38 @@ export default function EditorBankSoal() {
 
             {/* Input Pilihan Ganda */}
             <div className="space-y-3">
-              {['A', 'B', 'C', 'D', 'E'].map((huruf) => (
-                <div key={huruf} className={`flex items-center p-1.5 rounded-xl border transition-all ${kunciJawaban === huruf ? 'border-indigo-400 bg-indigo-50/40 ring-1 ring-indigo-400' : 'border-gray-200 bg-white'}`}>
-                  <input 
-                    type="radio" name="correctRadio" checked={kunciJawaban === huruf} onChange={() => setKunciJawaban(huruf)}
-                    className="w-4 h-4 text-indigo-600 mx-4 cursor-pointer"
-                  />
-                  <span className={`font-bold w-6 ${kunciJawaban === huruf ? 'text-indigo-600' : 'text-gray-400'}`}>{huruf}</span>
-                  <input
-                    type="text" value={opsi[huruf as keyof typeof opsi]} onChange={(e) => setOpsi({ ...opsi, [huruf]: e.target.value })}
-                    placeholder={`Isi opsi jawaban ${huruf}...`}
-                    className="w-full bg-transparent outline-none text-gray-700 placeholder-gray-300 py-2 text-sm"
-                  />
-                </div>
-              ))}
+              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 flex justify-between">
+                <span>Pernyataan Opsi & Kunci Jawaban</span>
+                <span>Atur Poin Opsi</span>
+              </div>
+              {['A', 'B', 'C', 'D', 'E'].map((huruf) => {
+                const isSelected = (kunciJawaban || '').includes(huruf);
+                return (
+                  <div key={huruf} className={`flex items-center p-1.5 rounded-xl border transition-all ${isSelected ? 'border-indigo-400 bg-indigo-50/40 ring-1 ring-indigo-400' : 'border-gray-200 bg-white'}`}>
+                    <input 
+                      type="checkbox" 
+                      checked={isSelected} 
+                      onChange={() => toggleKunciJawaban(huruf)}
+                      className="w-4 h-4 text-indigo-600 rounded mx-4 cursor-pointer focus:ring-indigo-500"
+                    />
+                    <span className={`font-bold w-6 ${isSelected ? 'text-indigo-600' : 'text-gray-400'}`}>{huruf}</span>
+                    <input
+                      type="text" value={opsi[huruf as keyof typeof opsi]} onChange={(e) => setOpsi({ ...opsi, [huruf]: e.target.value })}
+                      placeholder={`Isi opsi jawaban ${huruf}...`}
+                      className="w-full bg-transparent outline-none text-gray-700 placeholder-gray-300 py-2 text-sm"
+                    />
+                    <div className="flex items-center space-x-2 border-l border-gray-100 pl-3 pr-2 shrink-0">
+                      <span className="text-[10px] font-bold text-gray-400 uppercase">Poin:</span>
+                      <input
+                        type="number"
+                        value={optionPoints[huruf] ?? 0}
+                        onChange={(e) => setOptionPoints({ ...optionPoints, [huruf]: Number(e.target.value) })}
+                        className="w-14 text-center bg-gray-50 border border-gray-200 rounded-lg py-1 text-xs font-bold text-gray-700 outline-none focus:ring-1 focus:ring-indigo-500"
+                      />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -511,18 +577,29 @@ export default function EditorBankSoal() {
             />
 
             <div className="space-y-3 mt-auto">
-              {['A', 'B', 'C', 'D', 'E'].map((huruf) => (
-                <div key={huruf} className={`w-full text-left p-3.5 rounded-xl border transition-all flex items-center ${kunciJawaban === huruf ? 'border-emerald-400 bg-emerald-50 shadow-sm' : 'border-gray-200 bg-white'}`}>
-                  <span className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold mr-4 ${kunciJawaban === huruf ? 'bg-emerald-500 text-white' : 'bg-gray-100 text-gray-500'}`}>
-                    {huruf}
-                  </span>
-                  <div 
-                    className={`text-sm ${kunciJawaban === huruf ? 'text-emerald-900 font-semibold' : 'text-gray-600'}`}
-                    dangerouslySetInnerHTML={{ __html: renderMath(opsi[huruf as keyof typeof opsi] || "...") }}
-                  />
-                  {kunciJawaban === huruf && <CheckCircle className="w-5 h-5 text-emerald-500 ml-auto" />}
-                </div>
-              ))}
+              {['A', 'B', 'C', 'D', 'E'].map((huruf) => {
+                const isCorrect = (kunciJawaban || '').includes(huruf);
+                const isMultiSelect = (kunciJawaban || '').length > 1;
+                return (
+                  <div key={huruf} className={`w-full text-left p-3.5 rounded-xl border transition-all flex items-center ${isCorrect ? 'border-emerald-400 bg-emerald-50 shadow-sm' : 'border-gray-200 bg-white'}`}>
+                    <span className={`flex items-center justify-center w-7 h-7 ${isMultiSelect ? 'rounded-lg' : 'rounded-full'} text-xs font-bold mr-4 ${isCorrect ? 'bg-emerald-500 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                      {huruf}
+                    </span>
+                    <div className="flex-grow">
+                      <div 
+                        className={`text-sm ${isCorrect ? 'text-emerald-900 font-semibold' : 'text-gray-600'}`}
+                        dangerouslySetInnerHTML={{ __html: renderMath(opsi[huruf as keyof typeof opsi] || "...") }}
+                      />
+                      {optionPoints[huruf] !== undefined && optionPoints[huruf] !== 0 && (
+                        <span className="text-[9px] text-indigo-500 font-bold bg-indigo-50 px-1 py-0.5 rounded mt-0.5 inline-block">
+                          Poin: {optionPoints[huruf]}
+                        </span>
+                      )}
+                    </div>
+                    {isCorrect && <CheckCircle className="w-5 h-5 text-emerald-500 ml-auto flex-shrink-0" />}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -535,7 +612,7 @@ export default function EditorBankSoal() {
           <span className="bg-indigo-100 text-indigo-700 text-sm font-bold px-3 py-1 rounded-full">{daftarSoal.length}</span>
           {/* Counter soal belum ada jawaban */}
           {(() => {
-            const noAnswer = daftarSoal.filter(q => !q.correct_answer || !q.options?.[q.correct_answer]);
+            const noAnswer = daftarSoal.filter(q => !isCorrectAnswerValid(q));
             if (noAnswer.length === 0) return (
               <span className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold px-3 py-1 rounded-full">
                 <CheckCircle className="w-3.5 h-3.5" /> Semua soal lengkap
@@ -550,7 +627,7 @@ export default function EditorBankSoal() {
         </h3>
 
         {/* Banner peringatan jika ada soal tidak lengkap */}
-        {daftarSoal.some(q => !q.correct_answer || !q.options?.[q.correct_answer]) && (
+        {daftarSoal.some(q => !isCorrectAnswerValid(q)) && (
           <div className="mb-5 flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-2xl">
             <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center shrink-0 text-amber-600 font-black text-sm">!</div>
             <div>
@@ -573,7 +650,7 @@ export default function EditorBankSoal() {
               <div key={item.id} className={`bg-white p-6 rounded-2xl shadow-sm border flex flex-col md:flex-row justify-between items-start hover:shadow-md transition-all
                 ${editingId === item.id
                   ? 'border-amber-400 ring-1 ring-amber-400 bg-amber-50/10'
-                  : (!item.correct_answer || !item.options?.[item.correct_answer])
+                  : !isCorrectAnswerValid(item)
                     ? 'border-rose-300 ring-1 ring-rose-200 bg-rose-50/20'
                     : 'border-gray-100'}`}>
                 
@@ -587,13 +664,13 @@ export default function EditorBankSoal() {
                       {item.difficulty || 'Medium'}
                     </span>
                     {/* Badge peringatan jika belum ada kunci jawaban */}
-                    {(!item.correct_answer || !item.options?.[item.correct_answer]) && (
+                    {!isCorrectAnswerValid(item) && (
                       <span className="flex items-center gap-1 text-[10px] font-black uppercase px-2 py-0.5 rounded border bg-rose-50 text-rose-600 border-rose-200">
                         <XCircle className="w-3 h-3" /> Belum Ada Kunci Jawaban
                       </span>
                     )}
                     {/* Badge konfirmasi jika kunci jawaban sudah ada */}
-                    {(item.correct_answer && item.options?.[item.correct_answer]) && (
+                    {isCorrectAnswerValid(item) && (
                       <span className="flex items-center gap-1 text-[10px] font-black uppercase px-2 py-0.5 rounded border bg-emerald-50 text-emerald-600 border-emerald-200">
                         <CheckCircle className="w-3 h-3" /> Kunci: {item.correct_answer}
                       </span>
@@ -609,24 +686,31 @@ export default function EditorBankSoal() {
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs text-gray-600">
                     {['A', 'B', 'C', 'D', 'E'].map((opt) => {
                       const val = item.options?.[opt];
-                      const isCorrect = item.correct_answer === opt;
+                      const isCorrect = String(item.correct_answer || '').toUpperCase().includes(opt);
                       if (!val) return null;
                       return (
                         <div key={opt} className={`p-2 rounded border ${isCorrect ? 'bg-emerald-50 border-emerald-200 text-emerald-800 font-bold' : 'bg-gray-50 border-gray-100'}`}>
-                          {opt}. <span dangerouslySetInnerHTML={{ __html: renderMath(val) }} />
+                          <div className="flex justify-between items-start">
+                            <span>{opt}. <span dangerouslySetInnerHTML={{ __html: renderMath(val) }} /></span>
+                            {item.options?.points?.[opt] !== undefined && item.options.points[opt] !== 0 && (
+                              <span className="text-[9px] text-indigo-500 font-bold bg-indigo-50 px-1 py-0.5 rounded shrink-0 ml-1">
+                                {item.options.points[opt]}p
+                              </span>
+                            )}
+                          </div>
                         </div>
                       )
                     })}
                   </div>
 
                   {/* Peringatan inline jika tidak ada kunci jawaban */}
-                  {(!item.correct_answer || !item.options?.[item.correct_answer]) && (
+                  {!isCorrectAnswerValid(item) && (
                     <div className="mt-3 flex flex-col gap-1.5 text-xs text-rose-600 font-semibold bg-rose-50 border border-rose-100 rounded-xl px-3 py-2.5">
                       <div className="flex items-center gap-2">
                         <XCircle className="w-4 h-4 shrink-0" />
-                        {!['A','B','C','D','E'].includes(String(item.correct_answer||'').trim().toUpperCase())
+                        {/[^A-E]/i.test(item.correct_answer || '')
                           ? 'Data soal ini rusak akibat format CSV yang salah (koma dalam teks). Klik Edit — form akan dibersihkan otomatis, isi ulang opsi dan kunci jawaban.'
-                          : 'Soal ini belum memiliki kunci jawaban. Klik Edit untuk menentukan jawaban yang benar.'
+                          : 'Soal ini belum memiliki kunci jawaban yang valid. Klik Edit untuk menentukan jawaban yang benar.'
                         }
                       </div>
                     </div>
@@ -636,7 +720,7 @@ export default function EditorBankSoal() {
                 {/* SISI TOMBOL KENDALI DATA */}
                 <div className="flex md:flex-col space-x-2 md:space-x-0 md:space-y-2 mt-4 md:mt-0 w-full md:w-auto justify-end">
                   <button onClick={() => pemicuEditSoal(item)} className={`p-2.5 rounded-xl transition-colors flex items-center text-xs font-semibold ${
-                    (!item.correct_answer || !item.options?.[item.correct_answer])
+                    !isCorrectAnswerValid(item)
                       ? 'text-rose-500 bg-rose-50 hover:bg-rose-100 border border-rose-200'
                       : 'text-gray-400 hover:text-amber-500 hover:bg-amber-50'
                   }`}>

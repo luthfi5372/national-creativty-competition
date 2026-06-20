@@ -156,7 +156,7 @@ export async function PATCH(request: NextRequest) {
     // Ambil semua soal dari bank soal yang diterbitkan untuk menghitung total & unanswered
     const { data: allQuestions, error: qAllErr } = await supabase
       .from('cbt_questions')
-      .select('id, correct_answer, weight')
+      .select('id, correct_answer, weight, options')
       .eq('exam_id', exam.id)
       .eq('status', 'Published');
     if (qAllErr) throw qAllErr;
@@ -164,7 +164,7 @@ export async function PATCH(request: NextRequest) {
     const totalQuestionsCount = allQuestions?.length || 0;
 
     // Buat lookup map
-    const keyMap = new Map<string, { correct_answer: string; weight: number }>();
+    const keyMap = new Map<string, { correct_answer: string; weight: number; options?: any }>();
     (allQuestions || []).forEach(q => keyMap.set(q.id, q));
 
     let totalEarned = 0;
@@ -179,25 +179,46 @@ export async function PATCH(request: NextRequest) {
 
         if (answer.selected_option && answer.selected_option !== "") {
           answeredQuestionsCount++;
-          const isCorrect = answer.selected_option === key.correct_answer;
-
-          if (isCorrect) {
-            correctCount++;
-            switch (scoringSystem) {
-              case 'Fixed':
-                totalEarned += fixedCorrectPoint;
-                break;
-              case 'Custom':
-                totalEarned += key.weight;
-                break;
-              case 'Penalty':
-                totalEarned += fixedCorrectPoint;
-                break;
+          
+          // Cek jika ada custom option points di key.options.points
+          if (key.options && typeof key.options === 'object' && key.options.points) {
+            const selectedLetters = answer.selected_option.split('');
+            let questionPoints = 0;
+            selectedLetters.forEach((l: string) => {
+              const pt = key.options.points[l];
+              if (pt !== undefined) {
+                questionPoints += Number(pt);
+              }
+            });
+            totalEarned += questionPoints;
+            
+            // Anggap benar jika poin yang diperoleh positif
+            if (questionPoints > 0) {
+              correctCount++;
+            } else {
+              wrongCount++;
             }
           } else {
-            wrongCount++;
-            if (scoringSystem === 'Penalty') {
-              totalEarned += penaltyPoint < 0 ? penaltyPoint : -penaltyPoint;
+            const isCorrect = answer.selected_option === key.correct_answer;
+
+            if (isCorrect) {
+              correctCount++;
+              switch (scoringSystem) {
+                case 'Fixed':
+                  totalEarned += fixedCorrectPoint;
+                  break;
+                case 'Custom':
+                  totalEarned += key.weight;
+                  break;
+                case 'Penalty':
+                  totalEarned += fixedCorrectPoint;
+                  break;
+              }
+            } else {
+              wrongCount++;
+              if (scoringSystem === 'Penalty') {
+                totalEarned += penaltyPoint < 0 ? penaltyPoint : -penaltyPoint;
+              }
             }
           }
         }

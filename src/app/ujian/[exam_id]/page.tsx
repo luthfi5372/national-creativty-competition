@@ -186,7 +186,26 @@ export default function ExamRoom() {
   }, [violationCount, student, isFinished, isBlocked, examId]);
 
   const handleSelectOption = async (questionId: string, option: string) => {
-    const newAnswers = { ...answers, [questionId]: option };
+    const q = questions.find(item => item.id === questionId);
+    if (!q) return;
+
+    const isMultiSelect = q.correct_answer && q.correct_answer.length > 1;
+    let newOptionValue = '';
+
+    if (isMultiSelect) {
+      const currentAns = answers[questionId] || '';
+      if (currentAns.includes(option)) {
+        newOptionValue = currentAns.replace(option, '');
+      } else {
+        newOptionValue = currentAns + option;
+      }
+      // Urutkan alfabetis, misal "C" + "A" => "AC"
+      newOptionValue = newOptionValue.split('').sort().join('');
+    } else {
+      newOptionValue = option;
+    }
+
+    const newAnswers = { ...answers, [questionId]: newOptionValue };
     setAnswers(newAnswers);
     if (doubtfulAnswers[questionId]) setDoubtfulAnswers(prev => ({ ...prev, [questionId]: false }));
     const userId = student?.id
@@ -224,18 +243,35 @@ export default function ExamRoom() {
         const { correct_point, penalty_point, empty_point } = examConfig;
         questions.forEach(q => {
           const userAnswer = answers[q.id] || '';
-          const correct = String(q.correct_answer || '').trim().toUpperCase();
-          const user    = String(userAnswer).trim().toUpperCase();
-
-          if (!user) {
-            // Soal tidak dijawab
-            finalScore += empty_point;
-          } else if (user === correct) {
-            // Jawaban benar
-            finalScore += correct_point;
+          
+          // Cek jika ada custom option points di q.options.points
+          if (q.options && typeof q.options === 'object' && q.options.points) {
+            if (!userAnswer) {
+              finalScore += empty_point;
+            } else {
+              const selectedLetters = userAnswer.split('');
+              selectedLetters.forEach((l: string) => {
+                const pt = q.options.points[l];
+                if (pt !== undefined) {
+                  finalScore += Number(pt);
+                }
+              });
+            }
           } else {
-            // Jawaban salah — penalty_point biasanya negatif atau 0
-            finalScore += penalty_point <= 0 ? penalty_point : -penalty_point;
+            // Penilaian standar
+            const correct = String(q.correct_answer || '').trim().toUpperCase();
+            const user    = String(userAnswer).trim().toUpperCase();
+
+            if (!user) {
+              // Soal tidak dijawab
+              finalScore += empty_point;
+            } else if (user === correct) {
+              // Jawaban benar
+              finalScore += correct_point;
+            } else {
+              // Jawaban salah — penalty_point biasanya negatif atau 0
+              finalScore += penalty_point <= 0 ? penalty_point : -penalty_point;
+            }
           }
         });
       }
@@ -439,7 +475,10 @@ export default function ExamRoom() {
                     ['A', 'B', 'C', 'D', 'E'].map((letter) => {
                       const optionText = currentQ.options[letter] || currentQ.options[letter.toLowerCase()];
                       if (!optionText) return null; 
-                      const isSelected = answers[currentQ.id] === letter;
+                      const isMultiSelect = currentQ.correct_answer && currentQ.correct_answer.length > 1;
+                      const isSelected = isMultiSelect 
+                        ? (answers[currentQ.id] || '').includes(letter)
+                        : answers[currentQ.id] === letter;
                       return (
                         <button
                           key={letter}
@@ -447,7 +486,7 @@ export default function ExamRoom() {
                           className={`w-full flex items-center p-4 rounded-2xl border-2 transition-all text-left group
                             ${isSelected ? 'border-[#5145cd] bg-indigo-50/50 shadow-md scale-[1.01]' : 'border-gray-100 bg-white hover:border-indigo-200 hover:bg-gray-50'}`}
                         >
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-black mr-4 transition-colors flex-shrink-0
+                          <div className={`w-8 h-8 ${isMultiSelect ? 'rounded-lg' : 'rounded-full'} flex items-center justify-center text-sm font-black mr-4 transition-colors flex-shrink-0
                             ${isSelected ? 'bg-[#5145cd] text-white' : 'bg-gray-100 text-gray-500 group-hover:bg-indigo-100 group-hover:text-[#5145cd]'}`}>
                             {letter}
                           </div>
