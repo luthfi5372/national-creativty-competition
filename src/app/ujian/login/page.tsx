@@ -150,19 +150,31 @@ export default function ParticipantLogin() {
       let matchedExam = null;
       const userToken = tokenInput.toUpperCase().trim();
 
+      // Toleransi perbedaan waktu (clock drift) ±10 menit dengan mengecek 3 interval: sekarang, sebelumnya, dan berikutnya
+      const targetIntervals = [currentInterval, currentInterval - 1, currentInterval + 1];
+
       for (const exam of exams) {
-        let expectedToken = "";
-        let idSum = 0;
-        for (let i = 0; i < exam.id.length; i++) {
-          idSum += exam.id.charCodeAt(i);
-        }
-        let seed = (idSum + currentInterval) % 10000;
-        for (let i = 0; i < 6; i++) {
-          seed = (seed * 9301 + 49297) % 233280;
-          expectedToken += charPool[Math.floor((seed / 233280) * charPool.length)];
+        let isMatched = false;
+        
+        for (const interval of targetIntervals) {
+          let expectedToken = "";
+          let idSum = 0;
+          for (let i = 0; i < exam.id.length; i++) {
+            idSum += exam.id.charCodeAt(i);
+          }
+          let seed = (idSum + interval) % 10000;
+          for (let i = 0; i < 6; i++) {
+            seed = (seed * 9301 + 49297) % 233280;
+            expectedToken += charPool[Math.floor((seed / 233280) * charPool.length)];
+          }
+
+          if (userToken === expectedToken) {
+            isMatched = true;
+            break;
+          }
         }
 
-        if (userToken === expectedToken) {
+        if (isMatched) {
           matchedExam = exam;
           break;
         }
