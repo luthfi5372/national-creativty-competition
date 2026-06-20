@@ -472,28 +472,31 @@ export default function ExamRoom() {
 
                 <div className="space-y-3 mt-8">
                   {currentQ.options && Object.keys(currentQ.options).length > 0 ? (
-                    ['A', 'B', 'C', 'D', 'E'].map((letter) => {
-                      const optionText = currentQ.options[letter] || currentQ.options[letter.toLowerCase()];
-                      if (!optionText) return null; 
-                      const isMultiSelect = currentQ.correct_answer && currentQ.correct_answer.length > 1;
-                      const isSelected = isMultiSelect 
-                        ? (answers[currentQ.id] || '').includes(letter)
-                        : answers[currentQ.id] === letter;
-                      return (
-                        <button
-                          key={letter}
-                          onClick={() => handleSelectOption(currentQ.id, letter)}
-                          className={`w-full flex items-center p-4 rounded-2xl border-2 transition-all text-left group
-                            ${isSelected ? 'border-[#5145cd] bg-indigo-50/50 shadow-md scale-[1.01]' : 'border-gray-100 bg-white hover:border-indigo-200 hover:bg-gray-50'}`}
-                        >
-                          <div className={`w-8 h-8 ${isMultiSelect ? 'rounded-lg' : 'rounded-full'} flex items-center justify-center text-sm font-black mr-4 transition-colors flex-shrink-0
-                            ${isSelected ? 'bg-[#5145cd] text-white' : 'bg-gray-100 text-gray-500 group-hover:bg-indigo-100 group-hover:text-[#5145cd]'}`}>
-                            {letter}
-                          </div>
-                          <span className={`text-sm font-medium ${isSelected ? 'text-indigo-900' : 'text-gray-700'}`}>{optionText}</span>
-                        </button>
-                      );
-                    })
+                    Object.keys(currentQ.options)
+                      .filter(key => key.length === 1 && key >= 'A' && key <= 'Z')
+                      .sort()
+                      .map((letter) => {
+                        const optionText = currentQ.options[letter] || currentQ.options[letter.toLowerCase()];
+                        if (!optionText) return null; 
+                        const isMultiSelect = currentQ.correct_answer && currentQ.correct_answer.length > 1;
+                        const isSelected = isMultiSelect 
+                          ? (answers[currentQ.id] || '').includes(letter)
+                          : answers[currentQ.id] === letter;
+                        return (
+                          <button
+                            key={letter}
+                            onClick={() => handleSelectOption(currentQ.id, letter)}
+                            className={`w-full flex items-center p-4 rounded-2xl border-2 transition-all text-left group
+                              ${isSelected ? 'border-[#5145cd] bg-indigo-50/50 shadow-md scale-[1.01]' : 'border-gray-100 bg-white hover:border-indigo-200 hover:bg-gray-50'}`}
+                          >
+                            <div className={`w-8 h-8 ${isMultiSelect ? 'rounded-lg' : 'rounded-full'} flex items-center justify-center text-sm font-black mr-4 transition-colors flex-shrink-0
+                              ${isSelected ? 'bg-[#5145cd] text-white' : 'bg-gray-100 text-gray-500 group-hover:bg-indigo-100 group-hover:text-[#5145cd]'}`}>
+                              {letter}
+                            </div>
+                            <span className={`text-sm font-medium ${isSelected ? 'text-indigo-900' : 'text-gray-700'}`}>{optionText}</span>
+                          </button>
+                        );
+                      })
                   ) : (
                     <div className="w-full p-5 bg-amber-50 border-2 border-amber-200 border-dashed rounded-2xl flex items-center text-amber-600">
                       <ExclamationTriangleIcon className="w-6 h-6 mr-3 flex-shrink-0" />

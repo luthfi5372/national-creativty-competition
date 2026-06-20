@@ -47,8 +47,9 @@ export default function EditorBankSoal() {
   
   // State Form Input
   const [soal, setSoal] = useState('');
-  const [opsi, setOpsi] = useState({ A: '', B: '', C: '', D: '', E: '' });
+  const [opsi, setOpsi] = useState<Record<string, string>>({ A: '', B: '', C: '', D: '', E: '' });
   const [kunciJawaban, setKunciJawaban] = useState('A');
+  const [visibleOptions, setVisibleOptions] = useState<string[]>(['A', 'B', 'C', 'D', 'E']);
   const [optionPoints, setOptionPoints] = useState<Record<string, number>>({ A: 4, B: 0, C: 0, D: 0, E: 0 });
   const [difficulty, setDifficulty] = useState('Medium');
 
@@ -61,6 +62,35 @@ export default function EditorBankSoal() {
     }
     const sorted = current.split('').sort().join('');
     setKunciJawaban(sorted);
+  };
+
+  const handleAddOption = () => {
+    if (visibleOptions.length >= 10) return;
+    const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const nextLetter = alphabet[visibleOptions.length];
+    setVisibleOptions([...visibleOptions, nextLetter]);
+    setOpsi(prev => ({ ...prev, [nextLetter]: '' }));
+    setOptionPoints(prev => ({ ...prev, [nextLetter]: 0 }));
+  };
+
+  const handleRemoveOption = () => {
+    if (visibleOptions.length <= 2) return;
+    const lastLetter = visibleOptions[visibleOptions.length - 1];
+    const newVisible = visibleOptions.slice(0, -1);
+    setVisibleOptions(newVisible);
+
+    const newOpsi = { ...opsi };
+    delete newOpsi[lastLetter];
+    setOpsi(newOpsi);
+
+    const newPoints = { ...optionPoints };
+    delete newPoints[lastLetter];
+    setOptionPoints(newPoints);
+
+    if (kunciJawaban.includes(lastLetter)) {
+      const newKunci = kunciJawaban.replace(lastLetter, '');
+      setKunciJawaban(newKunci || 'A');
+    }
   };
   
   // State Mode Edit & Gambar
@@ -149,17 +179,17 @@ export default function EditorBankSoal() {
         finalImageUrl = publicUrlData.publicUrl;
       }
 
+      const finalOptions: Record<string, any> = {
+        points: optionPoints
+      };
+      visibleOptions.forEach(opt => {
+        finalOptions[opt] = opsi[opt] || '';
+      });
+
       const payload = {
         question_text: soal,
         image_url: finalImageUrl,
-        options: {
-          A: opsi.A,
-          B: opsi.B,
-          C: opsi.C,
-          D: opsi.D,
-          E: opsi.E,
-          points: optionPoints
-        },
+        options: finalOptions,
         correct_answer: kunciJawaban,
         difficulty: difficulty,
         weight: 1, // Default weight (1x multiplier)
@@ -211,6 +241,7 @@ export default function EditorBankSoal() {
       setSoal(item.question_text || '');
       setOpsi({ A: '', B: '', C: '', D: '', E: '' });
       setKunciJawaban('A');
+      setVisibleOptions(['A', 'B', 'C', 'D', 'E']);
       setOptionPoints({ A: 4, B: 0, C: 0, D: 0, E: 0 });
       setDifficulty(item.difficulty || 'Medium');
       setImagePreviewUrl(item.image_url || null);
@@ -220,37 +251,41 @@ export default function EditorBankSoal() {
     } else {
       // Data normal: muat semua data ke form
       setSoal(item.question_text);
-      setOpsi({
-        A: item.options?.A || '',
-        B: item.options?.B || '',
-        C: item.options?.C || '',
-        D: item.options?.D || '',
-        E: item.options?.E || ''
+      
+      // Deteksi opsi yang ada secara dinamis (A-Z dengan panjang 1)
+      const optionKeys = Object.keys(item.options || {})
+        .filter(key => key.length === 1 && key >= 'A' && key <= 'Z')
+        .sort();
+      
+      const finalOptionKeys = optionKeys.length >= 2 ? optionKeys : ['A', 'B', 'C', 'D', 'E'];
+      setVisibleOptions(finalOptionKeys);
+
+      const loadedOpsi: Record<string, string> = {};
+      finalOptionKeys.forEach(k => {
+        loadedOpsi[k] = item.options?.[k] || '';
       });
+      setOpsi(loadedOpsi);
+      
       setKunciJawaban(item.correct_answer);
       setDifficulty(item.difficulty || 'Medium');
       setImagePreviewUrl(item.image_url || null);
       setImageFile(null);
 
       // Load custom points if present, otherwise set default points based on correct_answer
-      if (item.options?.points) {
-        setOptionPoints({
-          A: Number(item.options.points.A ?? 0),
-          B: Number(item.options.points.B ?? 0),
-          C: Number(item.options.points.C ?? 0),
-          D: Number(item.options.points.D ?? 0),
-          E: Number(item.options.points.E ?? 0),
-        });
-      } else {
-        const defaultPoints: Record<string, number> = { A: 0, B: 0, C: 0, D: 0, E: 0 };
+      const loadedPoints: Record<string, number> = {};
+      finalOptionKeys.forEach(k => {
+        loadedPoints[k] = Number(item.options?.points?.[k] ?? 0);
+      });
+
+      if (!item.options?.points) {
         const correctLetters = (item.correct_answer || '').toUpperCase().split('');
         correctLetters.forEach((l: string) => {
-          if (defaultPoints[l] !== undefined) {
-            defaultPoints[l] = 4; // Default to 4 points for correct answers
+          if (loadedPoints[l] !== undefined) {
+            loadedPoints[l] = 4; // Default to 4 points for correct answers
           }
         });
-        setOptionPoints(defaultPoints);
       }
+      setOptionPoints(loadedPoints);
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -495,7 +530,7 @@ export default function EditorBankSoal() {
                 <span>Pernyataan Opsi & Kunci Jawaban</span>
                 <span>Atur Poin Opsi</span>
               </div>
-              {['A', 'B', 'C', 'D', 'E'].map((huruf) => {
+              {visibleOptions.map((huruf) => {
                 const isSelected = (kunciJawaban || '').includes(huruf);
                 return (
                   <div key={huruf} className={`flex items-center p-1.5 rounded-xl border transition-all ${isSelected ? 'border-indigo-400 bg-indigo-50/40 ring-1 ring-indigo-400' : 'border-gray-200 bg-white'}`}>
@@ -507,7 +542,7 @@ export default function EditorBankSoal() {
                     />
                     <span className={`font-bold w-6 ${isSelected ? 'text-indigo-600' : 'text-gray-400'}`}>{huruf}</span>
                     <input
-                      type="text" value={opsi[huruf as keyof typeof opsi]} onChange={(e) => setOpsi({ ...opsi, [huruf]: e.target.value })}
+                      type="text" value={opsi[huruf] || ''} onChange={(e) => setOpsi({ ...opsi, [huruf]: e.target.value })}
                       placeholder={`Isi opsi jawaban ${huruf}...`}
                       className="w-full bg-transparent outline-none text-gray-700 placeholder-gray-300 py-2 text-sm"
                     />
@@ -523,6 +558,26 @@ export default function EditorBankSoal() {
                   </div>
                 );
               })}
+
+              {/* Tombol Tambah/Kurang Opsi secara Dinamis */}
+              <div className="flex space-x-2 pt-2">
+                <button
+                  type="button"
+                  onClick={handleAddOption}
+                  disabled={visibleOptions.length >= 10}
+                  className="flex-grow py-2 px-3 border border-indigo-200 bg-indigo-50/30 hover:bg-indigo-50 text-[#5145cd] text-xs font-bold rounded-xl transition-all disabled:opacity-50"
+                >
+                  + Tambah Opsi Pilihan
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRemoveOption}
+                  disabled={visibleOptions.length <= 2}
+                  className="flex-grow py-2 px-3 border border-rose-200 bg-rose-50/30 hover:bg-rose-50 text-rose-600 text-xs font-bold rounded-xl transition-all disabled:opacity-50"
+                >
+                  - Kurangi Opsi Pilihan
+                </button>
+              </div>
             </div>
           </div>
 
@@ -577,7 +632,7 @@ export default function EditorBankSoal() {
             />
 
             <div className="space-y-3 mt-auto">
-              {['A', 'B', 'C', 'D', 'E'].map((huruf) => {
+              {visibleOptions.map((huruf) => {
                 const isCorrect = (kunciJawaban || '').includes(huruf);
                 const isMultiSelect = (kunciJawaban || '').length > 1;
                 return (
@@ -588,7 +643,7 @@ export default function EditorBankSoal() {
                     <div className="flex-grow">
                       <div 
                         className={`text-sm ${isCorrect ? 'text-emerald-900 font-semibold' : 'text-gray-600'}`}
-                        dangerouslySetInnerHTML={{ __html: renderMath(opsi[huruf as keyof typeof opsi] || "...") }}
+                        dangerouslySetInnerHTML={{ __html: renderMath(opsi[huruf] || "...") }}
                       />
                       {optionPoints[huruf] !== undefined && optionPoints[huruf] !== 0 && (
                         <span className="text-[9px] text-indigo-500 font-bold bg-indigo-50 px-1 py-0.5 rounded mt-0.5 inline-block">
@@ -684,23 +739,26 @@ export default function EditorBankSoal() {
                   />
                   
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs text-gray-600">
-                    {['A', 'B', 'C', 'D', 'E'].map((opt) => {
-                      const val = item.options?.[opt];
-                      const isCorrect = String(item.correct_answer || '').toUpperCase().includes(opt);
-                      if (!val) return null;
-                      return (
-                        <div key={opt} className={`p-2 rounded border ${isCorrect ? 'bg-emerald-50 border-emerald-200 text-emerald-800 font-bold' : 'bg-gray-50 border-gray-100'}`}>
-                          <div className="flex justify-between items-start">
-                            <span>{opt}. <span dangerouslySetInnerHTML={{ __html: renderMath(val) }} /></span>
-                            {item.options?.points?.[opt] !== undefined && item.options.points[opt] !== 0 && (
-                              <span className="text-[9px] text-indigo-500 font-bold bg-indigo-50 px-1 py-0.5 rounded shrink-0 ml-1">
-                                {item.options.points[opt]}p
-                              </span>
-                            )}
+                    {Object.keys(item.options || {})
+                      .filter(key => key.length === 1 && key >= 'A' && key <= 'Z')
+                      .sort()
+                      .map((opt) => {
+                        const val = item.options?.[opt];
+                        const isCorrect = String(item.correct_answer || '').toUpperCase().includes(opt);
+                        if (!val) return null;
+                        return (
+                          <div key={opt} className={`p-2 rounded border ${isCorrect ? 'bg-emerald-50 border-emerald-200 text-emerald-800 font-bold' : 'bg-gray-50 border-gray-100'}`}>
+                            <div className="flex justify-between items-start">
+                              <span>{opt}. <span dangerouslySetInnerHTML={{ __html: renderMath(val) }} /></span>
+                              {item.options?.points?.[opt] !== undefined && item.options.points[opt] !== 0 && (
+                                <span className="text-[9px] text-indigo-500 font-bold bg-indigo-50 px-1 py-0.5 rounded shrink-0 ml-1">
+                                  {item.options.points[opt]}p
+                                </span>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      )
-                    })}
+                        )
+                      })}
                   </div>
 
                   {/* Peringatan inline jika tidak ada kunci jawaban */}
