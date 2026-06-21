@@ -18,7 +18,8 @@ import {
   CheckCircle2,
   XCircle,
   MinusCircle,
-  Trash2
+  Trash2,
+  Info
 } from 'lucide-react';
 
 export default function LiveLeaderboard() {
