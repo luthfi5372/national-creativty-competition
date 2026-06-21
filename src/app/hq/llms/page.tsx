@@ -34,8 +34,8 @@ export default function IntegratedLLMSDashboard() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [newSession, setNewSession] = useState({
-    title: "", token: "", duration_minutes: 90, scoring_system: "Fixed",
-    correct_point: 4, penalty_point: 0, empty_point: 0, is_active: false
+    title: "", token: "", duration_minutes: 90, scoring_system: "Custom",
+    correct_point: 0, penalty_point: 0, empty_point: 0, is_active: false
   });
 
   const [showEditModal, setShowEditModal] = useState(false);
@@ -75,9 +75,6 @@ export default function IntegratedLLMSDashboard() {
     const { error } = await supabase.from('cbt_exams').update({
       title: editingSession.title,
       duration_minutes: editingSession.duration_minutes,
-      correct_point: editingSession.correct_point,
-      penalty_point: editingSession.penalty_point,
-      empty_point: editingSession.empty_point,
       is_active: editingSession.is_active,
     }).eq('id', editingSession.id);
     if (!error) {
@@ -289,15 +286,15 @@ export default function IntegratedLLMSDashboard() {
         title: newSession.title.trim(),
         token: finalToken,
         duration_minutes: newSession.duration_minutes,
-        scoring_system: newSession.scoring_system,
-        correct_point: newSession.correct_point,
-        penalty_point: newSession.penalty_point,
-        empty_point: newSession.empty_point,
+        scoring_system: 'Custom',
+        correct_point: 0,
+        penalty_point: 0,
+        empty_point: 0,
         is_active: (newSession as any).is_active ?? false,
       }]);
       if (error) throw error;
       setShowAddModal(false);
-      setNewSession({ title: '', token: '', duration_minutes: 90, scoring_system: 'Fixed', correct_point: 4, penalty_point: 0, empty_point: 0, is_active: false });
+      setNewSession({ title: '', token: '', duration_minutes: 90, scoring_system: 'Custom', correct_point: 0, penalty_point: 0, empty_point: 0, is_active: false });
       fetchTelemetryData();
       showToast((newSession as any).is_active ? 'Sesi ujian baru langsung aktif!' : 'Sesi ujian baru berhasil dibuat!', 'success');
     } catch (err: any) {
@@ -325,10 +322,7 @@ export default function IntegratedLLMSDashboard() {
     const sessionToken = getLiveToken(session.id) || session.token || "------";
 
     // Scoring system badge content
-    let scoringLabel = "CBT Ujian";
-    if (session.scoring_system === "Fixed" || session.correct_point !== undefined) {
-      scoringLabel = `UTBK (+${session.correct_point || 4} / ${session.penalty_point || 0} / ${session.empty_point || 0})`;
-    }
+    const scoringLabel = `DURASI: ${session.duration_minutes || 90} MENIT`;
 
     return (
       <div
@@ -396,15 +390,6 @@ export default function IntegratedLLMSDashboard() {
                           month: "long",
                           year: "numeric"
                         })}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 border-t border-slate-800/80 pt-2">
-                    <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full shrink-0"></span>
-                    <div>
-                      <p className="text-[9px] text-slate-400 font-black uppercase leading-none tracking-wide">Poin Penilaian</p>
-                      <p className="font-extrabold text-slate-100 mt-0.5">
-                        Benar: +{session.correct_point || 4} · Salah: {session.penalty_point || 0} · Kosong: {session.empty_point || 0}
                       </p>
                     </div>
                   </div>
@@ -926,29 +911,7 @@ export default function IntegratedLLMSDashboard() {
                   </button>
                 </div>
               </div>
-              <div className="p-5 bg-indigo-500/5 border border-indigo-100/50 rounded-2xl shadow-inner">
-                <p className="text-[10px] font-black uppercase text-indigo-500 tracking-widest mb-3 flex items-center gap-1.5">
-                  <span>⚙️</span> Konfigurasi Poin Penilaian
-                </p>
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="space-y-1.5">
-                    <label className="text-[9px] font-black uppercase tracking-widest text-emerald-600">✓ Benar</label>
-                    <input type="number" value={editingSession.correct_point ?? 4} onChange={e => setEditingSession({...editingSession, correct_point: parseInt(e.target.value)||0})}
-                      className="w-full bg-white border border-emerald-200 rounded-xl px-3 py-2.5 text-sm font-black text-slate-700 outline-none text-center focus:ring-4 focus:ring-emerald-100" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[9px] font-black uppercase tracking-widest text-rose-500">✗ Salah</label>
-                    <input type="number" value={editingSession.penalty_point ?? 0} onChange={e => setEditingSession({...editingSession, penalty_point: parseInt(e.target.value)||0})}
-                      className="w-full bg-white border border-rose-200 rounded-xl px-3 py-2.5 text-sm font-black text-slate-700 outline-none text-center focus:ring-4 focus:ring-rose-100" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">— Kosong</label>
-                    <input type="number" value={editingSession.empty_point ?? 0} onChange={e => setEditingSession({...editingSession, empty_point: parseInt(e.target.value)||0})}
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-black text-slate-700 outline-none text-center focus:ring-4 focus:ring-slate-100" />
-                  </div>
-                </div>
-                <p className="text-[9px] text-indigo-400 font-bold mt-2 text-center">Standard UTBK: Benar = 4, Salah = -1, Kosong = 0</p>
-              </div>
+
               <button onClick={handleUpdateSession} disabled={isSavingEdit}
                 className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/35 transition-all duration-300 flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50">
                 {isSavingEdit ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save size={16} /> Simpan Perubahan</>}
@@ -1058,33 +1021,7 @@ export default function IntegratedLLMSDashboard() {
                 </p>
               </div>
 
-              {/* Konfigurasi Poin */}
-              <div className="p-5 bg-indigo-500/5 border border-indigo-100/50 rounded-2xl shadow-inner">
-                <p className="text-[10px] font-black uppercase text-indigo-500 tracking-widest mb-3 flex items-center gap-1.5">
-                  <span>⚙️</span> Konfigurasi Poin Penilaian
-                </p>
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="space-y-1.5">
-                    <label className="text-[9px] font-black uppercase tracking-widest text-emerald-600">✓ Benar</label>
-                    <input type="number" value={newSession.correct_point ?? 4}
-                      onChange={(e) => setNewSession({...newSession, correct_point: parseInt(e.target.value) || 0})}
-                      className="w-full bg-white border border-emerald-200 rounded-xl px-3 py-2.5 text-sm font-black text-slate-700 outline-none text-center focus:ring-4 focus:ring-emerald-100" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[9px] font-black uppercase tracking-widest text-rose-500">✗ Salah</label>
-                    <input type="number" value={newSession.penalty_point ?? 0}
-                      onChange={(e) => setNewSession({...newSession, penalty_point: parseInt(e.target.value) || 0})}
-                      className="w-full bg-white border border-rose-200 rounded-xl px-3 py-2.5 text-sm font-black text-slate-700 outline-none text-center focus:ring-4 focus:ring-rose-100" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">— Kosong</label>
-                    <input type="number" value={newSession.empty_point ?? 0}
-                      onChange={(e) => setNewSession({...newSession, empty_point: parseInt(e.target.value) || 0})}
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-black text-slate-700 outline-none text-center focus:ring-4 focus:ring-slate-100" />
-                  </div>
-                </div>
-                <p className="text-[9px] text-indigo-400 font-bold mt-2 text-center">Standard UTBK: Benar = 4, Salah = -1, Kosong = 0</p>
-              </div>
+
 
               {/* Info Isolasi */}
               <div className="flex items-start gap-3 p-4 bg-violet-50 border border-violet-100 rounded-2xl">
