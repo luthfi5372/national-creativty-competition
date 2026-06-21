@@ -476,22 +476,26 @@ export default function LiveLeaderboard() {
                             ⭐️ PENILAIAN JURI & APPROVAL
                           </p>
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                            <span className="text-xs text-gray-500 font-bold">
-                              Berikan poin untuk jawaban ini (Maksimal: <span className="font-black text-indigo-600">{q.weight || 4}</span> poin)
-                            </span>
+                            <div className="flex flex-col gap-1">
+                              <span className="text-xs text-gray-500 font-bold">
+                                Berikan poin untuk jawaban ini
+                              </span>
+                              <span className="text-[10px] text-gray-400 font-medium">
+                                📌 Referensi bobot soal: <span className="font-black text-indigo-600">{q.weight || 0}</span> poin · Admin bebas menentukan nilai
+                              </span>
+                            </div>
                             <div className="flex items-center gap-2">
                               <input
                                 type="number"
                                 min="0"
-                                max={q.weight || 4}
                                 step="0.5"
                                 value={essayGrades[q.id] !== undefined ? essayGrades[q.id] : ""}
                                 onChange={(e) => {
-                                  const val = Math.min(q.weight || 4, Math.max(0, Number(e.target.value) || 0));
+                                  const val = Math.max(0, Number(e.target.value) || 0);
                                   setEssayGrades(prev => ({ ...prev, [q.id]: val }));
                                 }}
-                                className="w-24 px-3 py-1.5 bg-white border border-gray-300 rounded-xl font-bold text-center text-[#5145cd] focus:border-[#5145cd] focus:ring-1 focus:ring-[#5145cd]/20 text-sm shadow-sm"
-                                placeholder="Poin..."
+                                className="w-28 px-3 py-2 bg-white border-2 border-amber-300 rounded-xl font-black text-center text-[#5145cd] focus:border-[#5145cd] focus:ring-2 focus:ring-[#5145cd]/20 text-sm shadow-sm transition-all"
+                                placeholder="0"
                               />
                               <span className="text-xs font-bold text-gray-400">Poin</span>
                             </div>
