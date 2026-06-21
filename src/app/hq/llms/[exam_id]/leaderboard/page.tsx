@@ -38,6 +38,8 @@ export default function LiveLeaderboard() {
   const [selectedAttempt, setSelectedAttempt] = useState<any>(null);
   const [reviewQuestions, setReviewQuestions] = useState<any[]>([]);
   const [reviewLoading, setReviewLoading] = useState(false);
+  const [essayGrades, setEssayGrades] = useState<Record<string, number>>({});
+  const [isSavingGrades, setIsSavingGrades] = useState(false);
 
   // Delete per-participant
   const [showDeleteParticipant, setShowDeleteParticipant] = useState(false);
@@ -79,6 +81,7 @@ export default function LiveLeaderboard() {
     setSelectedAttempt(attempt);
     setShowReview(true);
     setReviewLoading(true);
+    setEssayGrades(attempt.answers?.essay_grades || {});
 
     const { data: qData } = await supabase
       .from('cbt_questions')
@@ -87,6 +90,45 @@ export default function LiveLeaderboard() {
 
     if (qData) setReviewQuestions(qData);
     setReviewLoading(false);
+  };
+
+  const handleSaveEssayGrades = async () => {
+    if (!selectedAttempt) return;
+    setIsSavingGrades(true);
+    try {
+      const updatedAnswers = {
+        ...(selectedAttempt.answers || {}),
+        essay_grades: essayGrades
+      };
+
+      const { error: updateError } = await supabase
+        .from('cbt_attempts')
+        .update({
+          answers: updatedAnswers,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', selectedAttempt.id);
+
+      if (updateError) throw updateError;
+
+      const res = await fetch('/api/admin/llms/grading', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ attempt_id: selectedAttempt.id })
+      });
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.error || "Gagal menghitung ulang skor.");
+      }
+
+      await fetchLeaderboardData();
+      alert(`Berhasil melakukan approval! Skor peserta diperbarui menjadi: ${data.score} poin.`);
+      setShowReview(false);
+    } catch (err: any) {
+      alert("Gagal menyimpan nilai: " + err.message);
+    } finally {
+      setIsSavingGrades(false);
+    }
   };
 
   const handleDeleteParticipant = async () => {
@@ -206,10 +248,23 @@ export default function LiveLeaderboard() {
     let correct = 0, wrong = 0, empty = 0;
     reviewQuestions.forEach(q => {
       const userAns = selectedAttempt.answers?.[q.id];
-      const key = q.correct_answer || q.answer;
-      if (!userAns) empty++;
-      else if (userAns.toUpperCase() === (key || '').toUpperCase()) correct++;
-      else wrong++;
+      const key = q.correct_answer || q.answer || '';
+      const qType = q.options?.type || 'pg';
+      if (!userAns) {
+        empty++;
+      } else if (qType === 'isian') {
+        const correctAnswers = String(key).toUpperCase().split('|').map(x => x.trim());
+        if (correctAnswers.includes(String(userAns).trim().toUpperCase())) {
+          correct++;
+        } else {
+          wrong++;
+        }
+      } else if (qType === 'essay') {
+        correct++; // Essay counted as answered / green in stats list
+      } else {
+        if (userAns.toUpperCase() === key.toUpperCase()) correct++;
+        else wrong++;
+      }
     });
     return { correct, wrong, empty };
   };
@@ -304,20 +359,52 @@ export default function LiveLeaderboard() {
                 reviewQuestions.map((q, idx) => {
                   const userAnswer = selectedAttempt.answers?.[q.id];
                   const correctKey = q.correct_answer || q.answer || '';
-                  const isCorrect = userAnswer && userAnswer.toUpperCase() === correctKey.toUpperCase();
+                  const qType = q.options?.type || 'pg';
                   const isEmpty = !userAnswer;
 
-                  const borderColor = isEmpty ? 'border-gray-200' : isCorrect ? 'border-emerald-300' : 'border-rose-300';
-                  const bgColor = isEmpty ? 'bg-white' : isCorrect ? 'bg-emerald-50/30' : 'bg-rose-50/30';
+                  let isCorrect = false;
+                  if (qType === 'isian') {
+                    const correctAnswers = String(correctKey).toUpperCase().split('|').map(x => x.trim());
+                    isCorrect = !!userAnswer && correctAnswers.includes(String(userAnswer).trim().toUpperCase());
+                  } else if (qType === 'essay') {
+                    isCorrect = false; // Neutral
+                  } else {
+                    isCorrect = !!userAnswer && String(userAnswer).trim().toUpperCase() === String(correctKey).trim().toUpperCase();
+                  }
+
+                  const borderColor = isEmpty 
+                    ? 'border-gray-200' 
+                    : qType === 'essay' 
+                      ? 'border-amber-200' 
+                      : isCorrect 
+                        ? 'border-emerald-300' 
+                        : 'border-rose-300';
+
+                  const bgColor = isEmpty 
+                    ? 'bg-white' 
+                    : qType === 'essay' 
+                      ? 'bg-amber-50/10' 
+                      : isCorrect 
+                        ? 'bg-emerald-50/30' 
+                        : 'bg-rose-50/30';
 
                   return (
                     <div key={q.id} className={`rounded-[20px] border-2 p-5 ${borderColor} ${bgColor} bg-white`}>
                       {/* Soal header */}
-                      <div className="flex justify-between items-start mb-3">
-                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Soal No. {idx + 1}</span>
+                      <div className="flex justify-between items-center mb-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Soal No. {idx + 1}</span>
+                          <span className="bg-indigo-50 text-indigo-700 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-indigo-100">
+                            {qType === 'pg' ? 'Pilihan Ganda' : qType === 'isian' ? 'Isian Singkat' : 'Essai Bebas'}
+                          </span>
+                        </div>
                         {isEmpty ? (
                           <span className="flex items-center gap-1 px-2.5 py-1 bg-gray-100 text-gray-500 text-[10px] font-black rounded-full">
                             <MinusCircle className="w-3 h-3" /> TIDAK DIJAWAB
+                          </span>
+                        ) : qType === 'essay' ? (
+                          <span className="flex items-center gap-1 px-2.5 py-1 bg-amber-100 text-amber-700 text-[10px] font-black rounded-full">
+                            <Info className="w-3 h-3" /> ESSAI
                           </span>
                         ) : isCorrect ? (
                           <span className="flex items-center gap-1 px-2.5 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-black rounded-full">
@@ -336,32 +423,106 @@ export default function LiveLeaderboard() {
                       </p>
 
                       {/* Perbandingan jawaban */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-left">
                         <div className={`p-4 rounded-2xl border ${
                           isEmpty ? 'bg-gray-50 border-gray-200' :
+                          qType === 'essay' ? 'bg-amber-50/30 border-amber-200' :
                           isCorrect ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'
                         }`}>
                           <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">Jawaban Peserta</p>
                           {isEmpty ? (
                             <p className="text-sm font-bold text-gray-400 italic">— Tidak menjawab —</p>
-                          ) : (
+                          ) : qType === 'pg' ? (
                             <p className={`text-base font-black ${isCorrect ? 'text-emerald-700' : 'text-rose-700'}`}>
-                              {userAnswer}. {q.options?.[userAnswer] || q.options?.[userAnswer?.toLowerCase()] || ''}
+                              {(() => {
+                                const letters = userAnswer.split('');
+                                return letters.map((l: string) => {
+                                  const text = q.options?.[l] || q.options?.[l.toLowerCase()] || '';
+                                  return `${l}${text ? `: ${text}` : ''}`;
+                                }).join(', ');
+                              })()}
+                            </p>
+                          ) : (
+                            <p className={`text-sm font-bold whitespace-pre-wrap leading-relaxed ${qType === 'essay' ? 'text-amber-900' : isCorrect ? 'text-emerald-700' : 'text-rose-700'}`}>
+                              {userAnswer}
                             </p>
                           )}
                         </div>
 
                         <div className="p-4 rounded-2xl border bg-indigo-50 border-indigo-200">
-                          <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-2">Kunci Jawaban</p>
-                          <p className="text-base font-black text-indigo-700">
-                            {correctKey}. {q.options?.[correctKey] || q.options?.[correctKey?.toLowerCase()] || '—'}
-                          </p>
+                          <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-2">Kunci / Panduan Jawaban</p>
+                          {qType === 'pg' ? (
+                            <p className="text-base font-black text-indigo-700">
+                              {(() => {
+                                const letters = correctKey.split('');
+                                return letters.map((l: string) => {
+                                  const text = q.options?.[l] || q.options?.[l.toLowerCase()] || '';
+                                  return `${l}${text ? `: ${text}` : ''}`;
+                                }).join(', ');
+                              })()}
+                            </p>
+                          ) : (
+                            <p className="text-sm font-bold text-indigo-700 whitespace-pre-wrap leading-relaxed">
+                              {correctKey}
+                            </p>
+                          )}
                         </div>
                       </div>
+
+                      {qType === 'essay' && !isEmpty && (
+                        <div className="mt-4 p-4 rounded-2xl border-2 border-dashed border-amber-200 bg-amber-50/30 text-left">
+                          <p className="text-[10px] font-black text-amber-700 uppercase tracking-widest mb-2 flex items-center gap-1">
+                            ⭐️ PENILAIAN JURI & APPROVAL
+                          </p>
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <span className="text-xs text-gray-500 font-bold">
+                              Berikan poin untuk jawaban ini (Maksimal: <span className="font-black text-indigo-600">{q.weight || 4}</span> poin)
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="number"
+                                min="0"
+                                max={q.weight || 4}
+                                step="0.5"
+                                value={essayGrades[q.id] !== undefined ? essayGrades[q.id] : ""}
+                                onChange={(e) => {
+                                  const val = Math.min(q.weight || 4, Math.max(0, Number(e.target.value) || 0));
+                                  setEssayGrades(prev => ({ ...prev, [q.id]: val }));
+                                }}
+                                className="w-24 px-3 py-1.5 bg-white border border-gray-300 rounded-xl font-bold text-center text-[#5145cd] focus:border-[#5145cd] focus:ring-1 focus:ring-[#5145cd]/20 text-sm shadow-sm"
+                                placeholder="Poin..."
+                              />
+                              <span className="text-xs font-bold text-gray-400">Poin</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })
               )}
+            </div>
+
+            {/* Footer Modal */}
+            <div className="bg-white px-8 py-4 border-t border-gray-100 flex justify-between items-center gap-4 flex-shrink-0">
+              <span className="text-xs font-bold text-gray-400">
+                * Pemberian poin essay membutuhkan klik tombol Simpan & Akumulasi Skor di sebelah kanan.
+              </span>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowReview(false)}
+                  className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-black uppercase tracking-widest rounded-xl transition-all"
+                >
+                  Tutup
+                </button>
+                <button
+                  onClick={handleSaveEssayGrades}
+                  disabled={isSavingGrades}
+                  className="px-6 py-2.5 bg-[#5145cd] hover:bg-[#3d32a8] text-white text-xs font-black uppercase tracking-widest rounded-xl shadow-lg shadow-indigo-100 flex items-center gap-2 disabled:opacity-50 transition-all"
+                >
+                  {isSavingGrades ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : '💾 Simpan & Akumulasi Skor'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

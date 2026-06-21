@@ -243,34 +243,53 @@ export default function ExamRoom() {
         const { correct_point, penalty_point, empty_point } = examConfig;
         questions.forEach(q => {
           const userAnswer = answers[q.id] || '';
-          
-          // Cek jika ada custom option points di q.options.points
-          if (q.options && typeof q.options === 'object' && q.options.points) {
+          const qType = q.options?.type || 'pg';
+
+          if (qType === 'isian') {
             if (!userAnswer) {
               finalScore += empty_point;
             } else {
-              const selectedLetters = userAnswer.split('');
-              selectedLetters.forEach((l: string) => {
-                const pt = q.options.points[l];
-                if (pt !== undefined) {
-                  finalScore += Number(pt);
-                }
-              });
+              const correctAnswers = String(q.correct_answer || '').toUpperCase().split('|').map(x => x.trim());
+              const studentAns = String(userAnswer).trim().toUpperCase();
+              if (correctAnswers.includes(studentAns)) {
+                finalScore += Number(q.options?.points?.correct ?? 4);
+              } else {
+                finalScore += penalty_point <= 0 ? penalty_point : -penalty_point;
+              }
             }
+          } else if (qType === 'essay') {
+            const grades = (answers as any).essay_grades || {};
+            const score = Number(grades[q.id] || 0);
+            finalScore += score;
           } else {
-            // Penilaian standar
-            const correct = String(q.correct_answer || '').trim().toUpperCase();
-            const user    = String(userAnswer).trim().toUpperCase();
-
-            if (!user) {
-              // Soal tidak dijawab
-              finalScore += empty_point;
-            } else if (user === correct) {
-              // Jawaban benar
-              finalScore += correct_point;
+            // Cek jika ada custom option points di q.options.points
+            if (q.options && typeof q.options === 'object' && q.options.points) {
+              if (!userAnswer) {
+                finalScore += empty_point;
+              } else {
+                const selectedLetters = userAnswer.split('');
+                selectedLetters.forEach((l: string) => {
+                  const pt = q.options.points[l];
+                  if (pt !== undefined) {
+                    finalScore += Number(pt);
+                  }
+                });
+              }
             } else {
-              // Jawaban salah — penalty_point biasanya negatif atau 0
-              finalScore += penalty_point <= 0 ? penalty_point : -penalty_point;
+              // Penilaian standar
+              const correct = String(q.correct_answer || '').trim().toUpperCase();
+              const user    = String(userAnswer).trim().toUpperCase();
+
+              if (!user) {
+                // Soal tidak dijawab
+                finalScore += empty_point;
+              } else if (user === correct) {
+                // Jawaban benar
+                finalScore += correct_point;
+              } else {
+                // Jawaban salah — penalty_point biasanya negatif atau 0
+                finalScore += penalty_point <= 0 ? penalty_point : -penalty_point;
+              }
             }
           }
         });
@@ -470,9 +489,81 @@ export default function ExamRoom() {
                 </p>
                 {currentQ.image_url && <img src={currentQ.image_url} alt="Ilustrasi Soal" className="max-w-full h-auto rounded-xl border border-gray-100 mb-6 shadow-sm" />}
 
-                <div className="space-y-3 mt-8">
-                  {currentQ.options && Object.keys(currentQ.options).length > 0 ? (
-                    Object.keys(currentQ.options)
+                 <div className="space-y-3 mt-8">
+                  {(() => {
+                    const qType = currentQ.options?.type || 'pg';
+                    if (qType === 'isian') {
+                      return (
+                        <div className="w-full space-y-2">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block text-left">Tulis Jawaban Singkat Anda:</label>
+                          <input
+                            type="text"
+                            value={answers[currentQ.id] || ''}
+                            onChange={(e) => {
+                              setAnswers({ ...answers, [currentQ.id]: e.target.value });
+                              if (doubtfulAnswers[currentQ.id]) setDoubtfulAnswers(prev => ({ ...prev, [currentQ.id]: false }));
+                            }}
+                            onBlur={async () => {
+                              const val = answers[currentQ.id] || '';
+                              const userId = student?.id
+                                ? `NCC-${generateTicketCode(student.id)}`
+                                : (student?.nisn || student?.username);
+                              if (userId && examId && examId !== 'undefined') {
+                                await supabase.from('cbt_attempts').update({ 
+                                  answers: { ...answers, [currentQ.id]: val },
+                                  updated_at: new Date().toISOString() 
+                                }).eq('user_id', userId).eq('exam_id', examId);
+                              }
+                            }}
+                            placeholder="Ketik jawaban Anda di sini..."
+                            className="w-full p-4 bg-white border-2 border-gray-100 rounded-2xl outline-none focus:border-[#5145cd] font-medium text-sm transition-all shadow-sm"
+                          />
+                        </div>
+                      );
+                    }
+                    if (qType === 'essay') {
+                      return (
+                        <div className="w-full space-y-2">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block text-left">Tulis Jawaban Essay Anda:</label>
+                          <textarea
+                            value={answers[currentQ.id] || ''}
+                            onChange={(e) => {
+                              setAnswers({ ...answers, [currentQ.id]: e.target.value });
+                              if (doubtfulAnswers[currentQ.id]) setDoubtfulAnswers(prev => ({ ...prev, [currentQ.id]: false }));
+                            }}
+                            onBlur={async () => {
+                              const val = answers[currentQ.id] || '';
+                              const userId = student?.id
+                                ? `NCC-${generateTicketCode(student.id)}`
+                                : (student?.nisn || student?.username);
+                              if (userId && examId && examId !== 'undefined') {
+                                await supabase.from('cbt_attempts').update({ 
+                                  answers: { ...answers, [currentQ.id]: val },
+                                  updated_at: new Date().toISOString() 
+                                }).eq('user_id', userId).eq('exam_id', examId);
+                              }
+                            }}
+                            placeholder="Tulis jawaban essay Anda secara lengkap di sini..."
+                            className="w-full h-48 p-4 bg-white border-2 border-gray-100 rounded-2xl outline-none focus:border-[#5145cd] font-medium text-sm transition-all resize-none shadow-sm"
+                          />
+                        </div>
+                      );
+                    }
+                    
+                    // PG
+                    const hasOptions = currentQ.options && Object.keys(currentQ.options).length > 0;
+                    if (!hasOptions) {
+                      return (
+                        <div className="w-full p-5 bg-amber-50 border-2 border-amber-200 border-dashed rounded-2xl flex items-center text-amber-600">
+                          <ExclamationTriangleIcon className="w-6 h-6 mr-3 flex-shrink-0" />
+                          <div>
+                            <p className="text-xs font-black uppercase tracking-widest">Opsi Kosong</p>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return Object.keys(currentQ.options)
                       .filter(key => key.length === 1 && key >= 'A' && key <= 'Z')
                       .sort()
                       .map((letter) => {
@@ -496,15 +587,8 @@ export default function ExamRoom() {
                             <span className={`text-sm font-medium ${isSelected ? 'text-indigo-900' : 'text-gray-700'}`}>{optionText}</span>
                           </button>
                         );
-                      })
-                  ) : (
-                    <div className="w-full p-5 bg-amber-50 border-2 border-amber-200 border-dashed rounded-2xl flex items-center text-amber-600">
-                      <ExclamationTriangleIcon className="w-6 h-6 mr-3 flex-shrink-0" />
-                      <div>
-                        <p className="text-xs font-black uppercase tracking-widest">Opsi Kosong</p>
-                      </div>
-                    </div>
-                  )}
+                      });
+                  })()}
                 </div>
               </div>
 

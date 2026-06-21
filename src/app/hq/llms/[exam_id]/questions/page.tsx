@@ -34,7 +34,16 @@ const renderMath = (text: string) => {
 };
 
 const isCorrectAnswerValid = (item: any) => {
-  if (!item || !item.correct_answer) return false;
+  if (!item) return false;
+  const qType = item.options?.type || 'pg';
+  if (qType === 'isian') {
+    return !!item.correct_answer && String(item.correct_answer).trim().length > 0;
+  }
+  if (qType === 'essay') {
+    return true;
+  }
+  // PG
+  if (!item.correct_answer) return false;
   const letters = String(item.correct_answer).toUpperCase().split('');
   if (letters.length === 0) return false;
   return letters.every((l: string) => item.options?.[l] !== undefined);
@@ -52,6 +61,9 @@ export default function EditorBankSoal() {
   const [visibleOptions, setVisibleOptions] = useState<string[]>(['A', 'B', 'C', 'D', 'E']);
   const [optionPoints, setOptionPoints] = useState<Record<string, number>>({ A: 4, B: 0, C: 0, D: 0, E: 0 });
   const [difficulty, setDifficulty] = useState('Medium');
+  const [questionType, setQuestionType] = useState<'pg' | 'isian' | 'essay'>('pg');
+  const [shortAnswerKey, setShortAnswerKey] = useState('');
+  const [essayGuide, setEssayGuide] = useState('');
 
   const toggleKunciJawaban = (huruf: string) => {
     let current = kunciJawaban ? kunciJawaban.toUpperCase() : '';
@@ -143,16 +155,22 @@ export default function EditorBankSoal() {
   // 🚀 3. FUNGSI UTAMA: SIMPAN (CREATE / UPDATE) DATA SOAL
   const handleSimpanSoal = async () => {
     if (!soal && !imageFile) return alert("Konten soal teks atau gambar wajib ada!");
-    if (!opsi.A || !opsi.B) return alert("Opsi jawaban A dan B minimal harus diisi!");
     
-    // Validasi: pastikan opsi yang dipilih sebagai kunci jawaban tidak kosong
-    const correctLetters = (kunciJawaban || '').split('');
-    if (correctLetters.length === 0) {
-      return alert("Pilih minimal satu kunci jawaban!");
-    }
-    for (const letter of correctLetters) {
-      if (!opsi[letter as keyof typeof opsi]) {
-        return alert(`Opsi ${letter} yang dipilih sebagai kunci jawaban masih kosong! Isi terlebih dahulu teks untuk opsi ${letter}.`);
+    if (questionType === 'pg') {
+      if (!opsi.A || !opsi.B) return alert("Opsi jawaban A dan B minimal harus diisi!");
+      // Validasi: pastikan opsi yang dipilih sebagai kunci jawaban tidak kosong
+      const correctLetters = (kunciJawaban || '').split('');
+      if (correctLetters.length === 0) {
+        return alert("Pilih minimal satu kunci jawaban!");
+      }
+      for (const letter of correctLetters) {
+        if (!opsi[letter]) {
+          return alert(`Opsi ${letter} yang dipilih sebagai kunci jawaban masih kosong! Isi terlebih dahulu teks untuk opsi ${letter}.`);
+        }
+      }
+    } else if (questionType === 'isian') {
+      if (!shortAnswerKey.trim()) {
+        return alert("Kunci jawaban isian singkat wajib diisi!");
       }
     }
 
@@ -180,17 +198,30 @@ export default function EditorBankSoal() {
       }
 
       const finalOptions: Record<string, any> = {
+        type: questionType,
         points: optionPoints
       };
-      visibleOptions.forEach(opt => {
-        finalOptions[opt] = opsi[opt] || '';
-      });
+
+      if (questionType === 'pg') {
+        visibleOptions.forEach(opt => {
+          finalOptions[opt] = opsi[opt] || '';
+        });
+      }
+
+      let finalCorrectAnswer = '';
+      if (questionType === 'pg') {
+        finalCorrectAnswer = kunciJawaban;
+      } else if (questionType === 'isian') {
+        finalCorrectAnswer = shortAnswerKey;
+      } else {
+        finalCorrectAnswer = essayGuide;
+      }
 
       const payload = {
         question_text: soal,
         image_url: finalImageUrl,
         options: finalOptions,
-        correct_answer: kunciJawaban,
+        correct_answer: finalCorrectAnswer,
         difficulty: difficulty,
         weight: 1, // Default weight (1x multiplier)
         status: 'Published'
@@ -231,62 +262,80 @@ export default function EditorBankSoal() {
   const pemicuEditSoal = (item: any) => {
     setEditingId(item.id);
     
-    // Deteksi apakah data rusak dari CSV (correct_answer berisi karakter selain A-E atau kunci tidak valid)
-    const isDataRusak = !item.correct_answer || 
-      /[^A-E]/i.test(item.correct_answer) ||
-      !isCorrectAnswerValid(item);
+    const qType = item.options?.type || 'pg';
+    setQuestionType(qType);
 
-    if (isDataRusak) {
-      // Data rusak: muat teks soal saja, kosongkan semua opsi & kunci agar admin bisa isi ulang
-      setSoal(item.question_text || '');
-      setOpsi({ A: '', B: '', C: '', D: '', E: '' });
-      setKunciJawaban('A');
-      setVisibleOptions(['A', 'B', 'C', 'D', 'E']);
-      setOptionPoints({ A: 4, B: 0, C: 0, D: 0, E: 0 });
-      setDifficulty(item.difficulty || 'Medium');
-      setImagePreviewUrl(item.image_url || null);
-      setImageFile(null);
-      // Tampilkan peringatan
-      showToast('⚠️ Data soal ini rusak dari impor CSV. Silakan isi ulang opsi jawaban A-E dan tentukan kunci jawaban.', 'error');
-    } else {
-      // Data normal: muat semua data ke form
-      setSoal(item.question_text);
-      
-      // Deteksi opsi yang ada secara dinamis (A-Z dengan panjang 1)
-      const optionKeys = Object.keys(item.options || {})
-        .filter(key => key.length === 1 && key >= 'A' && key <= 'Z')
-        .sort();
-      
-      const finalOptionKeys = optionKeys.length >= 2 ? optionKeys : ['A', 'B', 'C', 'D', 'E'];
-      setVisibleOptions(finalOptionKeys);
+    if (qType === 'pg') {
+      // Deteksi apakah data rusak dari CSV (correct_answer berisi karakter selain A-E atau kunci tidak valid)
+      const isDataRusak = !item.correct_answer || 
+        /[^A-E]/i.test(item.correct_answer) ||
+        !isCorrectAnswerValid(item);
 
-      const loadedOpsi: Record<string, string> = {};
-      finalOptionKeys.forEach(k => {
-        loadedOpsi[k] = item.options?.[k] || '';
-      });
-      setOpsi(loadedOpsi);
-      
-      setKunciJawaban(item.correct_answer);
-      setDifficulty(item.difficulty || 'Medium');
-      setImagePreviewUrl(item.image_url || null);
-      setImageFile(null);
+      if (isDataRusak) {
+        // Data rusak: muat teks soal saja, kosongkan semua opsi & kunci agar admin bisa isi ulang
+        setSoal(item.question_text || '');
+        setOpsi({ A: '', B: '', C: '', D: '', E: '' });
+        setKunciJawaban('A');
+        setVisibleOptions(['A', 'B', 'C', 'D', 'E']);
+        setOptionPoints({ A: 4, B: 0, C: 0, D: 0, E: 0 });
+        setDifficulty(item.difficulty || 'Medium');
+        setImagePreviewUrl(item.image_url || null);
+        setImageFile(null);
+        showToast('⚠️ Data soal ini rusak dari impor CSV. Silakan isi ulang opsi jawaban A-E dan tentukan kunci jawaban.', 'error');
+      } else {
+        // Data normal: muat semua data ke form
+        setSoal(item.question_text);
+        
+        // Deteksi opsi yang ada secara dinamis (A-Z dengan panjang 1)
+        const optionKeys = Object.keys(item.options || {})
+          .filter(key => key.length === 1 && key >= 'A' && key <= 'Z')
+          .sort();
+        
+        const finalOptionKeys = optionKeys.length >= 2 ? optionKeys : ['A', 'B', 'C', 'D', 'E'];
+        setVisibleOptions(finalOptionKeys);
 
-      // Load custom points if present, otherwise set default points based on correct_answer
-      const loadedPoints: Record<string, number> = {};
-      finalOptionKeys.forEach(k => {
-        loadedPoints[k] = Number(item.options?.points?.[k] ?? 0);
-      });
-
-      if (!item.options?.points) {
-        const correctLetters = (item.correct_answer || '').toUpperCase().split('');
-        correctLetters.forEach((l: string) => {
-          if (loadedPoints[l] !== undefined) {
-            loadedPoints[l] = 4; // Default to 4 points for correct answers
-          }
+        const loadedOpsi: Record<string, string> = {};
+        finalOptionKeys.forEach(k => {
+          loadedOpsi[k] = item.options?.[k] || '';
         });
+        setOpsi(loadedOpsi);
+        
+        setKunciJawaban(item.correct_answer);
+        setDifficulty(item.difficulty || 'Medium');
+        setImagePreviewUrl(item.image_url || null);
+        setImageFile(null);
+
+        // Load custom points if present, otherwise set default points based on correct_answer
+        const loadedPoints: Record<string, number> = {};
+        finalOptionKeys.forEach(k => {
+          loadedPoints[k] = Number(item.options?.points?.[k] ?? 0);
+        });
+
+        if (!item.options?.points) {
+          const correctLetters = (item.correct_answer || '').toUpperCase().split('');
+          correctLetters.forEach((l: string) => {
+            if (loadedPoints[l] !== undefined) {
+              loadedPoints[l] = 4; // Default to 4 points for correct answers
+            }
+          });
+        }
+        setOptionPoints(loadedPoints);
       }
-      setOptionPoints(loadedPoints);
+    } else if (qType === 'isian') {
+      setSoal(item.question_text || '');
+      setShortAnswerKey(item.correct_answer || '');
+      setOptionPoints({ correct: Number(item.options?.points?.correct ?? 4) });
+      setDifficulty(item.difficulty || 'Medium');
+      setImagePreviewUrl(item.image_url || null);
+      setImageFile(null);
+    } else if (qType === 'essay') {
+      setSoal(item.question_text || '');
+      setEssayGuide(item.correct_answer || '');
+      setDifficulty(item.difficulty || 'Medium');
+      setImagePreviewUrl(item.image_url || null);
+      setImageFile(null);
     }
+
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -349,19 +398,40 @@ export default function EditorBankSoal() {
           const opsiE         = kolom[5] || '';
           const rawKunci      = (kolom[6] || '').trim().toUpperCase();
           const rawDifficulty = (kolom[7] || '').trim();
+          const rawType       = (kolom[8] || '').trim().toLowerCase();
+          const type          = ['pg', 'isian', 'essay'].includes(rawType) ? rawType : 'pg';
 
-          // Validasi: kunci jawaban harus tepat 1 huruf A-E
-          const validKunci = ['A','B','C','D','E'].includes(rawKunci) ? rawKunci : null;
-          if (!validKunci) {
-            errorRows.push(i);
-            skippedCount++;
-            continue; // Lewati baris ini, jangan impor
-          }
-
-          // Validasi: soal dan opsi A tidak boleh kosong
-          if (!soalText || !opsiA) {
-            skippedCount++;
-            continue;
+          // Validasi Kunci Jawaban
+          let validKunci = '';
+          if (type === 'pg') {
+            validKunci = /^[A-J]+$/i.test(rawKunci) ? rawKunci.toUpperCase() : '';
+            if (!validKunci) {
+              errorRows.push(i);
+              skippedCount++;
+              continue;
+            }
+            if (!soalText || !opsiA || !opsiB) {
+              skippedCount++;
+              continue;
+            }
+          } else if (type === 'isian') {
+            validKunci = (kolom[6] || '').trim();
+            if (!validKunci) {
+              errorRows.push(i);
+              skippedCount++;
+              continue;
+            }
+            if (!soalText) {
+              skippedCount++;
+              continue;
+            }
+          } else {
+            // essay
+            validKunci = (kolom[6] || '').trim(); // Opsional panduan
+            if (!soalText) {
+              skippedCount++;
+              continue;
+            }
           }
 
           // Normalisasi tingkat kesulitan
@@ -372,16 +442,30 @@ export default function EditorBankSoal() {
           };
           const difficulty = diffMap[rawDifficulty.toLowerCase()] || 'Medium';
 
+          const optionsObj: Record<string, any> = {
+            type
+          };
+
+          if (type === 'pg') {
+            optionsObj.A = opsiA;
+            optionsObj.B = opsiB;
+            if (opsiC) optionsObj.C = opsiC;
+            if (opsiD) optionsObj.D = opsiD;
+            if (opsiE) optionsObj.E = opsiE;
+            optionsObj.points = { A: 4, B: 0, C: 0, D: 0, E: 0 };
+            // Assign default points
+            const letters = validKunci.split('');
+            letters.forEach(l => {
+              optionsObj.points[l] = 4;
+            });
+          } else if (type === 'isian') {
+            optionsObj.points = { correct: 4 };
+          }
+
           dataInsert.push({
             exam_id: examId,
             question_text: soalText,
-            options: {
-              A: opsiA,
-              B: opsiB,
-              C: opsiC || null,
-              D: opsiD || null,
-              E: opsiE || null,
-            },
+            options: optionsObj,
             correct_answer: validKunci,
             difficulty,
             weight: 1,
@@ -429,8 +513,12 @@ export default function EditorBankSoal() {
     setSoal('');
     setOpsi({ A: '', B: '', C: '', D: '', E: '' });
     setKunciJawaban('A');
+    setVisibleOptions(['A', 'B', 'C', 'D', 'E']);
     setOptionPoints({ A: 4, B: 0, C: 0, D: 0, E: 0 });
     setDifficulty('Medium');
+    setQuestionType('pg');
+    setShortAnswerKey('');
+    setEssayGuide('');
     setEditingId(null);
     setImageFile(null);
     setImagePreviewUrl(null);
@@ -517,68 +605,125 @@ export default function EditorBankSoal() {
               )}
             </div>
 
-            {/* Input Narasi/Soal */}
-            <textarea
-              value={soal} onChange={(e) => setSoal(e.target.value)}
-              placeholder="Ketik deskripsi soal di sini... Gunakan $...$ untuk menyisipkan formula rumusan matematika."
-              className="w-full h-32 p-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none resize-none transition-all text-sm"
-            />
-
-            {/* Input Pilihan Ganda */}
-            <div className="space-y-3">
-              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 flex justify-between">
-                <span>Pernyataan Opsi & Kunci Jawaban</span>
-                <span>Atur Poin Opsi</span>
-              </div>
-              {visibleOptions.map((huruf) => {
-                const isSelected = (kunciJawaban || '').includes(huruf);
-                return (
-                  <div key={huruf} className={`flex items-center p-1.5 rounded-xl border transition-all ${isSelected ? 'border-indigo-400 bg-indigo-50/40 ring-1 ring-indigo-400' : 'border-gray-200 bg-white'}`}>
-                    <input 
-                      type="checkbox" 
-                      checked={isSelected} 
-                      onChange={() => toggleKunciJawaban(huruf)}
-                      className="w-4 h-4 text-indigo-600 rounded mx-4 cursor-pointer focus:ring-indigo-500"
-                    />
-                    <span className={`font-bold w-6 ${isSelected ? 'text-indigo-600' : 'text-gray-400'}`}>{huruf}</span>
-                    <input
-                      type="text" value={opsi[huruf] || ''} onChange={(e) => setOpsi({ ...opsi, [huruf]: e.target.value })}
-                      placeholder={`Isi opsi jawaban ${huruf}...`}
-                      className="w-full bg-transparent outline-none text-gray-700 placeholder-gray-300 py-2 text-sm"
-                    />
-                    <div className="flex items-center space-x-2 border-l border-gray-100 pl-3 pr-2 shrink-0">
-                      <span className="text-[10px] font-bold text-gray-400 uppercase">Poin:</span>
-                      <input
-                        type="number"
-                        value={optionPoints[huruf] ?? 0}
-                        onChange={(e) => setOptionPoints({ ...optionPoints, [huruf]: Number(e.target.value) })}
-                        className="w-14 text-center bg-gray-50 border border-gray-200 rounded-lg py-1 text-xs font-bold text-gray-700 outline-none focus:ring-1 focus:ring-indigo-500"
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-
-              {/* Tombol Tambah/Kurang Opsi secara Dinamis */}
-              <div className="flex space-x-2 pt-2">
-                <button
-                  type="button"
-                  onClick={handleAddOption}
-                  disabled={visibleOptions.length >= 10}
-                  className="flex-grow py-2 px-3 border border-indigo-200 bg-indigo-50/30 hover:bg-indigo-50 text-[#5145cd] text-xs font-bold rounded-xl transition-all disabled:opacity-50"
-                >
-                  + Tambah Opsi Pilihan
-                </button>
-                <button
-                  type="button"
-                  onClick={handleRemoveOption}
-                  disabled={visibleOptions.length <= 2}
-                  className="flex-grow py-2 px-3 border border-rose-200 bg-rose-50/30 hover:bg-rose-50 text-rose-600 text-xs font-bold rounded-xl transition-all disabled:opacity-50"
-                >
-                  - Kurangi Opsi Pilihan
-                </button>
-              </div>
+            {/* Tipe Soal Dropdown */}
+            <div className="space-y-1 text-left">
+              <label className="text-xs font-bold text-gray-500 uppercase">Tipe Soal</label>
+              <select
+                value={questionType}
+                onChange={(e) => setQuestionType(e.target.value as any)}
+                className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-700 outline-none text-sm font-medium focus:ring-1 focus:ring-indigo-500"
+              >
+                <option value="pg">Pilihan Ganda (Single / Kompleks)</option>
+                <option value="isian">Isian Singkat (Auto-Graded)</option>
+                <option value="essay">Essai Bebas (Manual-Graded)</option>
+              </select>
             </div>
+
+            {/* Input Narasi/Soal */}
+            <div className="space-y-1 text-left">
+              <label className="text-xs font-bold text-gray-500 uppercase">Narasi / Teks Soal</label>
+              <textarea
+                value={soal} onChange={(e) => setSoal(e.target.value)}
+                placeholder="Ketik deskripsi soal di sini... Gunakan $...$ untuk menyisipkan formula rumusan matematika."
+                className="w-full h-32 p-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none resize-none transition-all text-sm"
+              />
+            </div>
+
+            {/* Render Form Berdasarkan Tipe Soal */}
+            {questionType === 'pg' && (
+              <div className="space-y-3">
+                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 flex justify-between">
+                  <span>Pernyataan Opsi & Kunci Jawaban</span>
+                  <span>Atur Poin Opsi</span>
+                </div>
+                {visibleOptions.map((huruf) => {
+                  const isSelected = (kunciJawaban || '').includes(huruf);
+                  return (
+                    <div key={huruf} className={`flex items-center p-1.5 rounded-xl border transition-all ${isSelected ? 'border-indigo-400 bg-indigo-50/40 ring-1 ring-indigo-400' : 'border-gray-200 bg-white'}`}>
+                      <input 
+                        type="checkbox" 
+                        checked={isSelected} 
+                        onChange={() => toggleKunciJawaban(huruf)}
+                        className="w-4 h-4 text-indigo-600 rounded mx-4 cursor-pointer focus:ring-indigo-500"
+                      />
+                      <span className={`font-bold w-6 ${isSelected ? 'text-indigo-600' : 'text-gray-400'}`}>{huruf}</span>
+                      <input
+                        type="text" value={opsi[huruf] || ''} onChange={(e) => setOpsi({ ...opsi, [huruf]: e.target.value })}
+                        placeholder={`Isi opsi jawaban ${huruf}...`}
+                        className="w-full bg-transparent outline-none text-gray-700 placeholder-gray-300 py-2 text-sm"
+                      />
+                      <div className="flex items-center space-x-2 border-l border-gray-100 pl-3 pr-2 shrink-0">
+                        <span className="text-[10px] font-bold text-gray-400 uppercase">Poin:</span>
+                        <input
+                          type="number"
+                          value={optionPoints[huruf] ?? 0}
+                          onChange={(e) => setOptionPoints({ ...optionPoints, [huruf]: Number(e.target.value) })}
+                          className="w-14 text-center bg-gray-50 border border-gray-200 rounded-lg py-1 text-xs font-bold text-gray-700 outline-none focus:ring-1 focus:ring-indigo-500"
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* Tombol Tambah/Kurang Opsi secara Dinamis */}
+                <div className="flex space-x-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={handleAddOption}
+                    disabled={visibleOptions.length >= 10}
+                    className="flex-grow py-2 px-3 border border-indigo-200 bg-indigo-50/30 hover:bg-indigo-50 text-[#5145cd] text-xs font-bold rounded-xl transition-all disabled:opacity-50"
+                  >
+                    + Tambah Opsi Pilihan
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleRemoveOption}
+                    disabled={visibleOptions.length <= 2}
+                    className="flex-grow py-2 px-3 border border-rose-200 bg-rose-50/30 hover:bg-rose-50 text-rose-600 text-xs font-bold rounded-xl transition-all disabled:opacity-50"
+                  >
+                    - Kurangi Opsi Pilihan
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {questionType === 'isian' && (
+              <div className="space-y-4 text-left">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-500 uppercase">Kunci Jawaban Singkat (Auto-Graded)</label>
+                  <input
+                    type="text"
+                    value={shortAnswerKey}
+                    onChange={(e) => setShortAnswerKey(e.target.value)}
+                    placeholder="Contoh: Jakarta (Gunakan | untuk alternatif, misal: Jakarta|DKI Jakarta)"
+                    className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none text-sm font-medium transition-all"
+                  />
+                  <p className="text-[10px] text-gray-400 font-medium">Penilaian bersifat tidak sensitif huruf besar/kecil (*case-insensitive*).</p>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-500 uppercase">Poin Jawaban Benar</label>
+                  <input
+                    type="number"
+                    value={optionPoints.correct ?? 4}
+                    onChange={(e) => setOptionPoints({ ...optionPoints, correct: Number(e.target.value) })}
+                    className="w-32 p-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-700 outline-none text-sm font-bold text-center focus:ring-1 focus:ring-indigo-500"
+                  />
+                </div>
+              </div>
+            )}
+
+            {questionType === 'essay' && (
+              <div className="space-y-2 text-left">
+                <label className="text-xs font-bold text-gray-500 uppercase">Panduan Penilaian Juri / Catatan Kunci (Opsional)</label>
+                <textarea
+                  value={essayGuide}
+                  onChange={(e) => setEssayGuide(e.target.value)}
+                  placeholder="Ketik panduan jawaban atau kata kunci penting untuk membantu juri menilai..."
+                  className="w-full h-36 p-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none resize-none transition-all text-sm"
+                />
+                <p className="text-[10px] text-gray-400 font-medium">Soal Essai Bebas dinilai secara manual oleh juri, skor otomatis awal dari sistem adalah 0.</p>
+              </div>
+            )}
           </div>
 
           {/* AKSI TOMBOL UTAMA */}
@@ -632,7 +777,7 @@ export default function EditorBankSoal() {
             />
 
             <div className="space-y-3 mt-auto">
-              {visibleOptions.map((huruf) => {
+              {questionType === 'pg' && visibleOptions.map((huruf) => {
                 const isCorrect = (kunciJawaban || '').includes(huruf);
                 const isMultiSelect = (kunciJawaban || '').length > 1;
                 return (
@@ -655,6 +800,40 @@ export default function EditorBankSoal() {
                   </div>
                 );
               })}
+
+              {questionType === 'isian' && (
+                <div className="w-full space-y-2">
+                  <input
+                    type="text"
+                    disabled
+                    placeholder="Kolom jawaban isian singkat peserta..."
+                    className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl outline-none font-medium text-sm text-gray-400 cursor-not-allowed"
+                  />
+                  {shortAnswerKey.trim() && (
+                    <div className="p-3.5 bg-indigo-50/50 border border-indigo-100 rounded-xl text-xs text-indigo-700 font-semibold leading-relaxed">
+                      Kunci Jawaban: <span className="font-bold">{shortAnswerKey}</span>
+                      <br/>
+                      Poin Jawaban Benar: <span className="font-bold">{optionPoints.correct ?? 4} Poin</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {questionType === 'essay' && (
+                <div className="w-full space-y-2">
+                  <textarea
+                    disabled
+                    placeholder="Kolom jawaban essay panjang peserta..."
+                    className="w-full h-32 p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl outline-none font-medium text-sm text-gray-400 resize-none cursor-not-allowed"
+                  />
+                  {essayGuide.trim() && (
+                    <div className="p-3.5 bg-amber-50/50 border border-amber-100 rounded-xl text-xs text-amber-800 font-semibold leading-relaxed">
+                      Panduan Penilaian Juri:
+                      <p className="mt-1 font-medium whitespace-pre-wrap">{essayGuide}</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -710,56 +889,82 @@ export default function EditorBankSoal() {
                     : 'border-gray-100'}`}>
                 
                 <div className="flex-grow w-full md:pr-6 text-left">
-                  <div className="flex items-center mb-3 flex-wrap gap-2">
-                    <span className="bg-slate-800 text-white text-xs font-bold px-2.5 py-1 rounded-md">Soal {daftarSoal.length - index}</span>
-                    <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded border
-                      ${item.difficulty === 'Hard' ? 'bg-red-50 text-red-600 border-red-100' : 
-                        item.difficulty === 'Easy' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
-                        'bg-amber-50 text-amber-600 border-amber-100'}`}>
-                      {item.difficulty || 'Medium'}
-                    </span>
-                    {/* Badge peringatan jika belum ada kunci jawaban */}
-                    {!isCorrectAnswerValid(item) && (
-                      <span className="flex items-center gap-1 text-[10px] font-black uppercase px-2 py-0.5 rounded border bg-rose-50 text-rose-600 border-rose-200">
-                        <XCircle className="w-3 h-3" /> Belum Ada Kunci Jawaban
-                      </span>
-                    )}
-                    {/* Badge konfirmasi jika kunci jawaban sudah ada */}
-                    {isCorrectAnswerValid(item) && (
-                      <span className="flex items-center gap-1 text-[10px] font-black uppercase px-2 py-0.5 rounded border bg-emerald-50 text-emerald-600 border-emerald-200">
-                        <CheckCircle className="w-3 h-3" /> Kunci: {item.correct_answer}
-                      </span>
-                    )}
-                  </div>
-                  
-                  {item.image_url && <img src={item.image_url} alt="Media" className="h-16 rounded-lg border border-gray-200 mb-3 object-cover" />}
-                  <div 
-                    className="text-gray-800 mb-4 text-sm font-medium prose-sm"
-                    dangerouslySetInnerHTML={{ __html: renderMath(item.question_text) }}
-                  />
-                  
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs text-gray-600">
-                    {Object.keys(item.options || {})
-                      .filter(key => key.length === 1 && key >= 'A' && key <= 'Z')
-                      .sort()
-                      .map((opt) => {
-                        const val = item.options?.[opt];
-                        const isCorrect = String(item.correct_answer || '').toUpperCase().includes(opt);
-                        if (!val) return null;
-                        return (
-                          <div key={opt} className={`p-2 rounded border ${isCorrect ? 'bg-emerald-50 border-emerald-200 text-emerald-800 font-bold' : 'bg-gray-50 border-gray-100'}`}>
-                            <div className="flex justify-between items-start">
-                              <span>{opt}. <span dangerouslySetInnerHTML={{ __html: renderMath(val) }} /></span>
-                              {item.options?.points?.[opt] !== undefined && item.options.points[opt] !== 0 && (
-                                <span className="text-[9px] text-indigo-500 font-bold bg-indigo-50 px-1 py-0.5 rounded shrink-0 ml-1">
-                                  {item.options.points[opt]}p
-                                </span>
-                              )}
-                            </div>
+                  {(() => {
+                    const qType = item.options?.type || 'pg';
+                    return (
+                      <>
+                        <div className="flex items-center mb-3 flex-wrap gap-2">
+                          <span className="bg-slate-800 text-white text-xs font-bold px-2.5 py-1 rounded-md">Soal {daftarSoal.length - index}</span>
+                          <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded border
+                            ${item.difficulty === 'Hard' ? 'bg-red-50 text-red-600 border-red-100' : 
+                              item.difficulty === 'Easy' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
+                              'bg-amber-50 text-amber-600 border-amber-100'}`}>
+                            {item.difficulty || 'Medium'}
+                          </span>
+                          <span className="bg-indigo-50 text-indigo-700 text-[10px] font-bold uppercase px-2 py-0.5 rounded border border-indigo-100">
+                            {qType === 'pg' ? 'Pilihan Ganda' : qType === 'isian' ? 'Isian Singkat' : 'Essai Bebas'}
+                          </span>
+                          {/* Badge peringatan jika belum ada kunci jawaban */}
+                          {!isCorrectAnswerValid(item) && (
+                            <span className="flex items-center gap-1 text-[10px] font-black uppercase px-2 py-0.5 rounded border bg-rose-50 text-rose-600 border-rose-200">
+                              <XCircle className="w-3 h-3" /> Belum Ada Kunci Jawaban
+                            </span>
+                          )}
+                          {/* Badge konfirmasi jika kunci jawaban sudah ada */}
+                          {isCorrectAnswerValid(item) && qType !== 'essay' && (
+                            <span className="flex items-center gap-1 text-[10px] font-black uppercase px-2 py-0.5 rounded border bg-emerald-50 text-emerald-600 border-emerald-200">
+                              <CheckCircle className="w-3 h-3" /> Kunci: {item.correct_answer}
+                            </span>
+                          )}
+                        </div>
+                        
+                        {item.image_url && <img src={item.image_url} alt="Media" className="h-16 rounded-lg border border-gray-200 mb-3 object-cover" />}
+                        <div 
+                          className="text-gray-800 mb-4 text-sm font-medium prose-sm"
+                          dangerouslySetInnerHTML={{ __html: renderMath(item.question_text) }}
+                        />
+                        
+                        {qType === 'pg' && (
+                          <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs text-gray-600">
+                            {Object.keys(item.options || {})
+                              .filter(key => key.length === 1 && key >= 'A' && key <= 'Z')
+                              .sort()
+                              .map((opt) => {
+                                const val = item.options?.[opt];
+                                const isCorrect = String(item.correct_answer || '').toUpperCase().includes(opt);
+                                if (!val) return null;
+                                return (
+                                  <div key={opt} className={`p-2 rounded border ${isCorrect ? 'bg-emerald-50 border-emerald-200 text-emerald-800 font-bold' : 'bg-gray-50 border-gray-100'}`}>
+                                    <div className="flex justify-between items-start">
+                                      <span>{opt}. <span dangerouslySetInnerHTML={{ __html: renderMath(val) }} /></span>
+                                      {item.options?.points?.[opt] !== undefined && item.options.points[opt] !== 0 && (
+                                        <span className="text-[9px] text-indigo-500 font-bold bg-indigo-50 px-1 py-0.5 rounded shrink-0 ml-1">
+                                          {item.options.points[opt]}p
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                )
+                              })}
                           </div>
-                        )
-                      })}
-                  </div>
+                        )}
+
+                        {qType === 'isian' && (
+                          <div className="p-3 bg-indigo-50/30 border border-indigo-100 rounded-xl text-xs text-indigo-700 font-semibold max-w-md">
+                            Alternatif Kunci Jawaban: <span className="font-bold">{item.correct_answer || '—'}</span>
+                            <br/>
+                            Bobot Poin: <span className="font-bold">{item.options?.points?.correct ?? 4} Poin</span>
+                          </div>
+                        )}
+
+                        {qType === 'essay' && (
+                          <div className="p-3 bg-amber-50/30 border border-amber-100 rounded-xl text-xs text-amber-800 font-semibold max-w-md">
+                            Panduan Penilaian Juri: <span className="font-bold">{item.correct_answer || '—'}</span>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
 
                   {/* Peringatan inline jika tidak ada kunci jawaban */}
                   {!isCorrectAnswerValid(item) && (

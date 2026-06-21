@@ -32,32 +32,32 @@ export default function TutorialCSV() {
   const downloadTemplate = () => {
     // Template dengan kutip ganda agar aman untuk semua teks
     const lines = [
-      `"Soal","Opsi A","Opsi B","Opsi C","Opsi D","Opsi E","Kunci Jawaban","Tingkat Kesulitan"`,
-      `"Siapakah penemu bola lampu?","Thomas Edison","Isaac Newton","Albert Einstein","Nikola Tesla","James Watt","A","MUDAH"`,
-      `"Jika semua kucing adalah hewan dan Milo adalah kucing, maka...","Milo adalah hewan","Milo bukan hewan","Milo adalah manusia","Semua hewan adalah kucing","Tidak bisa disimpulkan","A","SEDANG"`,
-      `"Berapakah hasil dari $2x + 3 = 7$, nilai x adalah...","1","2","3","4","5","B","MUDAH"`,
+      `"Soal","Opsi A","Opsi B","Opsi C","Opsi D","Opsi E","Kunci Jawaban","Tingkat Kesulitan","Tipe Soal"`,
+      `"Siapakah penemu bola lampu?","Thomas Edison","Isaac Newton","Albert Einstein","Nikola Tesla","James Watt","A","MUDAH","pg"`,
+      `"Apakah ibukota dari negara Indonesia?","","","","","","Jakarta|DKI Jakarta","MUDAH","isian"`,
+      `"Jelaskan bagaimana proses terjadinya siklus hujan secara singkat!","","","","","","Kunci: evaporasi, kondensasi, presipitasi","SEDANG","essay"`,
     ];
     const csvContent = "data:text/csv;charset=utf-8," + lines.join('\n');
     const link = document.createElement("a");
     link.setAttribute("href", encodeURI(csvContent));
-    link.setAttribute("download", "Template_Soal_NCC13_v2.csv");
+    link.setAttribute("download", "Template_Soal_NCC13_v3.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
-  const correctExample = `"Soal","Opsi A","Opsi B","Opsi C","Opsi D","Opsi E","Kunci Jawaban","Tingkat Kesulitan"
-"Jika x > y dan y > z, manakah yang pasti benar?","x < z","x = z","x > z","x + y = z","Tidak dapat ditentukan","C","SEDANG"
-"Siapakah penemu mesin uap?","James Watt","Isaac Newton","Albert Einstein","Nikola Tesla","Thomas Edison","A","MUDAH"`;
+  const correctExample = `"Soal","Opsi A","Opsi B","Opsi C","Opsi D","Opsi E","Kunci Jawaban","Tingkat Kesulitan","Tipe Soal"
+"Jika x > y dan y > z, manakah yang pasti benar?","x < z","x = z","x > z","x + y = z","Tidak dapat ditentukan","C","SEDANG","pg"
+"Apakah ibukota Indonesia?","","","","","","Jakarta|DKI Jakarta","MUDAH","isian"`;
 
-  const wrongExample1 = `Soal,Opsi A,Opsi B,Opsi C,Opsi D,Opsi E,Kunci Jawaban,Tingkat Kesulitan
-Jika x > y dan y > z, manakah yang pasti benar?,x < z,x = z,x > z,x + y = z,Tidak dapat ditentukan,C,SEDANG`;
+  const wrongExample1 = `Soal,Opsi A,Opsi B,Opsi C,Opsi D,Opsi E,Kunci Jawaban,Tingkat Kesulitan,Tipe Soal
+Jika x > y dan y > z, manakah yang pasti benar?,x < z,x = z,x > z,x + y = z,Tidak dapat ditentukan,C,SEDANG,pg`;
 
-  const wrongExample2 = `"Soal";"Opsi A";"Opsi B";"Kunci";"Kesulitan"
-"Berapa 1+1?";"Dua";"Tiga";"A";"MUDAH"`;
+  const wrongExample2 = `"Soal";"Opsi A";"Opsi B";"Kunci";"Kesulitan";"Tipe"
+"Berapa 1+1?";"Dua";"Tiga";"A";"MUDAH";"pg"`;
 
-  const wrongExample3 = `"Soal","Opsi A","Opsi B","Kunci"
-"Jika benar, maka salah. Pilih yang tepat!","Benar","Salah","A"`;
+  const wrongExample3 = `"Soal","Opsi A","Opsi B","Kunci","Tipe"
+"Jika benar, maka salah. Pilih yang tepat!","Benar","Salah","A","pg"`;
 
   return (
     <div className="min-h-screen bg-[#f8fafc] p-4 md:p-8 font-sans selection:bg-indigo-100">
@@ -122,8 +122,8 @@ Jika x > y dan y > z, manakah yang pasti benar?,x < z,x = z,x > z,x + y = z,Tida
         {/* ─── STRUKTUR KOLOM ─── */}
         <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="p-7 border-b border-gray-100 bg-gray-50/50">
-            <h2 className="text-base font-black text-gray-800">Struktur Kolom (8 Kolom Wajib Berurutan)</h2>
-            <p className="text-xs text-gray-500 mt-1">Kolom TIDAK boleh dikurangi, ditambah, atau ditukar urutannya.</p>
+            <h2 className="text-base font-black text-gray-800">Struktur Kolom (9 Kolom Berurutan)</h2>
+            <p className="text-xs text-gray-500 mt-1">Kolom TIDAK boleh dikurangi atau ditukar urutannya.</p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
@@ -138,13 +138,14 @@ Jika x > y dan y > z, manakah yang pasti benar?,x < z,x = z,x > z,x + y = z,Tida
               <tbody className="divide-y divide-gray-50">
                 {[
                   { col: '1', header: 'Soal', wajib: true, color: 'indigo', rule: 'Teks pertanyaan. Jika ada koma atau tanda kutip di dalam teks, bungkus seluruh teks dengan "...". Mendukung formula LaTeX: $...$' },
-                  { col: '2', header: 'Opsi A', wajib: true, color: 'slate', rule: 'Teks pilihan A. Wajib diisi. Bungkus dengan "..." jika terdapat koma.' },
-                  { col: '3', header: 'Opsi B', wajib: true, color: 'slate', rule: 'Teks pilihan B. Wajib diisi.' },
-                  { col: '4', header: 'Opsi C', wajib: false, color: 'slate', rule: 'Teks pilihan C. Bisa dikosongkan jika hanya 2 pilihan (isi dengan teks kosong "").' },
-                  { col: '5', header: 'Opsi D', wajib: false, color: 'slate', rule: 'Teks pilihan D. Bisa dikosongkan.' },
-                  { col: '6', header: 'Opsi E', wajib: false, color: 'slate', rule: 'Teks pilihan E. Bisa dikosongkan.' },
-                  { col: '7', header: 'Kunci Jawaban', wajib: true, color: 'emerald', rule: 'HANYA 1 huruf kapital: A, B, C, D, atau E. Tidak boleh berisi teks panjang, angka, atau lebih dari 1 karakter.' },
-                  { col: '8', header: 'Tingkat Kesulitan', wajib: true, color: 'amber', rule: 'Salah satu dari: Easy, Medium, atau Hard (bisa huruf besar/kecil, sistem akan sesuaikan otomatis).' },
+                  { col: '2', header: 'Opsi A', wajib: false, color: 'slate', rule: 'Teks pilihan A. Wajib diisi untuk tipe soal PG ("pg"). Kosongkan untuk Isian/Essay.' },
+                  { col: '3', header: 'Opsi B', wajib: false, color: 'slate', rule: 'Teks pilihan B. Wajib diisi untuk tipe soal PG ("pg"). Kosongkan untuk Isian/Essay.' },
+                  { col: '4', header: 'Opsi C', wajib: false, color: 'slate', rule: 'Teks pilihan C. Opsional untuk tipe soal PG.' },
+                  { col: '5', header: 'Opsi D', wajib: false, color: 'slate', rule: 'Teks pilihan D. Opsional untuk tipe soal PG.' },
+                  { col: '6', header: 'Opsi E', wajib: false, color: 'slate', rule: 'Teks pilihan E. Opsional untuk tipe soal PG.' },
+                  { col: '7', header: 'Kunci Jawaban', wajib: true, color: 'emerald', rule: 'Untuk PG: Huruf pilihan benar (misal: A, AC). Untuk Isian Singkat: Kata kunci jawaban benar (contoh: Jakarta|DKI Jakarta). Untuk Essay: Panduan penilaian.' },
+                  { col: '8', header: 'Tingkat Kesulitan', wajib: true, color: 'amber', rule: 'Salah satu dari: Easy, Medium, atau Hard (bisa huruf besar/kecil).' },
+                  { col: '9', header: 'Tipe Soal', wajib: false, color: 'indigo', rule: 'Isi dengan "pg" (Pilihan Ganda), "isian" (Isian Singkat), atau "essay" (Essai Bebas). Jika kosong, otomatis dianggap "pg".' },
                 ].map((row) => (
                   <tr key={row.col} className="hover:bg-indigo-50/20 transition-colors">
                     <td className="py-5 px-5 text-center">
@@ -182,10 +183,10 @@ Jika x > y dan y > z, manakah yang pasti benar?,x < z,x = z,x > z,x + y = z,Tida
               <Copy className="w-3 h-3" /> {copiedIdx === 0 ? 'Disalin!' : 'Salin'}
             </button>
             <pre className="font-mono text-[11px] text-gray-700 bg-gray-50 border border-gray-100 rounded-2xl p-5 overflow-x-auto whitespace-pre leading-6">
-{`"Soal","Opsi A","Opsi B","Opsi C","Opsi D","Opsi E","Kunci Jawaban","Tingkat Kesulitan"
-"Jika x > y dan y > z, manakah yang pasti benar?","x < z","x = z","x > z","x + y = z","Tidak dapat ditentukan","C","SEDANG"
-"Siapakah penemu mesin uap?","James Watt","Isaac Newton","Albert Einstein","Nikola Tesla","Thomas Edison","A","MUDAH"
-"Semua siswa rajin. Budi adalah siswa. Maka...","Budi rajin","Budi malas","Budi bukan siswa","Budi adalah guru","Tidak dapat disimpulkan","A","SEDANG"`}
+{`"Soal","Opsi A","Opsi B","Opsi C","Opsi D","Opsi E","Kunci Jawaban","Tingkat Kesulitan","Tipe Soal"
+"Jika x > y dan y > z, manakah yang pasti benar?","x < z","x = z","x > z","x + y = z","Tidak dapat ditentukan","C","SEDANG","pg"
+"Apakah ibukota Indonesia?","","","","","","Jakarta|DKI Jakarta","MUDAH","isian"
+"Sebutkan 3 macam zat pengisi termometer!","","","","","","alkohol|raksa|merkuri","SULIT","isian"`}
             </pre>
           </div>
         </div>
@@ -299,9 +300,9 @@ Jika x > y dan y > z, mana yang benar?,x<z,x=z,x>z,x+y=z,Tidak tentu,C,SEDANG
           </div>
           <div className="p-7 grid md:grid-cols-2 gap-6">
             {[
-              { icon: '📌', title: 'Baris pertama = header', desc: 'Baris pertama HARUS berisi nama kolom persis seperti template. Jangan diubah.' },
-              { icon: '🔤', title: 'Kunci jawaban = 1 huruf', desc: 'Kolom ke-7 hanya boleh A, B, C, D, atau E. Huruf kapital maupun kecil diterima — sistem otomatis konversi ke kapital.' },
-              { icon: '📝', title: 'Minimal 2 opsi terisi', desc: 'Opsi A dan B wajib diisi. Opsi C, D, E boleh dikosongkan dengan menulis "" (dua kutip tanpa spasi).' },
+              { icon: '📌', title: 'Baris pertama = header', desc: 'Baris pertama HARUS berisi nama kolom persis seperti template 9 kolom. Jangan diubah.' },
+              { icon: '🔤', title: 'Kunci jawaban disesuaikan', desc: 'Untuk PG: Huruf pilihan (A-J). Untuk Isian: Kata kunci teks (pisahkan alternatif dengan |). Untuk Essay: Panduan nilai.' },
+              { icon: '📝', title: 'Tipe soal opsional', desc: 'Kolom ke-9 diisi dengan "pg", "isian", atau "essay". Jika dikosongkan, default ke Pilihan Ganda (pg).' },
               { icon: '🚫', title: 'Jangan merge sel di Excel', desc: 'Merge cell akan merusak struktur CSV. Pastikan setiap sel berdiri sendiri.' },
               { icon: '💬', title: 'Teks berkoma = wajib dikutip', desc: 'Jika teks soal/opsi mengandung koma, bungkus seluruh teks dengan tanda kutip ganda: "Jika A, maka B".' },
               { icon: '🔢', title: 'Angka dalam teks = aman', desc: 'Angka seperti 100, 3.14, atau -5 tidak perlu dikutip asalkan tidak mengandung koma.' },
@@ -341,10 +342,11 @@ Jika x > y dan y > z, mana yang benar?,x<z,x=z,x>z,x+y=z,Tidak tentu,C,SEDANG
           </h2>
           <div className="space-y-3">
             {[
-              'Baris pertama berisi header yang benar (8 kolom sesuai urutan)',
+              'Baris pertama berisi header yang benar (9 kolom sesuai urutan)',
               'Semua teks soal dan opsi yang mengandung koma sudah dibungkus kutip ganda "..."',
-              'Kolom Kunci Jawaban hanya berisi satu huruf: A, B, C, D, atau E',
+              'Kolom Kunci Jawaban berisi kunci jawaban yang sesuai dengan tipe soal',
               'Kolom Tingkat Kesulitan hanya berisi: Easy, Medium, atau Hard',
+              'Kolom Tipe Soal hanya berisi: pg, isian, atau essay',
               'Tidak ada baris yang kosong di tengah-tengah data',
               'File disimpan dalam format CSV, bukan .xlsx atau .xls',
               'Pemisah kolom adalah koma (,) bukan titik koma (;)',
