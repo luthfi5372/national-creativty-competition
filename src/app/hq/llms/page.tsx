@@ -129,9 +129,8 @@ export default function IntegratedLLMSDashboard() {
     try {
       const { logoutLocalUser } = await import("@/app/actions/auth");
       await logoutLocalUser();
-    } catch (_) {
-      router.push('/login');
-    }
+    } catch (_) {}
+    router.push('/login');
   };
 
   const lastFetchTimeRef = React.useRef<number>(0);

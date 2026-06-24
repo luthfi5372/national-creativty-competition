@@ -165,42 +165,11 @@ export default function LiveLeaderboard() {
     const channel = supabase
       .channel(`live-cbt-scores-${examId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'cbt_attempts' }, (payload) => {
-        if (payload.new && (payload.new as any).exam_id === examId) {
+        // Cek DELETE dulu sebelum cek payload.new (DELETE selalu punya payload.new = {})
+        if (payload.eventType === 'DELETE' && payload.old) {
           setAttempts((prev) => {
-            let nextList = [...prev];
-            const updated = payload.new as any;
-            
-            const idx = nextList.findIndex(p => p.user_id === updated.user_id);
-            if (idx !== -1) {
-              nextList[idx] = updated;
-            } else {
-              nextList.push(updated);
-            }
-            
-            // Urutkan ulang data (Score DESC, Violations ASC, updated_at ASC)
-            nextList.sort((a, b) => {
-              const sA = a.score ?? 0;
-              const sB = b.score ?? 0;
-              if (sB !== sA) return sB - sA;
-              if (a.violations_count !== b.violations_count) return a.violations_count - b.violations_count;
-              return new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime();
-            });
-            
-            // Perbarui statistik secara lokal (tanpa kueri jaringan)
-            if (nextList.length > 0) {
-              const skorList = nextList.map(p => p.score ?? 0);
-              setTopScore(Math.max(...skorList));
-              setAvgScore(Math.round(skorList.reduce((a, b) => a + b, 0) / skorList.length));
-              setTotalCheatAlert(nextList.reduce((acc, curr) => acc + (curr.violations_count || 0), 0));
-            }
-            
-            return nextList;
-          });
-        } else if (payload.eventType === 'DELETE' && payload.old) {
-          setAttempts((prev) => {
-            // Jika dihapus, bersihkan secara lokal
-            const nextList = prev.filter(p => p.id !== payload.old.id && p.user_id !== payload.old.user_id);
-            
+            // Filter by primary key saja — hapus baris yang didelete
+            const nextList = prev.filter(p => p.id !== payload.old.id);
             if (nextList.length > 0) {
               const skorList = nextList.map(p => p.score ?? 0);
               setTopScore(Math.max(...skorList));
@@ -211,6 +180,37 @@ export default function LiveLeaderboard() {
               setAvgScore(0);
               setTotalCheatAlert(0);
             }
+            return nextList;
+          });
+        } else if (payload.new && (payload.new as any).exam_id === examId) {
+          setAttempts((prev) => {
+            let nextList = [...prev];
+            const updated = payload.new as any;
+
+            const idx = nextList.findIndex(p => p.user_id === updated.user_id);
+            if (idx !== -1) {
+              nextList[idx] = updated;
+            } else {
+              nextList.push(updated);
+            }
+
+            // Urutkan ulang data (Score DESC, Violations ASC, updated_at ASC)
+            nextList.sort((a, b) => {
+              const sA = a.score ?? 0;
+              const sB = b.score ?? 0;
+              if (sB !== sA) return sB - sA;
+              if (a.violations_count !== b.violations_count) return a.violations_count - b.violations_count;
+              return new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime();
+            });
+
+            // Perbarui statistik secara lokal (tanpa kueri jaringan)
+            if (nextList.length > 0) {
+              const skorList = nextList.map(p => p.score ?? 0);
+              setTopScore(Math.max(...skorList));
+              setAvgScore(Math.round(skorList.reduce((a, b) => a + b, 0) / skorList.length));
+              setTotalCheatAlert(nextList.reduce((acc, curr) => acc + (curr.violations_count || 0), 0));
+            }
+
             return nextList;
           });
         }
@@ -228,15 +228,21 @@ export default function LiveLeaderboard() {
   const downloadCSV = () => {
     if (attempts.length === 0) return;
     const headers = ['Peringkat', 'ID Peserta', 'Skor', 'Jumlah Pelanggaran', 'Terakhir Update'];
-    const rows = filteredAttempts.map((item, index) => [
-      index + 1, item.user_id, item.score ?? 0,
-      item.violations_count, new Date(item.updated_at).toLocaleTimeString()
-    ]);
-    const csvContent = "data:text/csv;charset=utf-8,BOM" + headers.join(',') + "\n" + rows.map(e => e.join(",")).join("\n");
-    const link = document.createElement("a");
-    link.setAttribute("href", encodeURI(csvContent));
-    link.setAttribute("download", `Leaderboard_NCC13_${examId.split('-')[0]}.csv`);
+    // Gunakan rank asli dari attempts (bukan filtered index)
+    const rows = filteredAttempts.map((item) => {
+      const realRank = attempts.findIndex(a => a.id === item.id) + 1;
+      return [realRank, item.user_id, item.score ?? 0,
+        item.violations_count, new Date(item.updated_at).toLocaleTimeString()];
+    });
+    // \uFEFF = BOM karakter asli untuk Excel UTF-8
+    const csvContent = "\uFEFF" + headers.join(',') + "\n" + rows.map(e => e.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Leaderboard_NCC13_${examId.split('-')[0]}.csv`);
     document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   // Export detail: per question answer correctness
@@ -263,7 +269,9 @@ export default function LiveLeaderboard() {
         ...statusHeaders
       ];
 
-      const rows = filteredAttempts.map((item, index) => {
+      const rows = filteredAttempts.map((item) => {
+        // Gunakan rank asli dari full attempts list
+        const realRank = attempts.findIndex(a => a.id === item.id) + 1;
         let benar = 0, salah = 0, kosong = 0;
         const qTexts: string[] = [];
         const answerCols: string[] = [];
@@ -298,7 +306,7 @@ export default function LiveLeaderboard() {
         });
 
         return [
-          index + 1,
+          realRank,
           item.user_id,
           item.score ?? 0,
           benar, salah, kosong,
@@ -321,6 +329,8 @@ export default function LiveLeaderboard() {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert('Gagal mengekspor data: ' + (err?.message || 'Unknown error'));
     } finally {
       setIsExporting(false);
     }
