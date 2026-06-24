@@ -236,7 +236,7 @@ export async function POST(request: Request) {
         score: finalScore,
         current_score: Math.round(finalScore),
         status: 'submitted',
-        finished_at: new Date().toISOString()
+        submitted_at: new Date().toISOString()
       })
       .eq('id', attempt_id);
 

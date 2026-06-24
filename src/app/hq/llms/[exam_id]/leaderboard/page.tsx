@@ -44,6 +44,7 @@ export default function LiveLeaderboard() {
   const [totalCheatAlert, setTotalCheatAlert] = useState(0);
   const [allQuestions, setAllQuestions] = useState<any[]>([]);
   const [isExporting, setIsExporting] = useState(false);
+  const [examConfig, setExamConfig] = useState<any>(null);
 
   // Review Modal state
   const [showReview, setShowReview] = useState(false);
@@ -53,6 +54,54 @@ export default function LiveLeaderboard() {
   const [essayGrades, setEssayGrades] = useState<Record<string, number>>({});
   const [isSavingGrades, setIsSavingGrades] = useState(false);
   const [reviewFilter, setReviewFilter] = useState<'wrong_and_essay' | 'all' | 'wrong' | 'essay'>('wrong_and_essay');
+
+  const getQuestionPoints = (q: any) => {
+    if (!selectedAttempt) return 0;
+    const userAnswer = selectedAttempt.answers?.[q.id] || '';
+    const qType = q.options?.type || 'pg';
+    const correctKey = q.correct_answer || q.answer || '';
+    
+    if (qType === 'essay') {
+      const grades = essayGrades || {};
+      return Number(grades[q.id] !== undefined ? grades[q.id] : (selectedAttempt.answers?.essay_grades?.[q.id] || 0));
+    }
+    
+    if (!userAnswer) {
+      return examConfig?.empty_point || 0;
+    }
+    
+    if (qType === 'isian') {
+      const correctAnswers = String(correctKey).toUpperCase().split('|').map(x => x.trim());
+      const studentAns = String(userAnswer).trim().toUpperCase();
+      if (correctAnswers.includes(studentAns)) {
+        return Number(q.options?.points?.correct ?? examConfig?.correct_point ?? 4);
+      } else {
+        const penalty = examConfig?.penalty_point || 0;
+        return penalty <= 0 ? penalty : -penalty;
+      }
+    }
+    
+    // Multiple Choice (PG)
+    if (q.options && typeof q.options === 'object' && q.options.points) {
+      // Custom points per option
+      const selectedLetters = userAnswer.split('');
+      let pts = 0;
+      selectedLetters.forEach((l: string) => {
+        pts += Number(q.options.points[l] || 0);
+      });
+      return pts;
+    } else {
+      // Standard PG points
+      const correct = String(correctKey).trim().toUpperCase();
+      const user = String(userAnswer).trim().toUpperCase();
+      if (user === correct) {
+        return examConfig?.correct_point ?? 4;
+      } else {
+        const penalty = examConfig?.penalty_point || 0;
+        return penalty <= 0 ? penalty : -penalty;
+      }
+    }
+  };
 
   // Delete per-participant
   const [showDeleteParticipant, setShowDeleteParticipant] = useState(false);
@@ -89,14 +138,16 @@ export default function LiveLeaderboard() {
   };
 
   const fetchLeaderboardData = async () => {
-    const [attemptsRes, questionsRes] = await Promise.all([
+    const [attemptsRes, questionsRes, examRes] = await Promise.all([
       supabase.from('cbt_attempts').select('*').eq('exam_id', examId),
-      supabase.from('cbt_questions').select('*').eq('exam_id', examId).order('created_at', { ascending: true })
+      supabase.from('cbt_questions').select('*').eq('exam_id', examId).order('created_at', { ascending: true }),
+      supabase.from('cbt_exams').select('*').eq('id', examId).maybeSingle()
     ]);
 
     if (attemptsRes.error) { console.error('Gagal:', attemptsRes.error); return; }
     const qList = questionsRes.data || [];
     setAllQuestions(qList);
+    if (examRes.data) setExamConfig(examRes.data);
     if (attemptsRes.data) prosesDanUrutkanData(attemptsRes.data, qList);
     setLoading(false);
   };
@@ -653,29 +704,45 @@ export default function LiveLeaderboard() {
                               {qType === 'pg' ? 'Pilihan Ganda' : qType === 'isian' ? 'Isian Singkat' : 'Essai Bebas'}
                             </span>
                           </div>
-                          {isEmpty ? (
-                            <span className="flex items-center gap-1 px-2.5 py-1 bg-gray-100 text-gray-500 text-[10px] font-black rounded-full">
-                              <MinusCircle className="w-3 h-3" /> TIDAK DIJAWAB
-                            </span>
-                          ) : qType === 'essay' ? (
-                            essayGrades[q.id] === undefined ? (
-                              <span className="flex items-center gap-1.5 px-3 py-1 bg-amber-500 text-white text-[10px] font-black rounded-full animate-pulse shadow-sm">
-                                <Info className="w-3.5 h-3.5" /> DALAM REVIEW
+                           <div className="flex items-center gap-1.5">
+                            {isEmpty ? (
+                              <span className="flex items-center gap-1 px-2.5 py-1 bg-gray-100 text-gray-500 text-[10px] font-black rounded-full">
+                                <MinusCircle className="w-3 h-3" /> TIDAK DIJAWAB
+                              </span>
+                            ) : qType === 'essay' ? (
+                              essayGrades[q.id] === undefined ? (
+                                <span className="flex items-center gap-1.5 px-3 py-1 bg-amber-500 text-white text-[10px] font-black rounded-full animate-pulse shadow-sm">
+                                  <Info className="w-3.5 h-3.5" /> DALAM REVIEW
+                                </span>
+                              ) : (
+                                <span className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500 text-white text-[10px] font-black rounded-full shadow-sm">
+                                  <CheckCircle2 className="w-3.5 h-3.5" /> SUDAH DINILAI
+                                </span>
+                              )
+                            ) : isCorrect ? (
+                              <span className="flex items-center gap-1 px-2.5 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-black rounded-full">
+                                <CheckCircle2 className="w-3 h-3" /> BENAR
                               </span>
                             ) : (
-                              <span className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500 text-white text-[10px] font-black rounded-full shadow-sm">
-                                <CheckCircle2 className="w-3.5 h-3.5" /> SUDAH DINILAI
+                              <span className="flex items-center gap-1 px-2.5 py-1 bg-rose-100 text-rose-700 text-[10px] font-black rounded-full">
+                                <XCircle className="w-3 h-3" /> SALAH
                               </span>
-                            )
-                          ) : isCorrect ? (
-                            <span className="flex items-center gap-1 px-2.5 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-black rounded-full">
-                              <CheckCircle2 className="w-3 h-3" /> BENAR
-                            </span>
-                          ) : (
-                            <span className="flex items-center gap-1 px-2.5 py-1 bg-rose-100 text-rose-700 text-[10px] font-black rounded-full">
-                              <XCircle className="w-3 h-3" /> SALAH
-                            </span>
-                          )}
+                            )}
+
+                            {/* Point Badge */}
+                            {examConfig && (examConfig.correct_point !== 0 || examConfig.scoring_system === 'Custom' || qType === 'essay') && (() => {
+                              const pts = getQuestionPoints(q);
+                              const ptsText = pts >= 0 ? `+${pts} Poin` : `${pts} Poin`;
+                              return (
+                                <span className={`px-2.5 py-1 text-[10px] font-black rounded-full border ${
+                                  pts > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                  pts < 0 ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-gray-50 text-gray-500 border-gray-200'
+                                }`}>
+                                  {ptsText}
+                                </span>
+                              );
+                            })()}
+                          </div>
                         </div>
 
                         {/* Teks soal */}
