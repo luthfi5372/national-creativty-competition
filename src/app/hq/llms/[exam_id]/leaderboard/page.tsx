@@ -57,14 +57,16 @@ export default function LiveLeaderboard() {
     ]);
 
     if (attemptsRes.error) { console.error('Gagal:', attemptsRes.error); return; }
-    if (attemptsRes.data) prosesDanUrutkanData(attemptsRes.data);
-    if (questionsRes.data) setAllQuestions(questionsRes.data);
+    const qList = questionsRes.data || [];
+    setAllQuestions(qList);
+    if (attemptsRes.data) prosesDanUrutkanData(attemptsRes.data, qList);
     setLoading(false);
   };
 
-  const checkHasUngradedEssay = (item: any) => {
+  const checkHasUngradedEssay = (item: any, customQuestions?: any[]) => {
     if (!item.answers) return false;
-    const essayQuestions = allQuestions.filter(q => (q.options?.type || 'pg') === 'essay');
+    const questionsToUse = customQuestions || allQuestions;
+    const essayQuestions = questionsToUse.filter(q => (q.options?.type || 'pg') === 'essay');
     if (essayQuestions.length === 0) return false;
     return essayQuestions.some(q => {
       const userAnswer = item.answers[q.id];
@@ -105,7 +107,7 @@ export default function LiveLeaderboard() {
     });
   };
 
-  const prosesDanUrutkanData = (dataRaw: any[]) => {
+  const prosesDanUrutkanData = (dataRaw: any[], customQuestions?: any[]) => {
     const dataUrut = [...dataRaw].sort((a, b) => {
       const sA = a.score ?? 0;
       const sB = b.score ?? 0;
@@ -117,9 +119,16 @@ export default function LiveLeaderboard() {
     setAttempts(dataUrut);
 
     if (dataUrut.length > 0) {
-      const skorList = dataUrut.map(p => p.score ?? 0);
-      setTopScore(Math.max(...skorList));
-      setAvgScore(Math.round(skorList.reduce((a, b) => a + b, 0) / skorList.length));
+      // Hanya hitung statistik skor dari peserta yang TIDAK memiliki esai tertunda (sudah dinilai)
+      const completedAttempts = dataUrut.filter(p => !checkHasUngradedEssay(p, customQuestions));
+      if (completedAttempts.length > 0) {
+        const skorList = completedAttempts.map(p => p.score ?? 0);
+        setTopScore(Math.max(...skorList));
+        setAvgScore(Math.round(skorList.reduce((a, b) => a + b, 0) / skorList.length));
+      } else {
+        setTopScore(0);
+        setAvgScore(0);
+      }
       setTotalCheatAlert(dataUrut.reduce((acc, curr) => acc + (curr.violations_count || 0), 0));
     }
   };
@@ -216,9 +225,15 @@ export default function LiveLeaderboard() {
             // Filter by primary key saja — hapus baris yang didelete
             const nextList = prev.filter(p => p.id !== payload.old.id);
             if (nextList.length > 0) {
-              const skorList = nextList.map(p => p.score ?? 0);
-              setTopScore(Math.max(...skorList));
-              setAvgScore(Math.round(skorList.reduce((a, b) => a + b, 0) / skorList.length));
+              const completedAttempts = nextList.filter(p => !checkHasUngradedEssay(p));
+              if (completedAttempts.length > 0) {
+                const skorList = completedAttempts.map(p => p.score ?? 0);
+                setTopScore(Math.max(...skorList));
+                setAvgScore(Math.round(skorList.reduce((a, b) => a + b, 0) / completedAttempts.length));
+              } else {
+                setTopScore(0);
+                setAvgScore(0);
+              }
               setTotalCheatAlert(nextList.reduce((acc, curr) => acc + (curr.violations_count || 0), 0));
             } else {
               setTopScore(0);
@@ -250,9 +265,15 @@ export default function LiveLeaderboard() {
 
             // Perbarui statistik secara lokal (tanpa kueri jaringan)
             if (nextList.length > 0) {
-              const skorList = nextList.map(p => p.score ?? 0);
-              setTopScore(Math.max(...skorList));
-              setAvgScore(Math.round(skorList.reduce((a, b) => a + b, 0) / skorList.length));
+              const completedAttempts = nextList.filter(p => !checkHasUngradedEssay(p));
+              if (completedAttempts.length > 0) {
+                const skorList = completedAttempts.map(p => p.score ?? 0);
+                setTopScore(Math.max(...skorList));
+                setAvgScore(Math.round(skorList.reduce((a, b) => a + b, 0) / completedAttempts.length));
+              } else {
+                setTopScore(0);
+                setAvgScore(0);
+              }
               setTotalCheatAlert(nextList.reduce((acc, curr) => acc + (curr.violations_count || 0), 0));
             }
 
@@ -276,7 +297,8 @@ export default function LiveLeaderboard() {
     // Gunakan rank asli dari attempts (bukan filtered index)
     const rows = filteredAttempts.map((item) => {
       const realRank = attempts.findIndex(a => a.id === item.id) + 1;
-      return [realRank, item.user_id, item.score ?? 0,
+      const displayScore = checkHasUngradedEssay(item) ? 'Ditinjau' : (item.score ?? 0);
+      return [realRank, item.user_id, displayScore,
         item.violations_count, new Date(item.updated_at).toLocaleTimeString()];
     });
     // \uFEFF = BOM karakter asli untuk Excel UTF-8
@@ -353,7 +375,7 @@ export default function LiveLeaderboard() {
         return [
           realRank,
           item.user_id,
-          item.score ?? 0,
+          checkHasUngradedEssay(item) ? 'Ditinjau' : (item.score ?? 0),
           benar, salah, kosong,
           item.violations_count || 0,
           item.submitted_at ? 'SELESAI' : 'BERLANGSUNG',
@@ -665,6 +687,47 @@ export default function LiveLeaderboard() {
                           </div>
                         </div>
 
+                        {qType === 'pg' && q.options && (
+                          <div className="mt-4 p-4 rounded-2xl border border-gray-200 bg-gray-50/30 text-left">
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
+                              📋 Pilihan Ganda Ujian:
+                            </p>
+                            <div className="space-y-1.5">
+                              {Object.entries(q.options)
+                                .filter(([key]) => ['A', 'B', 'C', 'D', 'E', 'a', 'b', 'c', 'd', 'e'].includes(key))
+                                .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
+                                .map(([key, val]) => {
+                                  const isUserSelected = String(userAnswer).toUpperCase() === key.toUpperCase();
+                                  const isCorrect = String(correctKey).toUpperCase() === key.toUpperCase();
+                                  
+                                  let optBg = 'bg-white border-gray-200 text-gray-700';
+                                  let badge = null;
+                                  
+                                  if (isUserSelected && isCorrect) {
+                                    optBg = 'bg-emerald-50 border-emerald-300 text-emerald-800 font-extrabold';
+                                    badge = <span className="text-[9px] font-black uppercase text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-lg border border-emerald-200">Jawaban Peserta (Benar)</span>;
+                                  } else if (isUserSelected) {
+                                    optBg = 'bg-rose-50 border-rose-300 text-rose-800 font-extrabold';
+                                    badge = <span className="text-[9px] font-black uppercase text-rose-700 bg-rose-100 px-2 py-0.5 rounded-lg border border-rose-200">Jawaban Peserta (Salah)</span>;
+                                  } else if (isCorrect) {
+                                    optBg = 'bg-indigo-50 border-indigo-300 text-indigo-800 font-extrabold';
+                                    badge = <span className="text-[9px] font-black uppercase text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-lg border border-indigo-200">Kunci Jawaban</span>;
+                                  }
+
+                                  return (
+                                    <div key={key} className={`flex justify-between items-center px-4 py-2.5 border rounded-xl text-xs transition-all ${optBg}`}>
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-black uppercase">{key}.</span>
+                                        <span>{String(val)}</span>
+                                      </div>
+                                      {badge}
+                                    </div>
+                                  );
+                                })}
+                            </div>
+                          </div>
+                        )}
+
                         {qType === 'essay' && !isEmpty && (
                           <div className="mt-4 p-4 rounded-2xl border-2 border-dashed border-amber-200 bg-amber-50/30 text-left">
                             <p className="text-[10px] font-black text-amber-700 uppercase tracking-widest mb-2 flex items-center gap-1">
@@ -868,9 +931,15 @@ export default function LiveLeaderboard() {
 
                         {/* SKOR */}
                         <td className="py-4 px-6 text-center">
-                          <span className={`text-2xl font-black ${score > 0 ? 'text-[#5145cd]' : 'text-gray-300'}`}>
-                            {score}
-                          </span>
+                          {checkHasUngradedEssay(item) ? (
+                            <span className="inline-flex items-center px-3 py-1 rounded-xl text-xs font-black bg-amber-50 text-amber-600 border border-amber-100 animate-pulse">
+                              ⏳ Ditinjau
+                            </span>
+                          ) : (
+                            <span className={`text-2xl font-black ${score > 0 ? 'text-[#5145cd]' : 'text-gray-300'}`}>
+                              {score}
+                            </span>
+                          )}
                         </td>
 
                         {/* PELANGGARAN */}
