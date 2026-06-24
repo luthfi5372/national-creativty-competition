@@ -33,6 +33,8 @@ export default function LiveLeaderboard() {
   const [topScore, setTopScore] = useState(0);
   const [avgScore, setAvgScore] = useState(0);
   const [totalCheatAlert, setTotalCheatAlert] = useState(0);
+  const [allQuestions, setAllQuestions] = useState<any[]>([]);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Review Modal state
   const [showReview, setShowReview] = useState(false);
@@ -48,13 +50,14 @@ export default function LiveLeaderboard() {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchLeaderboardData = async () => {
-    const { data, error } = await supabase
-      .from('cbt_attempts')
-      .select('*')
-      .eq('exam_id', examId);
+    const [attemptsRes, questionsRes] = await Promise.all([
+      supabase.from('cbt_attempts').select('*').eq('exam_id', examId),
+      supabase.from('cbt_questions').select('*').eq('exam_id', examId).order('created_at', { ascending: true })
+    ]);
 
-    if (error) { console.error('Gagal:', error); return; }
-    if (data) prosesDanUrutkanData(data);
+    if (attemptsRes.error) { console.error('Gagal:', attemptsRes.error); return; }
+    if (attemptsRes.data) prosesDanUrutkanData(attemptsRes.data);
+    if (questionsRes.data) setAllQuestions(questionsRes.data);
     setLoading(false);
   };
 
@@ -224,16 +227,103 @@ export default function LiveLeaderboard() {
 
   const downloadCSV = () => {
     if (attempts.length === 0) return;
-    const headers = ['Peringkat', 'ID Peserta', 'Skor', 'Jumlah Pelanggaran', 'Terakhir Update\n'];
+    const headers = ['Peringkat', 'ID Peserta', 'Skor', 'Jumlah Pelanggaran', 'Terakhir Update'];
     const rows = filteredAttempts.map((item, index) => [
       index + 1, item.user_id, item.score ?? 0,
       item.violations_count, new Date(item.updated_at).toLocaleTimeString()
     ]);
-    const csvContent = "data:text/csv;charset=utf-8," + headers.join(',') + rows.map(e => e.join(",")).join("\n");
+    const csvContent = "data:text/csv;charset=utf-8,BOM" + headers.join(',') + "\n" + rows.map(e => e.join(",")).join("\n");
     const link = document.createElement("a");
     link.setAttribute("href", encodeURI(csvContent));
     link.setAttribute("download", `Leaderboard_NCC13_${examId.split('-')[0]}.csv`);
     document.body.appendChild(link); link.click(); document.body.removeChild(link);
+  };
+
+  // Export detail: per question answer correctness
+  const downloadDetailCSV = async () => {
+    if (attempts.length === 0) return;
+    setIsExporting(true);
+    try {
+      const questions = allQuestions.length > 0 ? allQuestions : [];
+      if (questions.length === 0) {
+        const { data } = await supabase.from('cbt_questions').select('*').eq('exam_id', examId).order('created_at', { ascending: true });
+        if (data) questions.push(...data);
+      }
+
+      // Build header: basic info + per-question columns
+      const questionHeaders = questions.map((q, i) => `"Soal ${i + 1} (${(q.options?.type || 'pg').toUpperCase()}) - Bobot ${q.weight || 0}"`);
+      const answerHeaders = questions.map((q, i) => `"Jawaban Soal ${i + 1}"`);
+      const statusHeaders = questions.map((q, i) => `"Status Soal ${i + 1}"`);
+
+      const headers = [
+        'Peringkat', 'ID Peserta', 'Skor Total', 'Jumlah Benar', 'Jumlah Salah', 'Jumlah Kosong',
+        'Pelanggaran', 'Status Submit', 'Terakhir Update',
+        ...questionHeaders,
+        ...answerHeaders,
+        ...statusHeaders
+      ];
+
+      const rows = filteredAttempts.map((item, index) => {
+        let benar = 0, salah = 0, kosong = 0;
+        const qTexts: string[] = [];
+        const answerCols: string[] = [];
+        const statusCols: string[] = [];
+
+        questions.forEach((q) => {
+          const userAns = item.answers?.[q.id];
+          const correctKey = q.correct_answer || q.answer || '';
+          const qType = q.options?.type || 'pg';
+          qTexts.push(`"${String(q.question_text || '').replace(/"/g, "'").substring(0, 80)}"`);
+
+          if (!userAns) {
+            kosong++;
+            answerCols.push('(kosong)');
+            statusCols.push('KOSONG');
+          } else if (qType === 'essay') {
+            const essayScore = item.answers?.essay_grades?.[q.id] ?? 0;
+            answerCols.push(`"${String(userAns).replace(/"/g, "'").substring(0, 100)}"`);
+            statusCols.push(`ESSAY (${essayScore} poin)`);
+          } else if (qType === 'isian') {
+            const correctAnswers = String(correctKey).toUpperCase().split('|').map((x: string) => x.trim());
+            const isCorrect = correctAnswers.includes(String(userAns).trim().toUpperCase());
+            if (isCorrect) benar++; else salah++;
+            answerCols.push(`"${String(userAns).substring(0, 80)}"`);
+            statusCols.push(isCorrect ? 'BENAR' : 'SALAH');
+          } else {
+            const isCorrect = String(userAns).trim().toUpperCase() === String(correctKey).trim().toUpperCase();
+            if (isCorrect) benar++; else salah++;
+            answerCols.push(String(userAns));
+            statusCols.push(isCorrect ? 'BENAR' : 'SALAH');
+          }
+        });
+
+        return [
+          index + 1,
+          item.user_id,
+          item.score ?? 0,
+          benar, salah, kosong,
+          item.violations_count || 0,
+          item.submitted_at ? 'SELESAI' : 'BERLANGSUNG',
+          new Date(item.updated_at).toLocaleString('id-ID'),
+          ...qTexts,
+          ...answerCols,
+          ...statusCols
+        ].join(',');
+      });
+
+      const csvContent = "\uFEFF" + headers.join(',') + "\n" + rows.join("\n");
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Detail_Jawaban_NCC13_${examId.split('-')[0]}_${new Date().toLocaleDateString('id-ID').replace(/\//g,'-')}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const rankMedal = (i: number) => {
@@ -552,7 +642,18 @@ export default function LiveLeaderboard() {
               <RefreshCw className="w-4 h-4" />
             </button>
             <button onClick={downloadCSV} className="flex items-center px-4 py-2.5 bg-white border border-gray-200 text-gray-700 text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-gray-50 shadow-sm transition-all">
-              <Download className="w-4 h-4 mr-2 text-indigo-500" /> Export CSV
+              <Download className="w-4 h-4 mr-2 text-indigo-500" /> Rekap Skor
+            </button>
+            <button
+              onClick={downloadDetailCSV}
+              disabled={isExporting}
+              className="flex items-center px-4 py-2.5 bg-[#5145cd] hover:bg-[#3d32a8] border border-transparent text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-md shadow-indigo-200 transition-all disabled:opacity-60"
+            >
+              {isExporting
+                ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                : <Download className="w-4 h-4 mr-2" />
+              }
+              {isExporting ? 'Mengekspor...' : 'Detail Jawaban'}
             </button>
           </div>
         </div>
