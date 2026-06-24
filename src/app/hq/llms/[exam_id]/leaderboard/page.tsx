@@ -26,8 +26,10 @@ import {
   ClipboardList,
   Star,
   Lightbulb,
-  Pin
+  Pin,
+  Save
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function LiveLeaderboard() {
   const supabase = createClient();
@@ -56,6 +58,35 @@ export default function LiveLeaderboard() {
   const [showDeleteParticipant, setShowDeleteParticipant] = useState(false);
   const [deleteTargetUser, setDeleteTargetUser] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Toast Notification state
+  const [toast, setToast] = useState<{ show: boolean; message: string; type: 'success' | 'error' | 'info' }>({
+    show: false,
+    message: '',
+    type: 'success'
+  });
+
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast(prev => ({ ...prev, show: false }));
+    }, 4000);
+  };
+
+  const hasGradesChanged = () => {
+    const originalGrades = selectedAttempt?.answers?.essay_grades || {};
+    const originalKeys = Object.keys(originalGrades);
+    const currentKeys = Object.keys(essayGrades);
+    
+    if (originalKeys.length !== currentKeys.length) return true;
+    
+    for (const key of currentKeys) {
+      if (Number(essayGrades[key]) !== Number(originalGrades[key])) {
+        return true;
+      }
+    }
+    return false;
+  };
 
   const fetchLeaderboardData = async () => {
     const [attemptsRes, questionsRes] = await Promise.all([
@@ -175,10 +206,10 @@ export default function LiveLeaderboard() {
       }
 
       await fetchLeaderboardData();
-      alert(`Berhasil melakukan approval! Skor peserta diperbarui menjadi: ${data.score} poin.`);
+      showToast(`Berhasil melakukan approval! Skor peserta diperbarui menjadi: ${data.score} poin.`, 'success');
       setShowReview(false);
     } catch (err: any) {
-      alert("Gagal menyimpan nilai: " + err.message);
+      showToast("Gagal menyimpan nilai: " + err.message, 'error');
     } finally {
       setIsSavingGrades(false);
     }
@@ -198,9 +229,9 @@ export default function LiveLeaderboard() {
       setShowDeleteParticipant(false);
       setDeleteTargetUser(null);
       fetchLeaderboardData();
-      alert("Data peserta berhasil dimusnahkan dari sesi ini!");
+      showToast("Data peserta berhasil dimusnahkan dari sesi ini!", 'success');
     } catch (err: any) {
-      alert("Gagal menghapus data: " + err.message);
+      showToast("Gagal menghapus data: " + err.message, 'error');
     } finally {
       setIsDeleting(false);
     }
@@ -392,7 +423,7 @@ export default function LiveLeaderboard() {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
     } catch (err: any) {
-      alert('Gagal mengekspor data: ' + (err?.message || 'Unknown error'));
+      showToast('Gagal mengekspor data: ' + (err?.message || 'Unknown error'), 'error');
     } finally {
       setIsExporting(false);
     }
@@ -833,12 +864,17 @@ export default function LiveLeaderboard() {
                 >
                   Tutup
                 </button>
-                <button
+                 <button
                   onClick={handleSaveEssayGrades}
-                  disabled={isSavingGrades}
-                  className="px-6 py-2.5 bg-[#5145cd] hover:bg-[#3d32a8] text-white text-xs font-black uppercase tracking-widest rounded-xl shadow-lg shadow-indigo-100 flex items-center gap-2 disabled:opacity-50 transition-all"
+                  disabled={isSavingGrades || !hasGradesChanged()}
+                  className={`px-6 py-2.5 text-xs font-black uppercase tracking-widest rounded-xl flex items-center gap-2 transition-all ${
+                    (isSavingGrades || !hasGradesChanged())
+                      ? 'bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed'
+                      : 'bg-[#5145cd] hover:bg-[#3d32a8] text-white shadow-lg shadow-indigo-100 shadow-indigo-100/30'
+                  }`}
                 >
-                  {isSavingGrades ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : '💾 Simpan & Akumulasi Skor'}
+                  {isSavingGrades ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                  <span>{isSavingGrades ? 'Menyimpan...' : 'Simpan & Akumulasi Skor'}</span>
                 </button>
               </div>
             </div>
@@ -1044,6 +1080,40 @@ export default function LiveLeaderboard() {
         </div>
 
       </div>
+      
+      {/* ===== CUSTOM ANIMATED TOAST NOTIFICATION ===== */}
+      <AnimatePresence>
+        {toast.show && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: -20 }}
+            transition={{ type: "spring", duration: 0.5 }}
+            className="fixed top-6 right-6 z-[999] max-w-sm w-full bg-white border border-gray-100 rounded-[24px] shadow-2xl p-4 flex items-center gap-3.5"
+          >
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+              toast.type === 'success' ? 'bg-emerald-50 text-emerald-500' :
+              toast.type === 'error' ? 'bg-rose-50 text-rose-500' : 'bg-blue-50 text-blue-500'
+            }`}>
+              {toast.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> :
+               toast.type === 'error' ? <XCircle className="w-5 h-5" /> : <Info className="w-5 h-5" />}
+            </div>
+            <div className="flex-1">
+              <p className="text-xs font-black text-gray-900 uppercase tracking-wider">
+                {toast.type === 'success' ? 'Berhasil' : toast.type === 'error' ? 'Gagal' : 'Informasi'}
+              </p>
+              <p className="text-[11px] font-bold text-gray-400 mt-0.5 leading-snug">{toast.message}</p>
+            </div>
+            <button 
+              onClick={() => setToast(prev => ({ ...prev, show: false }))}
+              className="w-7 h-7 bg-gray-50 hover:bg-gray-100 text-gray-400 hover:text-gray-600 rounded-full flex items-center justify-center transition-all flex-shrink-0"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }

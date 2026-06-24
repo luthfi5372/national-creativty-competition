@@ -81,13 +81,14 @@ export async function POST(request: Request) {
     const penaltyPoint: number = exam?.penalty_point || 0;
     const emptyPoint: number = exam?.empty_point || 0;
 
-    // ── STEP 2: Ambil semua jawaban peserta ──
-    const { data: answers, error: ansErr } = await supabase
-      .from('cbt_answers')
-      .select('question_id, selected_option')
-      .eq('attempt_id', attempt_id);
-
-    if (ansErr) throw ansErr;
+    // ── STEP 2: Ambil semua jawaban peserta dari cbt_attempts.answers ──
+    const studentAnswersObj = attempt.answers || {};
+    const answers = Object.entries(studentAnswersObj)
+      .filter(([key]) => key !== 'essay_grades')
+      .map(([question_id, selected_option]) => ({
+        question_id,
+        selected_option: String(selected_option)
+      }));
 
     if (!answers || answers.length === 0) {
       // Peserta tidak menjawab sama sekali
@@ -233,6 +234,7 @@ export async function POST(request: Request) {
       .update({
         final_score: finalScore,
         score: finalScore,
+        current_score: Math.round(finalScore),
         status: 'submitted',
         finished_at: new Date().toISOString()
       })
