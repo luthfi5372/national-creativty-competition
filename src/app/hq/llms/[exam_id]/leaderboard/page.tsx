@@ -161,25 +161,13 @@ export default function LiveLeaderboard() {
     if (!selectedAttempt) return;
     setIsSavingGrades(true);
     try {
-      const updatedAnswers = {
-        ...(selectedAttempt.answers || {}),
-        essay_grades: essayGrades
-      };
-
-      const { error: updateError } = await supabase
-        .from('cbt_attempts')
-        .update({
-          answers: updatedAnswers,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', selectedAttempt.id);
-
-      if (updateError) throw updateError;
-
       const res = await fetch('/api/admin/llms/grading', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ attempt_id: selectedAttempt.id })
+        body: JSON.stringify({ 
+          attempt_id: selectedAttempt.id,
+          essay_grades: essayGrades
+        })
       });
       const data = await res.json();
       if (!data.success) {

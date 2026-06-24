@@ -10,22 +10,24 @@
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
 /**
  * POST /api/admin/llms/grading
  * Menghitung skor akhir peserta berdasarkan jawaban yang tersimpan.
  * 
- * Body: { "attempt_id": "uuid-dari-cbt_attempts" }
+ * Body: { "attempt_id": "uuid-dari-cbt_attempts", "essay_grades": { ... } }
  * 
  * Alur kalkulasi:
- * 1. Ambil semua jawaban peserta dari cbt_answers
- * 2. Cocokkan dengan kunci jawaban di cbt_questions
- * 3. Hitung skor berdasarkan scoring_system ujian
- * 4. Update skor akhir di cbt_attempts
+ * 1. Update nilai essay jika disertakan di body (menggunakan service_role)
+ * 2. Ambil semua jawaban peserta dari cbt_answers
+ * 3. Cocokkan dengan kunci jawaban di cbt_questions
+ * 4. Hitung skor berdasarkan scoring_system ujian
+ * 5. Update skor akhir di cbt_attempts
  */
 export async function POST(request: Request) {
   try {
-    const { attempt_id } = await request.json();
+    const { attempt_id, essay_grades } = await request.json();
 
     if (!attempt_id) {
       return NextResponse.json(
@@ -34,7 +36,11 @@ export async function POST(request: Request) {
       );
     }
 
-    const supabase = await createClient();
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const supabase = serviceRoleKey 
+      ? createSupabaseClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false } })
+      : await createClient();
 
     // ── STEP 1: Ambil data attempt & konfigurasi ujian ──
     const { data: attempt, error: attemptErr } = await supabase
@@ -48,6 +54,25 @@ export async function POST(request: Request) {
         { success: false, error: "Sesi ujian peserta tidak ditemukan." },
         { status: 404 }
       );
+    }
+
+    // Jika essay_grades dikirim, lakukan update ke database terlebih dahulu
+    if (essay_grades) {
+      const updatedAnswers = {
+        ...(attempt.answers || {}),
+        essay_grades: essay_grades
+      };
+
+      const { error: updateError } = await supabase
+        .from('cbt_attempts')
+        .update({
+          answers: updatedAnswers,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', attempt_id);
+
+      if (updateError) throw updateError;
+      attempt.answers = updatedAnswers;
     }
 
     const exam = attempt.cbt_exams;
