@@ -19,7 +19,14 @@ import {
   XCircle,
   MinusCircle,
   Trash2,
-  Info
+  Info,
+  Hourglass,
+  Check,
+  AlertTriangle,
+  ClipboardList,
+  Star,
+  Lightbulb,
+  Pin
 } from 'lucide-react';
 
 export default function LiveLeaderboard() {
@@ -527,27 +534,28 @@ export default function LiveLeaderboard() {
                   <span className="text-xs font-black text-gray-400 uppercase tracking-widest">Tampilan:</span>
                   <div className="flex gap-1.5">
                     {[
-                      { id: 'wrong_and_essay', label: '❌ Salah & 📝 Essai' },
-                      { id: 'all', label: 'Semua Soal' },
-                      { id: 'wrong', label: 'Hanya Salah' },
-                      { id: 'essay', label: 'Hanya Essai' }
+                      { id: 'wrong_and_essay', label: 'Salah & Essai', icon: AlertTriangle },
+                      { id: 'all', label: 'Semua Soal', icon: BookOpen },
+                      { id: 'wrong', label: 'Hanya Salah', icon: XCircle },
+                      { id: 'essay', label: 'Hanya Essai', icon: Info }
                     ].map((btn) => (
                       <button
                         key={btn.id}
                         onClick={() => setReviewFilter(btn.id as any)}
-                        className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all border ${
+                        className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all border ${
                           reviewFilter === btn.id
                             ? 'bg-[#5145cd] text-white border-[#5145cd] shadow-md shadow-indigo-100'
                             : 'bg-white hover:bg-gray-50 text-gray-600 border-gray-200 hover:border-gray-300'
                         }`}
                       >
+                        <btn.icon className="w-3.5 h-3.5" />
                         {btn.label}
                       </button>
                     ))}
                   </div>
                 </div>
-                <div className="text-[10px] font-black text-amber-600 bg-amber-50 border border-amber-100 px-3 py-1 rounded-xl uppercase tracking-wider animate-pulse">
-                  💡 Default: Soal Salah & Essai
+                <div className="flex items-center gap-1 text-[10px] font-black text-amber-600 bg-amber-50 border border-amber-100 px-3 py-1 rounded-xl uppercase tracking-wider animate-pulse">
+                  <Lightbulb className="w-3.5 h-3.5 text-amber-500" /> Default: Soal Salah & Essai
                 </div>
               </div>
             )}
@@ -667,15 +675,20 @@ export default function LiveLeaderboard() {
                             {isEmpty ? (
                               <p className="text-sm font-bold text-gray-400 italic">— Tidak menjawab —</p>
                             ) : qType === 'pg' ? (
-                              <p className={`text-base font-black ${isCorrect ? 'text-emerald-700' : 'text-rose-700'}`}>
+                              <div className="space-y-1.5 mt-1">
                                 {(() => {
                                   const letters = userAnswer.split('');
                                   return letters.map((l: string) => {
                                     const text = q.options?.[l] || q.options?.[l.toLowerCase()] || '';
-                                    return `${l}${text ? `: ${text}` : ''}`;
-                                  }).join(', ');
+                                    return (
+                                      <div key={l} className={`flex items-center gap-2 text-xs font-black ${isCorrect ? 'text-emerald-700' : 'text-rose-700'}`}>
+                                        <span className={`w-6 h-6 ${isCorrect ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-rose-100 text-rose-800 border-rose-200'} text-[10px] font-black rounded-full flex items-center justify-center border uppercase flex-shrink-0`}>{l}</span>
+                                        <span>{text}</span>
+                                      </div>
+                                    );
+                                  });
                                 })()}
-                              </p>
+                              </div>
                             ) : (
                               <p className={`text-sm font-bold whitespace-pre-wrap leading-relaxed ${qType === 'essay' ? 'text-amber-900' : isCorrect ? 'text-emerald-700' : 'text-rose-700'}`}>
                                 {userAnswer}
@@ -686,15 +699,20 @@ export default function LiveLeaderboard() {
                           <div className="p-4 rounded-2xl border bg-indigo-50 border-indigo-200">
                             <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-2">Kunci / Panduan Jawaban</p>
                             {qType === 'pg' ? (
-                              <p className="text-base font-black text-indigo-700">
+                              <div className="space-y-1.5 mt-1">
                                 {(() => {
                                   const letters = correctKey.split('');
                                   return letters.map((l: string) => {
                                     const text = q.options?.[l] || q.options?.[l.toLowerCase()] || '';
-                                    return `${l}${text ? `: ${text}` : ''}`;
-                                  }).join(', ');
+                                    return (
+                                      <div key={l} className="flex items-center gap-2 text-xs font-black text-indigo-700">
+                                        <span className="w-6 h-6 bg-indigo-100 text-indigo-800 border border-indigo-200 text-[10px] font-black rounded-full flex items-center justify-center uppercase flex-shrink-0">{l}</span>
+                                        <span>{text}</span>
+                                      </div>
+                                    );
+                                  });
                                 })()}
-                              </p>
+                              </div>
                             ) : (
                               <p className="text-sm font-bold text-indigo-700 whitespace-pre-wrap leading-relaxed">
                                 {correctKey}
@@ -705,8 +723,8 @@ export default function LiveLeaderboard() {
 
                         {qType === 'pg' && q.options && (
                           <div className="mt-4 p-4 rounded-2xl border border-gray-200 bg-gray-50/30 text-left">
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
-                              📋 Pilihan Ganda Ujian:
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-1">
+                              <ClipboardList className="w-3.5 h-3.5 text-gray-400" /> Pilihan Ganda Ujian:
                             </p>
                             <div className="space-y-1.5">
                               {Object.entries(q.options)
@@ -767,15 +785,15 @@ export default function LiveLeaderboard() {
                         {qType === 'essay' && !isEmpty && (
                           <div className="mt-4 p-4 rounded-2xl border-2 border-dashed border-amber-200 bg-amber-50/30 text-left">
                             <p className="text-[10px] font-black text-amber-700 uppercase tracking-widest mb-2 flex items-center gap-1">
-                              ⭐️ PENILAIAN JURI & APPROVAL
+                              <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" /> Penilaian Juri & Approval
                             </p>
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                               <div className="flex flex-col gap-1">
                                 <span className="text-xs text-gray-500 font-bold">
                                   Berikan poin untuk jawaban ini
                                 </span>
-                                <span className="text-[10px] text-gray-400 font-medium">
-                                  📌 Referensi bobot soal: <span className="font-black text-indigo-600">{q.weight || 0}</span> poin · Admin bebas menentukan nilai
+                                <span className="flex items-center gap-1 text-[10px] text-gray-400 font-medium mt-0.5">
+                                  <Pin className="w-3 h-3 text-gray-400" /> Referensi bobot soal: <span className="font-black text-indigo-600">{q.weight || 0}</span> poin · Admin bebas menentukan nilai
                                 </span>
                               </div>
                               <div className="flex items-center gap-2">
@@ -969,7 +987,7 @@ export default function LiveLeaderboard() {
                         <td className="py-4 px-6 text-center">
                           {checkHasUngradedEssay(item) ? (
                             <span className="inline-flex items-center px-3 py-1 rounded-xl text-xs font-black bg-amber-50 text-amber-600 border border-amber-100 animate-pulse">
-                              ⏳ Ditinjau
+                              <Hourglass className="w-3.5 h-3.5 mr-1 animate-spin text-amber-500" /> Ditinjau
                             </span>
                           ) : (
                             <span className={`text-2xl font-black ${score > 0 ? 'text-[#5145cd]' : 'text-gray-300'}`}>
@@ -982,11 +1000,11 @@ export default function LiveLeaderboard() {
                         <td className="py-4 px-6 text-center">
                           {hasViolations ? (
                             <span className="inline-flex items-center px-3 py-1 rounded-xl text-xs font-black bg-rose-50 text-rose-600 border border-rose-100">
-                              ⚠️ {item.violations_count}×
+                              <AlertTriangle className="w-3.5 h-3.5 mr-1 text-rose-600" /> {item.violations_count}×
                             </span>
                           ) : (
                             <span className="inline-flex items-center px-3 py-1 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">
-                              ✓ Aman
+                              <Check className="w-3.5 h-3.5 mr-1 text-emerald-600" /> Aman
                             </span>
                           )}
                         </td>
