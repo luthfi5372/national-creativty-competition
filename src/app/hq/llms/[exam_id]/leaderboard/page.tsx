@@ -415,14 +415,14 @@ export default function LiveLeaderboard() {
     if (!selectedAttempt || reviewQuestions.length === 0) return { correct: 0, wrong: 0, empty: 0 };
     let correct = 0, wrong = 0, empty = 0;
     reviewQuestions.forEach(q => {
-      const userAns = selectedAttempt.answers?.[q.id];
+      const userAnswer = selectedAttempt.answers?.[q.id];
       const key = q.correct_answer || q.answer || '';
       const qType = q.options?.type || 'pg';
-      if (!userAns) {
+      if (!userAnswer) {
         empty++;
       } else if (qType === 'isian') {
         const correctAnswers = String(key).toUpperCase().split('|').map(x => x.trim());
-        if (correctAnswers.includes(String(userAns).trim().toUpperCase())) {
+        if (correctAnswers.includes(String(userAnswer).trim().toUpperCase())) {
           correct++;
         } else {
           wrong++;
@@ -430,7 +430,15 @@ export default function LiveLeaderboard() {
       } else if (qType === 'essay') {
         correct++; // Essay counted as answered / green in stats list
       } else {
-        if (userAns.toUpperCase() === key.toUpperCase()) correct++;
+        let isCorrect = false;
+        if (q.options?.points) {
+          const pts = q.options.points[String(userAnswer).toUpperCase()] ?? 0;
+          isCorrect = pts > 0;
+        } else {
+          isCorrect = String(userAnswer).trim().toUpperCase() === String(key).trim().toUpperCase() ||
+                      (String(key).length > 1 && String(key).toUpperCase().includes(String(userAnswer).trim().toUpperCase()));
+        }
+        if (isCorrect) correct++;
         else wrong++;
       }
     });
@@ -581,7 +589,15 @@ export default function LiveLeaderboard() {
                     } else if (qType === 'essay') {
                       isCorrect = false;
                     } else {
-                      isCorrect = !!userAnswer && String(userAnswer).trim().toUpperCase() === String(correctKey).trim().toUpperCase();
+                      if (q.options?.points) {
+                        const pts = q.options.points[String(userAnswer).toUpperCase()] ?? 0;
+                        isCorrect = pts > 0;
+                      } else {
+                        isCorrect = !!userAnswer && (
+                          String(userAnswer).trim().toUpperCase() === String(correctKey).trim().toUpperCase() ||
+                          (String(correctKey).length > 1 && String(correctKey).toUpperCase().includes(String(userAnswer).trim().toUpperCase()))
+                        );
+                      }
                     }
 
                     const borderColor = isEmpty 
@@ -698,20 +714,40 @@ export default function LiveLeaderboard() {
                                 .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
                                 .map(([key, val]) => {
                                   const isUserSelected = String(userAnswer).toUpperCase() === key.toUpperCase();
-                                  const isCorrect = String(correctKey).toUpperCase() === key.toUpperCase();
+                                  
+                                  let isOptCorrect = false;
+                                  let pointVal = 0;
+                                  if (q.options?.points) {
+                                    pointVal = Number(q.options.points[key] || 0);
+                                    isOptCorrect = pointVal > 0;
+                                  } else {
+                                    isOptCorrect = String(correctKey).toUpperCase().includes(key.toUpperCase());
+                                  }
                                   
                                   let optBg = 'bg-white border-gray-200 text-gray-700';
                                   let badge = null;
                                   
-                                  if (isUserSelected && isCorrect) {
+                                  if (isUserSelected && isOptCorrect) {
                                     optBg = 'bg-emerald-50 border-emerald-300 text-emerald-800 font-extrabold';
-                                    badge = <span className="text-[9px] font-black uppercase text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-lg border border-emerald-200">Jawaban Peserta (Benar)</span>;
+                                    badge = (
+                                      <span className="text-[9px] font-black uppercase text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-lg border border-emerald-200">
+                                        Jawaban Peserta (Benar {pointVal > 0 ? `+${pointVal} Poin` : ''})
+                                      </span>
+                                    );
                                   } else if (isUserSelected) {
                                     optBg = 'bg-rose-50 border-rose-300 text-rose-800 font-extrabold';
-                                    badge = <span className="text-[9px] font-black uppercase text-rose-700 bg-rose-100 px-2 py-0.5 rounded-lg border border-rose-200">Jawaban Peserta (Salah)</span>;
-                                  } else if (isCorrect) {
+                                    badge = (
+                                      <span className="text-[9px] font-black uppercase text-rose-700 bg-rose-100 px-2 py-0.5 rounded-lg border border-rose-200">
+                                        Jawaban Peserta (Salah)
+                                      </span>
+                                    );
+                                  } else if (isOptCorrect) {
                                     optBg = 'bg-indigo-50 border-indigo-300 text-indigo-800 font-extrabold';
-                                    badge = <span className="text-[9px] font-black uppercase text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-lg border border-indigo-200">Kunci Jawaban</span>;
+                                    badge = (
+                                      <span className="text-[9px] font-black uppercase text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-lg border border-indigo-200">
+                                        Kunci Jawaban {pointVal > 0 ? `(+${pointVal} Poin)` : ''}
+                                      </span>
+                                    );
                                   }
 
                                   return (
