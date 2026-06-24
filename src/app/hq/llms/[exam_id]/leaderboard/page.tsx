@@ -794,19 +794,47 @@ export default function LiveLeaderboard() {
                                   const letters = correctKey.split('');
                                   return letters.map((l: string) => {
                                     const text = q.options?.[l] || q.options?.[l.toLowerCase()] || '';
+                                    
+                                    // Hitung poin yang diset admin untuk opsi ini
+                                    let pts = 0;
+                                    if (q.options?.points) {
+                                      pts = Number(q.options.points[l] || 0);
+                                    } else {
+                                      pts = examConfig?.correct_point ?? 4;
+                                    }
+                                    const ptsText = pts >= 0 ? `+${pts} Poin` : `${pts} Poin`;
+
                                     return (
-                                      <div key={l} className="flex items-center gap-2.5 px-3 py-2 border border-indigo-100 bg-indigo-100/40 text-indigo-800 text-xs font-black transition-all">
-                                        <span className="w-6 h-6 bg-indigo-200 text-indigo-900 border border-indigo-300 text-[10px] font-black rounded-full flex items-center justify-center uppercase flex-shrink-0">{l}</span>
-                                        <span>{text}</span>
+                                      <div key={l} className="flex justify-between items-center gap-2.5 px-3 py-2 border border-indigo-100 bg-indigo-100/40 text-indigo-800 text-xs font-black transition-all rounded-xl">
+                                        <div className="flex items-center gap-2.5">
+                                          <span className="w-6 h-6 bg-indigo-200 text-indigo-900 border border-indigo-300 text-[10px] font-black rounded-full flex items-center justify-center uppercase flex-shrink-0">{l}</span>
+                                          <span>{text}</span>
+                                        </div>
+                                        <span className="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-lg border border-indigo-200 font-black">
+                                          {ptsText}
+                                        </span>
                                       </div>
                                     );
                                   });
                                 })()}
                               </div>
                             ) : (
-                              <p className="text-sm font-bold text-indigo-700 whitespace-pre-wrap leading-relaxed">
-                                {correctKey}
-                              </p>
+                              <div>
+                                <p className="text-sm font-bold text-indigo-700 whitespace-pre-wrap leading-relaxed">
+                                  {correctKey}
+                                </p>
+                                {(() => {
+                                  const pts = Number(q.options?.points?.correct ?? examConfig?.correct_point ?? 4);
+                                  const ptsText = pts >= 0 ? `+${pts} Poin` : `${pts} Poin`;
+                                  return (
+                                    <div className="mt-2.5">
+                                      <span className="text-[10px] bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-xl border border-indigo-200 font-black">
+                                        Kunci Benar ({ptsText})
+                                      </span>
+                                    </div>
+                                  );
+                                })()}
+                              </div>
                             )}
                           </div>
                         </div>
@@ -835,25 +863,29 @@ export default function LiveLeaderboard() {
                                   let optBg = 'bg-white border-gray-200 text-gray-700';
                                   let badge = null;
                                   
+                                  const displayPts = q.options?.points ? pointVal : (examConfig?.correct_point ?? 4);
+                                  const penaltyVal = examConfig?.penalty_point || 0;
+                                  const penaltyText = penaltyVal > 0 ? `-${penaltyVal} Poin` : '';
+
                                   if (isUserSelected && isOptCorrect) {
                                     optBg = 'bg-emerald-50 border-emerald-300 text-emerald-800 font-extrabold';
                                     badge = (
                                       <span className="text-[9px] font-black uppercase text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-lg border border-emerald-200">
-                                        Jawaban Peserta (Benar {pointVal > 0 ? `+${pointVal} Poin` : ''})
+                                        Jawaban Peserta (Benar +{displayPts} Poin)
                                       </span>
                                     );
                                   } else if (isUserSelected) {
                                     optBg = 'bg-rose-50 border-rose-300 text-rose-800 font-extrabold';
                                     badge = (
                                       <span className="text-[9px] font-black uppercase text-rose-700 bg-rose-100 px-2 py-0.5 rounded-lg border border-rose-200">
-                                        Jawaban Peserta (Salah)
+                                        Jawaban Peserta (Salah {penaltyText ? ` ${penaltyText}` : ''})
                                       </span>
                                     );
                                   } else if (isOptCorrect) {
                                     optBg = 'bg-indigo-50 border-indigo-300 text-indigo-800 font-extrabold';
                                     badge = (
                                       <span className="text-[9px] font-black uppercase text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-lg border border-indigo-200">
-                                        Kunci Jawaban {pointVal > 0 ? `(+${pointVal} Poin)` : ''}
+                                        Kunci Jawaban (+{displayPts} Poin)
                                       </span>
                                     );
                                   }
