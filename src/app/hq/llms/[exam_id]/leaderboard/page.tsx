@@ -675,14 +675,18 @@ export default function LiveLeaderboard() {
                             {isEmpty ? (
                               <p className="text-sm font-bold text-gray-400 italic">— Tidak menjawab —</p>
                             ) : qType === 'pg' ? (
-                              <div className="space-y-1.5 mt-1">
+                              <div className="space-y-1.5 mt-2">
                                 {(() => {
                                   const letters = userAnswer.split('');
                                   return letters.map((l: string) => {
                                     const text = q.options?.[l] || q.options?.[l.toLowerCase()] || '';
                                     return (
-                                      <div key={l} className={`flex items-center gap-2 text-xs font-black ${isCorrect ? 'text-emerald-700' : 'text-rose-700'}`}>
-                                        <span className={`w-6 h-6 ${isCorrect ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-rose-100 text-rose-800 border-rose-200'} text-[10px] font-black rounded-full flex items-center justify-center border uppercase flex-shrink-0`}>{l}</span>
+                                      <div key={l} className={`flex items-center gap-2.5 px-3 py-2 border rounded-xl ${
+                                        isCorrect 
+                                          ? 'bg-emerald-50/50 border-emerald-200 text-emerald-800' 
+                                          : 'bg-rose-50/50 border-rose-200 text-rose-800'
+                                      } text-xs font-black transition-all`}>
+                                        <span className={`w-6 h-6 ${isCorrect ? 'bg-emerald-200 text-emerald-900 border-emerald-300' : 'bg-rose-200 text-rose-900 border-rose-300'} text-[10px] font-black rounded-full flex items-center justify-center border uppercase flex-shrink-0`}>{l}</span>
                                         <span>{text}</span>
                                       </div>
                                     );
@@ -699,14 +703,14 @@ export default function LiveLeaderboard() {
                           <div className="p-4 rounded-2xl border bg-indigo-50 border-indigo-200">
                             <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-2">Kunci / Panduan Jawaban</p>
                             {qType === 'pg' ? (
-                              <div className="space-y-1.5 mt-1">
+                              <div className="space-y-1.5 mt-2">
                                 {(() => {
                                   const letters = correctKey.split('');
                                   return letters.map((l: string) => {
                                     const text = q.options?.[l] || q.options?.[l.toLowerCase()] || '';
                                     return (
-                                      <div key={l} className="flex items-center gap-2 text-xs font-black text-indigo-700">
-                                        <span className="w-6 h-6 bg-indigo-100 text-indigo-800 border border-indigo-200 text-[10px] font-black rounded-full flex items-center justify-center uppercase flex-shrink-0">{l}</span>
+                                      <div key={l} className="flex items-center gap-2.5 px-3 py-2 border border-indigo-100 bg-indigo-100/40 text-indigo-800 text-xs font-black transition-all">
+                                        <span className="w-6 h-6 bg-indigo-200 text-indigo-900 border border-indigo-300 text-[10px] font-black rounded-full flex items-center justify-center uppercase flex-shrink-0">{l}</span>
                                         <span>{text}</span>
                                       </div>
                                     );
