@@ -207,6 +207,7 @@ export async function POST(request: Request) {
       .from('cbt_attempts')
       .update({
         final_score: finalScore,
+        score: finalScore,
         status: 'submitted',
         finished_at: new Date().toISOString()
       })

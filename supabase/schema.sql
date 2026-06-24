@@ -208,11 +208,25 @@ EXECUTE PROCEDURE update_modified_column();
 -- ============================================================================
 -- OTOMATISASI: FUNGSI PROTEKSI ATTEMPTS SETELAH SUBMIT
 -- Mencegah update data apapun pada tabel cbt_attempts setelah status disubmit
+-- Kecuali jika update dilakukan oleh admin (bypass proteksi)
 -- ============================================================================
 CREATE OR REPLACE FUNCTION protect_submitted_attempts()
 RETURNS TRIGGER AS $$
+DECLARE
+    current_user_email TEXT;
 BEGIN
-    -- Jika data lama (OLD) sudah memiliki submitted_at, tolak segala bentuk UPDATE
+    -- Dapatkan email user saat ini dari auth.jwt()
+    SELECT COALESCE(
+        current_setting('request.jwt.claims', true)::json->>'email',
+        ''
+    ) INTO current_user_email;
+
+    -- Jika user adalah admin, izinkan update (bypass proteksi submit)
+    IF current_user_email IN ('admin@ncc.id', 'admin1@ncc.id', 'halo.ncc@gmail.com') THEN
+        RETURN NEW;
+    END IF;
+
+    -- Jika data lama (OLD) sudah memiliki submitted_at, tolak segala bentuk UPDATE untuk non-admin
     IF OLD.submitted_at IS NOT NULL THEN
         RAISE EXCEPTION 'Sesi ujian ini telah disubmit dan tidak dapat diubah lagi secara ilegal.';
     END IF;

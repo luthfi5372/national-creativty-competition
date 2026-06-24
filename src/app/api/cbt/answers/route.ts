@@ -259,6 +259,7 @@ export async function PATCH(request: NextRequest) {
       .from('cbt_attempts')
       .update({
         final_score: finalScore,
+        score: finalScore,
         status: 'submitted',
         finished_at: new Date().toISOString()
       })

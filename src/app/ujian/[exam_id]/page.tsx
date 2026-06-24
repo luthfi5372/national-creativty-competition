@@ -305,6 +305,7 @@ export default function ExamRoom() {
           submitted_at: new Date().toISOString(),
           status: 'submitted', // Set status secara eksplisit
           score: finalScore,
+          final_score: finalScore,
           answers: answers, // Kirim juga rekaman jawaban mentah
           updated_at: new Date().toISOString()
         }).eq('user_id', userId).eq('exam_id', examId);

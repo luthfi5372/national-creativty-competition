@@ -211,7 +211,10 @@ export async function PATCH(request: NextRequest) {
 
         const { error } = await supabase
           .from('cbt_attempts')
-          .update({ final_score: body.score })
+          .update({ 
+            final_score: body.score,
+            score: body.score
+          })
           .eq('id', body.attempt_id);
         if (error) throw error;
 
