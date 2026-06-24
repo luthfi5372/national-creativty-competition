@@ -489,37 +489,52 @@ export default function LiveLeaderboard() {
 
   // Hitung statistik untuk review
   const getReviewStats = () => {
-    if (!selectedAttempt || reviewQuestions.length === 0) return { correct: 0, wrong: 0, empty: 0 };
+    if (!selectedAttempt || reviewQuestions.length === 0) return { correct: 0, wrong: 0, empty: 0, totalPoints: 0 };
     let correct = 0, wrong = 0, empty = 0;
+    let totalPoints = 0;
+    const fixedCorrect = examConfig?.correct_point ?? 4;
+    const penaltyPt = examConfig?.penalty_point || 0;
     reviewQuestions.forEach(q => {
       const userAnswer = selectedAttempt.answers?.[q.id];
       const key = q.correct_answer || q.answer || '';
       const qType = q.options?.type || 'pg';
-      if (!userAnswer) {
+      if (!userAnswer || String(userAnswer).trim() === '') {
         empty++;
+        totalPoints += examConfig?.empty_point || 0;
+      } else if (qType === 'essay') {
+        correct++;
+        const gradeVal = Number(essayGrades[q.id] ?? selectedAttempt.answers?.essay_grades?.[q.id] ?? 0);
+        totalPoints += gradeVal;
       } else if (qType === 'isian') {
         const correctAnswers = String(key).toUpperCase().split('|').map(x => x.trim());
-        if (correctAnswers.includes(String(userAnswer).trim().toUpperCase())) {
+        const isCorrect = correctAnswers.includes(String(userAnswer).trim().toUpperCase());
+        if (isCorrect) {
           correct++;
+          totalPoints += Number(q.options?.points?.correct ?? fixedCorrect);
         } else {
           wrong++;
+          totalPoints += penaltyPt > 0 ? -penaltyPt : penaltyPt;
         }
-      } else if (qType === 'essay') {
-        correct++; // Essay counted as answered / green in stats list
       } else {
-        let isCorrect = false;
+        // PG
         if (q.options?.points) {
-          const pts = q.options.points[String(userAnswer).toUpperCase()] ?? 0;
-          isCorrect = pts > 0;
+          const pts = Number(q.options.points[String(userAnswer).toUpperCase()] ?? 0);
+          totalPoints += pts;
+          if (pts > 0) correct++;
+          else wrong++;
         } else {
-          isCorrect = String(userAnswer).trim().toUpperCase() === String(key).trim().toUpperCase() ||
-                      (String(key).length > 1 && String(key).toUpperCase().includes(String(userAnswer).trim().toUpperCase()));
+          const isCorrect = String(userAnswer).trim().toUpperCase() === String(key).trim().toUpperCase();
+          if (isCorrect) {
+            correct++;
+            totalPoints += fixedCorrect;
+          } else {
+            wrong++;
+            totalPoints += penaltyPt > 0 ? -penaltyPt : penaltyPt;
+          }
         }
-        if (isCorrect) correct++;
-        else wrong++;
       }
     });
-    return { correct, wrong, empty };
+    return { correct, wrong, empty, totalPoints };
   };
 
   return (
@@ -570,32 +585,45 @@ export default function LiveLeaderboard() {
             </div>
 
             {/* Statistik ringkas */}
-            {!reviewLoading && (
-              <div className="grid grid-cols-3 gap-3 px-8 py-4 bg-white border-b border-gray-50 flex-shrink-0">
-                {[
-                  { label: 'Benar', value: getReviewStats().correct, color: 'emerald', icon: CheckCircle2 },
-                  { label: 'Salah', value: getReviewStats().wrong, color: 'rose', icon: XCircle },
-                  { label: 'Kosong', value: getReviewStats().empty, color: 'gray', icon: MinusCircle },
-                ].map((s, i) => (
-                  <div key={i} className={`flex items-center gap-3 p-3 rounded-2xl border ${
-                    s.color === 'emerald' ? 'bg-emerald-50 border-emerald-100' :
-                    s.color === 'rose' ? 'bg-rose-50 border-rose-100' : 'bg-gray-50 border-gray-100'
-                  }`}>
-                    <s.icon className={`w-5 h-5 flex-shrink-0 ${
-                      s.color === 'emerald' ? 'text-emerald-500' :
-                      s.color === 'rose' ? 'text-rose-500' : 'text-gray-400'
-                    }`} />
+            {!reviewLoading && (() => {
+              const stats = getReviewStats();
+              return (
+                <div className="grid grid-cols-4 gap-2.5 px-8 py-4 bg-white border-b border-gray-50 flex-shrink-0">
+                  {/* Benar */}
+                  <div className="flex items-center gap-2.5 p-3 rounded-2xl border bg-emerald-50 border-emerald-100">
+                    <CheckCircle2 className="w-5 h-5 flex-shrink-0 text-emerald-500" />
                     <div>
-                      <p className={`text-2xl font-black leading-none ${
-                        s.color === 'emerald' ? 'text-emerald-600' :
-                        s.color === 'rose' ? 'text-rose-600' : 'text-gray-500'
-                      }`}>{s.value}</p>
-                      <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-0.5">{s.label}</p>
+                      <p className="text-2xl font-black leading-none text-emerald-600">{stats.correct}</p>
+                      <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-0.5">Benar</p>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
+                  {/* Salah */}
+                  <div className="flex items-center gap-2.5 p-3 rounded-2xl border bg-rose-50 border-rose-100">
+                    <XCircle className="w-5 h-5 flex-shrink-0 text-rose-500" />
+                    <div>
+                      <p className="text-2xl font-black leading-none text-rose-600">{stats.wrong}</p>
+                      <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-0.5">Salah</p>
+                    </div>
+                  </div>
+                  {/* Kosong */}
+                  <div className="flex items-center gap-2.5 p-3 rounded-2xl border bg-gray-50 border-gray-100">
+                    <MinusCircle className="w-5 h-5 flex-shrink-0 text-gray-400" />
+                    <div>
+                      <p className="text-2xl font-black leading-none text-gray-500">{stats.empty}</p>
+                      <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-0.5">Kosong</p>
+                    </div>
+                  </div>
+                  {/* Total Poin */}
+                  <div className="flex items-center gap-2.5 p-3 rounded-2xl border bg-indigo-50 border-indigo-100">
+                    <Star className="w-5 h-5 flex-shrink-0 text-indigo-500 fill-indigo-200" />
+                    <div>
+                      <p className="text-2xl font-black leading-none text-indigo-600">{stats.totalPoints}</p>
+                      <p className="text-[9px] font-black uppercase tracking-widest text-indigo-400 mt-0.5">Total Poin</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Filter Soal */}
             {!reviewLoading && (
