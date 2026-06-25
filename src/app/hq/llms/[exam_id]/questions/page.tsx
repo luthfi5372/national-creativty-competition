@@ -632,40 +632,66 @@ export default function EditorBankSoal() {
             {/* Render Form Berdasarkan Tipe Soal */}
             {questionType === 'pg' && (
               <div className="space-y-3">
-                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 flex justify-between">
+                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 flex justify-between items-center">
                   <span>Pernyataan Opsi & Kunci Jawaban</span>
-                  <span>Atur Poin Opsi</span>
+                  <span className="text-indigo-500">Poin Kustom Per Opsi</span>
                 </div>
+
                 {visibleOptions.map((huruf) => {
                   const isSelected = (kunciJawaban || '').includes(huruf);
+                  const pts = optionPoints[huruf] ?? 0;
                   return (
-                    <div key={huruf} className={`flex items-center p-1.5 rounded-xl border transition-all ${isSelected ? 'border-indigo-400 bg-indigo-50/40 ring-1 ring-indigo-400' : 'border-gray-200 bg-white'}`}>
-                      <input 
-                        type="checkbox" 
-                        checked={isSelected} 
-                        onChange={() => toggleKunciJawaban(huruf)}
-                        className="w-4 h-4 text-indigo-600 rounded mx-4 cursor-pointer focus:ring-indigo-500"
-                      />
-                      <span className={`font-bold w-6 ${isSelected ? 'text-indigo-600' : 'text-gray-400'}`}>{huruf}</span>
-                      <input
-                        type="text" value={opsi[huruf] || ''} onChange={(e) => setOpsi({ ...opsi, [huruf]: e.target.value })}
-                        placeholder={`Isi opsi jawaban ${huruf}...`}
-                        className="w-full bg-transparent outline-none text-gray-700 placeholder-gray-300 py-2 text-sm"
-                      />
-                      <div className="flex items-center space-x-2 border-l border-gray-100 pl-3 pr-2 shrink-0">
-                        <span className="text-[10px] font-bold text-gray-400 uppercase">Poin:</span>
+                    <div key={huruf} className={`rounded-xl border transition-all ${isSelected ? 'border-indigo-400 bg-indigo-50/40 ring-1 ring-indigo-400' : 'border-gray-200 bg-white'}`}>
+                      {/* Baris Utama: checkbox + huruf + teks opsi */}
+                      <div className="flex items-center p-1.5">
                         <input
-                          type="number"
-                          value={optionPoints[huruf] ?? 0}
-                          onChange={(e) => setOptionPoints({ ...optionPoints, [huruf]: Number(e.target.value) })}
-                          className="w-14 text-center bg-gray-50 border border-gray-200 rounded-lg py-1 text-xs font-bold text-gray-700 outline-none focus:ring-1 focus:ring-indigo-500"
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleKunciJawaban(huruf)}
+                          className="w-4 h-4 text-indigo-600 rounded mx-4 cursor-pointer focus:ring-indigo-500"
                         />
+                        <span className={`font-bold w-6 ${isSelected ? 'text-indigo-600' : 'text-gray-400'}`}>{huruf}</span>
+                        <input
+                          type="text"
+                          value={opsi[huruf] || ''}
+                          onChange={(e) => setOpsi({ ...opsi, [huruf]: e.target.value })}
+                          placeholder={`Isi opsi jawaban ${huruf}...`}
+                          className="w-full bg-transparent outline-none text-gray-700 placeholder-gray-300 py-2 text-sm"
+                        />
+                      </div>
+
+                      {/* Baris Poin Kustom */}
+                      <div className={`flex items-center gap-2 px-4 py-2 border-t ${isSelected ? 'border-indigo-200 bg-indigo-50/60' : 'border-gray-100 bg-gray-50/60'} rounded-b-xl`}>
+                        <span className={`text-[10px] font-black uppercase tracking-wide ${isSelected ? 'text-indigo-500' : 'text-gray-400'}`}>
+                          Poin opsi ini:
+                        </span>
+                        <div className="flex items-center gap-1 ml-auto">
+                          <button
+                            type="button"
+                            onClick={() => setOptionPoints({ ...optionPoints, [huruf]: Math.max(0, pts - 1) })}
+                            className="w-6 h-6 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-600 font-black text-sm flex items-center justify-center transition-all"
+                          >−</button>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.5"
+                            value={pts}
+                            onChange={(e) => setOptionPoints({ ...optionPoints, [huruf]: Number(e.target.value) || 0 })}
+                            className={`w-16 text-center border rounded-lg py-0.5 text-sm font-black outline-none focus:ring-1 focus:ring-indigo-500 transition-all ${isSelected ? 'bg-white border-indigo-300 text-indigo-700' : 'bg-white border-gray-200 text-gray-700'}`}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setOptionPoints({ ...optionPoints, [huruf]: pts + 1 })}
+                            className="w-6 h-6 rounded-lg bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-black text-sm flex items-center justify-center transition-all"
+                          >+</button>
+                          <span className="text-[10px] font-bold text-gray-400 ml-1">Poin</span>
+                        </div>
                       </div>
                     </div>
                   );
                 })}
 
-                {/* Tombol Tambah/Kurang Opsi secara Dinamis */}
+                {/* Tombol Tambah/Kurang Opsi */}
                 <div className="flex space-x-2 pt-2">
                   <button
                     type="button"
@@ -681,8 +707,20 @@ export default function EditorBankSoal() {
                     disabled={visibleOptions.length <= 2}
                     className="flex-grow py-2 px-3 border border-rose-200 bg-rose-50/30 hover:bg-rose-50 text-rose-600 text-xs font-bold rounded-xl transition-all disabled:opacity-50"
                   >
-                    - Kurangi Opsi Pilihan
+                    − Kurangi Opsi Pilihan
                   </button>
+                </div>
+
+                {/* Ringkasan Total Poin */}
+                <div className="mt-1 p-3 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100 flex flex-wrap gap-2 items-center justify-between">
+                  <span className="text-[10px] font-black text-indigo-600 uppercase tracking-wider">Ringkasan Poin Soal Ini:</span>
+                  <div className="flex gap-2 flex-wrap">
+                    {visibleOptions.map(h => (
+                      <span key={h} className={`text-[9px] font-black px-2 py-0.5 rounded-lg border ${optionPoints[h] > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-gray-50 text-gray-400 border-gray-200'}`}>
+                        {h}: {optionPoints[h] ?? 0} Poin
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
@@ -780,23 +818,23 @@ export default function EditorBankSoal() {
               {questionType === 'pg' && visibleOptions.map((huruf) => {
                 const isCorrect = (kunciJawaban || '').includes(huruf);
                 const isMultiSelect = (kunciJawaban || '').length > 1;
+                const pts = optionPoints[huruf] ?? 0;
                 return (
-                  <div key={huruf} className={`w-full text-left p-3.5 rounded-xl border transition-all flex items-center ${isCorrect ? 'border-emerald-400 bg-emerald-50 shadow-sm' : 'border-gray-200 bg-white'}`}>
-                    <span className={`flex items-center justify-center w-7 h-7 ${isMultiSelect ? 'rounded-lg' : 'rounded-full'} text-xs font-bold mr-4 ${isCorrect ? 'bg-emerald-500 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                  <div key={huruf} className={`w-full text-left p-3.5 rounded-xl border transition-all flex items-center gap-3 ${isCorrect ? 'border-emerald-400 bg-emerald-50 shadow-sm' : 'border-gray-200 bg-white'}`}>
+                    <span className={`flex items-center justify-center w-7 h-7 flex-shrink-0 ${isMultiSelect ? 'rounded-lg' : 'rounded-full'} text-xs font-bold ${isCorrect ? 'bg-emerald-500 text-white' : 'bg-gray-100 text-gray-500'}`}>
                       {huruf}
                     </span>
-                    <div className="flex-grow">
-                      <div 
+                    <div className="flex-grow min-w-0">
+                      <div
                         className={`text-sm ${isCorrect ? 'text-emerald-900 font-semibold' : 'text-gray-600'}`}
-                        dangerouslySetInnerHTML={{ __html: renderMath(opsi[huruf] || "...") }}
+                        dangerouslySetInnerHTML={{ __html: renderMath(opsi[huruf] || '...') }}
                       />
-                      {optionPoints[huruf] !== undefined && optionPoints[huruf] !== 0 && (
-                        <span className="text-[9px] text-indigo-500 font-bold bg-indigo-50 px-1 py-0.5 rounded mt-0.5 inline-block">
-                          Poin: {optionPoints[huruf]}
-                        </span>
-                      )}
                     </div>
-                    {isCorrect && <CheckCircle className="w-5 h-5 text-emerald-500 ml-auto flex-shrink-0" />}
+                    {/* Badge Poin selalu tampil */}
+                    <span className={`flex-shrink-0 text-[10px] font-black px-2 py-0.5 rounded-lg border ${pts > 0 ? 'bg-emerald-100 text-emerald-700 border-emerald-300' : 'bg-gray-100 text-gray-400 border-gray-200'}`}>
+                      {pts > 0 ? `+${pts}` : pts} Poin
+                    </span>
+                    {isCorrect && <CheckCircle className="w-5 h-5 text-emerald-500 flex-shrink-0" />}
                   </div>
                 );
               })}
