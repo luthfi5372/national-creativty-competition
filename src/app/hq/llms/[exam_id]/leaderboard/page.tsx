@@ -400,67 +400,136 @@ export default function LiveLeaderboard() {
         if (data) questions.push(...data);
       }
 
-      // Build header: basic info + per-question columns
-      const questionHeaders = questions.map((q, i) => `"Soal ${i + 1} (${(q.options?.type || 'pg').toUpperCase()}) - Bobot ${q.weight || 0}"`);
-      const answerHeaders = questions.map((q, i) => `"Jawaban Soal ${i + 1}"`);
-      const statusHeaders = questions.map((q, i) => `"Status Soal ${i + 1}"`);
-
+      // Build header dynamically: basic info + per-question details (grouped for readability)
       const headers = [
-        'Peringkat', 'ID Peserta', 'Skor Total', 'Jumlah Benar', 'Jumlah Salah', 'Jumlah Kosong',
-        'Pelanggaran', 'Status Submit', 'Terakhir Update',
-        ...questionHeaders,
-        ...answerHeaders,
-        ...statusHeaders
+        '"Peringkat"', '"ID Peserta"', '"Skor Total"', '"Jumlah Benar"', '"Jumlah Salah"', '"Jumlah Kosong"',
+        '"Pelanggaran"', '"Status Submit"', '"Terakhir Update"'
       ];
+      questions.forEach((q, i) => {
+        headers.push(`"Soal ${i + 1}: Pertanyaan"`);
+        headers.push(`"Soal ${i + 1}: Tipe"`);
+        headers.push(`"Soal ${i + 1}: Kunci"`);
+        headers.push(`"Soal ${i + 1}: Jawaban Peserta"`);
+        headers.push(`"Soal ${i + 1}: Status"`);
+        headers.push(`"Soal ${i + 1}: Poin"`);
+      });
 
       const rows = filteredAttempts.map((item) => {
         // Gunakan rank asli dari full attempts list
         const realRank = attempts.findIndex(a => a.id === item.id) + 1;
         let benar = 0, salah = 0, kosong = 0;
-        const qTexts: string[] = [];
-        const answerCols: string[] = [];
-        const statusCols: string[] = [];
+        const qCols: string[] = [];
 
         questions.forEach((q) => {
           const userAns = item.answers?.[q.id];
           const correctKey = q.correct_answer || q.answer || '';
           const qType = q.options?.type || 'pg';
-          qTexts.push(`"${String(q.question_text || '').replace(/"/g, "'").substring(0, 80)}"`);
+
+          // 1. Pertanyaan
+          const cleanQText = `"${String(q.question_text || '').replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`;
+          
+          // 2. Tipe
+          const tipeText = qType.toUpperCase();
+
+          // 3. Kunci
+          let kunciText = correctKey;
+          if (qType === 'pg' && q.options?.points) {
+            const ptsObj = q.options.points;
+            const ptsStr = Object.entries(ptsObj)
+              .map(([opt, pt]) => `${opt}:${pt}p`)
+              .join(' | ');
+            kunciText = `${correctKey} (${ptsStr})`;
+          }
+          const cleanKunciText = `"${String(kunciText || '').replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`;
+
+          // 4. Jawaban Peserta
+          const cleanUserAns = userAns 
+            ? `"${String(userAns).replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`
+            : '"(kosong)"';
+
+          // 5. Status & 6. Poin
+          let statusText = '';
+          let pointEarned = 0;
 
           if (!userAns) {
             kosong++;
-            answerCols.push('(kosong)');
-            statusCols.push('KOSONG');
+            statusText = 'KOSONG';
+            pointEarned = examConfig?.empty_point || 0;
           } else if (qType === 'essay') {
-            const essayScore = item.answers?.essay_grades?.[q.id] ?? 0;
-            answerCols.push(`"${String(userAns).replace(/"/g, "'").substring(0, 100)}"`);
-            statusCols.push(`ESSAY (${essayScore} poin)`);
+            const essayScore = item.answers?.essay_grades?.[q.id];
+            if (essayScore === undefined) {
+              statusText = 'BELUM DINILAI';
+              pointEarned = 0;
+            } else {
+              statusText = 'ESSAY';
+              pointEarned = Number(essayScore);
+              if (pointEarned > 0) benar++; else salah++;
+            }
           } else if (qType === 'isian') {
             const correctAnswers = String(correctKey).toUpperCase().split('|').map((x: string) => x.trim());
             const isCorrect = correctAnswers.includes(String(userAns).trim().toUpperCase());
-            if (isCorrect) benar++; else salah++;
-            answerCols.push(`"${String(userAns).substring(0, 80)}"`);
-            statusCols.push(isCorrect ? 'BENAR' : 'SALAH');
+            if (isCorrect) {
+              benar++;
+              statusText = 'BENAR';
+              pointEarned = Number(q.options?.points?.correct ?? examConfig?.correct_point ?? 4);
+            } else {
+              salah++;
+              statusText = 'SALAH';
+              const penalty = examConfig?.penalty_point || 0;
+              pointEarned = penalty <= 0 ? penalty : -penalty;
+            }
           } else {
-            const isCorrect = String(userAns).trim().toUpperCase() === String(correctKey).trim().toUpperCase();
-            if (isCorrect) benar++; else salah++;
-            answerCols.push(String(userAns));
-            statusCols.push(isCorrect ? 'BENAR' : 'SALAH');
+            // PG
+            if (q.options && typeof q.options === 'object' && q.options.points) {
+              const selectedLetters = String(userAns).split('');
+              let pts = 0;
+              selectedLetters.forEach((l: string) => {
+                pts += Number(q.options.points[l] || 0);
+              });
+              pointEarned = pts;
+              if (pts > 0) {
+                benar++;
+                statusText = 'BENAR';
+              } else {
+                salah++;
+                statusText = 'SALAH';
+              }
+            } else {
+              const isCorrect = String(userAns).trim().toUpperCase() === String(correctKey).trim().toUpperCase();
+              if (isCorrect) {
+                benar++;
+                statusText = 'BENAR';
+                pointEarned = examConfig?.correct_point ?? 4;
+              } else {
+                salah++;
+                statusText = 'SALAH';
+                const penalty = examConfig?.penalty_point || 0;
+                pointEarned = penalty <= 0 ? penalty : -penalty;
+              }
+            }
           }
+
+          qCols.push(cleanQText);
+          qCols.push(`"${tipeText}"`);
+          qCols.push(cleanKunciText);
+          qCols.push(cleanUserAns);
+          qCols.push(`"${statusText}"`);
+          qCols.push(String(pointEarned));
         });
 
-        return [
+        const rowMeta = [
           realRank,
-          item.user_id,
-          checkHasUngradedEssay(item) ? 'Ditinjau' : (item.score ?? 0),
-          benar, salah, kosong,
+          `"${item.user_id}"`,
+          checkHasUngradedEssay(item, questions) ? '"Ditinjau"' : (item.score ?? 0),
+          benar,
+          salah,
+          kosong,
           item.violations_count || 0,
-          item.submitted_at ? 'SELESAI' : 'BERLANGSUNG',
-          new Date(item.updated_at).toLocaleString('id-ID'),
-          ...qTexts,
-          ...answerCols,
-          ...statusCols
-        ].join(',');
+          `"${item.submitted_at ? 'SELESAI' : 'BERLANGSUNG'}"`,
+          `"${new Date(item.updated_at).toLocaleString('id-ID')}"`
+        ];
+
+        return [...rowMeta, ...qCols].join(',');
       });
 
       const csvContent = "\uFEFF" + headers.join(',') + "\n" + rows.join("\n");
