@@ -217,13 +217,25 @@ export default function EditorBankSoal() {
         finalCorrectAnswer = essayGuide;
       }
 
+      let calculatedWeight = 4;
+      if (questionType === 'pg') {
+        const values = Object.keys(optionPoints)
+          .filter(k => visibleOptions.includes(k))
+          .map(k => Number(optionPoints[k] ?? 0));
+        calculatedWeight = values.length > 0 ? Math.max(...values) : 4;
+      } else if (questionType === 'isian') {
+        calculatedWeight = Number(optionPoints.correct ?? 4);
+      } else if (questionType === 'essay') {
+        calculatedWeight = Number(optionPoints.correct ?? 10);
+      }
+
       const payload = {
         question_text: soal,
         image_url: finalImageUrl,
         options: finalOptions,
         correct_answer: finalCorrectAnswer,
         difficulty: difficulty,
-        weight: 1, // Default weight (1x multiplier)
+        weight: calculatedWeight,
         status: 'Published'
       };
 
@@ -324,13 +336,14 @@ export default function EditorBankSoal() {
     } else if (qType === 'isian') {
       setSoal(item.question_text || '');
       setShortAnswerKey(item.correct_answer || '');
-      setOptionPoints({ correct: Number(item.options?.points?.correct ?? 4) });
+      setOptionPoints({ correct: Number(item.options?.points?.correct ?? item.weight ?? 4) });
       setDifficulty(item.difficulty || 'Medium');
       setImagePreviewUrl(item.image_url || null);
       setImageFile(null);
     } else if (qType === 'essay') {
       setSoal(item.question_text || '');
       setEssayGuide(item.correct_answer || '');
+      setOptionPoints({ correct: Number(item.options?.points?.correct ?? item.weight ?? 10) });
       setDifficulty(item.difficulty || 'Medium');
       setImagePreviewUrl(item.image_url || null);
       setImageFile(null);
@@ -446,6 +459,7 @@ export default function EditorBankSoal() {
             type
           };
 
+          let calculatedWeight = 4;
           if (type === 'pg') {
             optionsObj.A = opsiA;
             optionsObj.B = opsiB;
@@ -458,8 +472,13 @@ export default function EditorBankSoal() {
             letters.forEach(l => {
               optionsObj.points[l] = 4;
             });
+            calculatedWeight = Math.max(...Object.values(optionsObj.points).map(Number));
           } else if (type === 'isian') {
             optionsObj.points = { correct: 4 };
+            calculatedWeight = 4;
+          } else if (type === 'essay') {
+            optionsObj.points = { correct: 10 };
+            calculatedWeight = 10;
           }
 
           dataInsert.push({
@@ -468,7 +487,7 @@ export default function EditorBankSoal() {
             options: optionsObj,
             correct_answer: validKunci,
             difficulty,
-            weight: 1,
+            weight: calculatedWeight,
 
             status: 'Published'
           });
@@ -751,15 +770,27 @@ export default function EditorBankSoal() {
             )}
 
             {questionType === 'essay' && (
-              <div className="space-y-2 text-left">
-                <label className="text-xs font-bold text-gray-500 uppercase">Panduan Penilaian Juri / Catatan Kunci (Opsional)</label>
-                <textarea
-                  value={essayGuide}
-                  onChange={(e) => setEssayGuide(e.target.value)}
-                  placeholder="Ketik panduan jawaban atau kata kunci penting untuk membantu juri menilai..."
-                  className="w-full h-36 p-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none resize-none transition-all text-sm"
-                />
-                <p className="text-[10px] text-gray-400 font-medium">Soal Essai Bebas dinilai secara manual oleh juri, skor otomatis awal dari sistem adalah 0.</p>
+              <div className="space-y-4 text-left">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-500 uppercase">Panduan Penilaian Juri / Catatan Kunci (Opsional)</label>
+                  <textarea
+                    value={essayGuide}
+                    onChange={(e) => setEssayGuide(e.target.value)}
+                    placeholder="Ketik panduan jawaban atau kata kunci penting untuk membantu juri menilai..."
+                    className="w-full h-36 p-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:ring-2 focus:ring-indigo-500 outline-none resize-none transition-all text-sm"
+                  />
+                  <p className="text-[10px] text-gray-400 font-medium">Soal Essai Bebas dinilai secara manual oleh juri, skor otomatis awal dari sistem adalah 0.</p>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-500 uppercase">Poin Maksimal Soal Essai</label>
+                  <input
+                    type="number"
+                    value={optionPoints.correct ?? 10}
+                    onChange={(e) => setOptionPoints({ ...optionPoints, correct: Number(e.target.value) })}
+                    className="w-32 p-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-700 outline-none text-sm font-bold text-center focus:ring-1 focus:ring-indigo-500"
+                  />
+                  <p className="text-[10px] text-gray-400 font-medium">Bobot poin ini digunakan sebagai batas maksimal nilai saat juri melakukan penilaian.</p>
+                </div>
               </div>
             )}
           </div>
@@ -847,13 +878,15 @@ export default function EditorBankSoal() {
                     placeholder="Kolom jawaban isian singkat peserta..."
                     className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl outline-none font-medium text-sm text-gray-400 cursor-not-allowed"
                   />
-                  {shortAnswerKey.trim() && (
-                    <div className="p-3.5 bg-indigo-50/50 border border-indigo-100 rounded-xl text-xs text-indigo-700 font-semibold leading-relaxed">
-                      Kunci Jawaban: <span className="font-bold">{shortAnswerKey}</span>
-                      <br/>
-                      Poin Jawaban Benar: <span className="font-bold">{optionPoints.correct ?? 4} Poin</span>
-                    </div>
-                  )}
+                  <div className="p-3.5 bg-indigo-50/50 border border-indigo-100 rounded-xl text-xs text-indigo-700 font-semibold leading-relaxed">
+                    {shortAnswerKey.trim() && (
+                      <>
+                        Kunci Jawaban: <span className="font-bold">{shortAnswerKey}</span>
+                        <br/>
+                      </>
+                    )}
+                    Poin Jawaban Benar: <span className="font-bold">{optionPoints.correct ?? 4} Poin</span>
+                  </div>
                 </div>
               )}
 
@@ -864,12 +897,15 @@ export default function EditorBankSoal() {
                     placeholder="Kolom jawaban essay panjang peserta..."
                     className="w-full h-32 p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl outline-none font-medium text-sm text-gray-400 resize-none cursor-not-allowed"
                   />
-                  {essayGuide.trim() && (
-                    <div className="p-3.5 bg-amber-50/50 border border-amber-100 rounded-xl text-xs text-amber-800 font-semibold leading-relaxed">
-                      Panduan Penilaian Juri:
-                      <p className="mt-1 font-medium whitespace-pre-wrap">{essayGuide}</p>
-                    </div>
-                  )}
+                  <div className="p-3.5 bg-amber-50/50 border border-amber-100 rounded-xl text-xs text-amber-800 font-semibold leading-relaxed">
+                    {essayGuide.trim() && (
+                      <>
+                        Panduan Penilaian Juri:
+                        <p className="mt-1 mb-2 font-medium whitespace-pre-wrap">{essayGuide}</p>
+                      </>
+                    )}
+                    Poin Maksimal Soal Essai: <span className="font-bold">{optionPoints.correct ?? 10} Poin</span>
+                  </div>
                 </div>
               )}
             </div>
@@ -998,6 +1034,8 @@ export default function EditorBankSoal() {
                         {qType === 'essay' && (
                           <div className="p-3 bg-amber-50/30 border border-amber-100 rounded-xl text-xs text-amber-800 font-semibold max-w-md">
                             Panduan Penilaian Juri: <span className="font-bold">{item.correct_answer || '—'}</span>
+                            <br/>
+                            Poin Maksimal: <span className="font-bold">{item.options?.points?.correct ?? item.weight ?? 10} Poin</span>
                           </div>
                         )}
                       </>

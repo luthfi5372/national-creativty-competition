@@ -950,16 +950,18 @@ export default function LiveLeaderboard() {
                                 <input
                                   type="number"
                                   min="0"
+                                  max={q.weight || 10}
                                   step="0.5"
                                   value={essayGrades[q.id] !== undefined ? essayGrades[q.id] : ""}
                                   onChange={(e) => {
                                     const valStr = e.target.value;
+                                    const maxVal = q.weight || 10;
                                     setEssayGrades(prev => {
                                       const next = { ...prev };
                                       if (valStr === "") {
                                         delete next[q.id];
                                       } else {
-                                        next[q.id] = Math.max(0, Number(valStr) || 0);
+                                        next[q.id] = Math.min(maxVal, Math.max(0, Number(valStr) || 0));
                                       }
                                       return next;
                                     });

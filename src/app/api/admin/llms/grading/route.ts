@@ -12,6 +12,24 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
+function getQuestionMaxPoints(q: any, fixedCorrectPoint: number): number {
+  const qType = q.options?.type || 'pg';
+  if (qType === 'pg') {
+    if (q.options?.points && typeof q.options.points === 'object') {
+      const values = Object.values(q.options.points).map(Number);
+      if (values.length > 0) {
+        return Math.max(...values);
+      }
+    }
+    return q.weight && q.weight !== 1 ? q.weight : fixedCorrectPoint;
+  } else if (qType === 'isian') {
+    return Number(q.options?.points?.correct ?? (q.weight && q.weight !== 1 ? q.weight : fixedCorrectPoint));
+  } else if (qType === 'essay') {
+    return Number(q.options?.points?.correct ?? (q.weight && q.weight !== 1 ? q.weight : 10));
+  }
+  return q.weight && q.weight !== 1 ? q.weight : fixedCorrectPoint;
+}
+
 /**
  * POST /api/admin/llms/grading
  * Menghitung skor akhir peserta berdasarkan jawaban yang tersimpan.
@@ -127,7 +145,7 @@ export async function POST(request: Request) {
     // Hitung total bobot maksimum (semua soal dalam ujian, bukan hanya yang dijawab)
     const { data: allQuestions } = await supabase
       .from('cbt_questions')
-      .select('weight')
+      .select('weight, options')
       .eq('exam_id', exam.id)
       .eq('status', 'Published');
 
@@ -212,18 +230,10 @@ export async function POST(request: Request) {
       totalEarned += (unanswered * emptyPoint);
     }
 
-    // Hitung total bobot maksimum
-    switch (scoringSystem) {
-      case 'Fixed':
-        totalMaximum = totalQuestionsCount * fixedCorrectPoint;
-        break;
-      case 'Custom':
-        totalMaximum = (allQuestions || []).reduce((sum, q) => sum + (q.weight || 4), 0);
-        break;
-      case 'Penalty':
-        totalMaximum = totalQuestionsCount * fixedCorrectPoint;
-        break;
-    }
+    // Hitung total bobot maksimum berdasarkan akumulasi custom points per soal
+    (allQuestions || []).forEach(q => {
+      totalMaximum += getQuestionMaxPoints(q, fixedCorrectPoint);
+    });
 
     // Hitung skor akhir berdasarkan akumulasi poin admin (raw score, tidak dipaksa ke skala 100)
     const finalScore = Math.max(0, Math.round(totalEarned * 100) / 100);
@@ -297,7 +307,7 @@ export async function GET(request: Request) {
     // Ambil semua soal dari bank soal yang diterbitkan
     const { data: allQuestions } = await supabase
       .from('cbt_questions')
-      .select('weight')
+      .select('weight, options')
       .eq('exam_id', examId)
       .eq('status', 'Published');
 
@@ -306,15 +316,9 @@ export async function GET(request: Request) {
     const fixedCorrectPoint = exam?.correct_point || 4;
 
     let totalMaximum = 0;
-    switch (scoringSystem) {
-      case 'Fixed':
-      case 'Penalty':
-        totalMaximum = totalQuestionsCount * fixedCorrectPoint;
-        break;
-      case 'Custom':
-        totalMaximum = (allQuestions || []).reduce((sum, q) => sum + (q.weight || 4), 0);
-        break;
-    }
+    (allQuestions || []).forEach(q => {
+      totalMaximum += getQuestionMaxPoints(q, fixedCorrectPoint);
+    });
 
     const passingThreshold = totalMaximum > 0 ? 0.7 * totalMaximum : 70;
 
