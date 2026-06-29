@@ -13,7 +13,8 @@ import {
   RotateCcw, Key, Clock, Monitor, Trophy,
   ShieldCheck, AlertTriangle, FileDown, ChevronRight,
   Loader2, X, Save, Pencil, ToggleLeft, ToggleRight, Trash2,
-  Zap, Activity, Radio, Lock, MoreHorizontal, MessageSquare, Info, Check, FolderOpen
+  Zap, Activity, Radio, Lock, MoreHorizontal, MessageSquare, Info, Check, FolderOpen,
+  Shuffle, ListOrdered
 } from "lucide-react";
 
 export default function IntegratedLLMSDashboard() {
@@ -35,7 +36,8 @@ export default function IntegratedLLMSDashboard() {
   const [isSaving, setIsSaving] = useState(false);
   const [newSession, setNewSession] = useState({
     title: "", token: "", duration_minutes: 90, scoring_system: "Custom",
-    correct_point: 0, penalty_point: 0, empty_point: 0, is_active: false
+    correct_point: 0, penalty_point: 0, empty_point: 0, is_active: false,
+    shuffle_questions: true
   });
 
   const [showEditModal, setShowEditModal] = useState(false);
@@ -76,6 +78,7 @@ export default function IntegratedLLMSDashboard() {
       title: editingSession.title,
       duration_minutes: editingSession.duration_minutes,
       is_active: editingSession.is_active,
+      shuffle_questions: editingSession.shuffle_questions ?? true,
     }).eq('id', editingSession.id);
     if (!error) {
       setShowEditModal(false);
@@ -290,10 +293,11 @@ export default function IntegratedLLMSDashboard() {
         penalty_point: 0,
         empty_point: 0,
         is_active: (newSession as any).is_active ?? false,
+        shuffle_questions: newSession.shuffle_questions ?? true,
       }]);
       if (error) throw error;
       setShowAddModal(false);
-      setNewSession({ title: '', token: '', duration_minutes: 90, scoring_system: 'Custom', correct_point: 0, penalty_point: 0, empty_point: 0, is_active: false });
+      setNewSession({ title: '', token: '', duration_minutes: 90, scoring_system: 'Custom', correct_point: 0, penalty_point: 0, empty_point: 0, is_active: false, shuffle_questions: true });
       fetchTelemetryData();
       showToast((newSession as any).is_active ? 'Sesi ujian baru langsung aktif!' : 'Sesi ujian baru berhasil dibuat!', 'success');
     } catch (err: any) {
@@ -911,6 +915,28 @@ export default function IntegratedLLMSDashboard() {
                 </div>
               </div>
 
+              {/* Toggle Acak Soal */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Acak Urutan Soal</label>
+                <button
+                  onClick={() => setEditingSession({...editingSession, shuffle_questions: !(editingSession.shuffle_questions ?? true)})}
+                  className={`w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all duration-300 border-2 ${
+                    (editingSession.shuffle_questions ?? true)
+                      ? 'bg-gradient-to-r from-violet-500 to-purple-600 border-transparent text-white shadow-md shadow-violet-200/60'
+                      : 'bg-slate-50 border-slate-200/80 text-slate-500'
+                  }`}
+                >
+                  {(editingSession.shuffle_questions ?? true)
+                    ? <><Shuffle className="w-4 h-4" /> Soal Diacak (ON)</>
+                    : <><ListOrdered className="w-4 h-4" /> Urutan Tetap (OFF)</>}
+                </button>
+                <p className="text-[9px] text-slate-400 font-bold px-1">
+                  {(editingSession.shuffle_questions ?? true)
+                    ? '🔀 Tiap peserta mendapat urutan soal yang berbeda secara acak.'
+                    : '📋 Semua peserta mendapat soal dengan urutan yang sama persis.'}
+                </p>
+              </div>
+
               <button onClick={handleUpdateSession} disabled={isSavingEdit}
                 className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/35 transition-all duration-300 flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50">
                 {isSavingEdit ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save size={16} /> Simpan Perubahan</>}
@@ -1020,7 +1046,27 @@ export default function IntegratedLLMSDashboard() {
                 </p>
               </div>
 
-
+              {/* Toggle Acak Soal */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Acak Urutan Soal</label>
+                <button
+                  onClick={() => setNewSession({...newSession, shuffle_questions: !newSession.shuffle_questions})}
+                  className={`w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all duration-300 border-2 ${
+                    newSession.shuffle_questions
+                      ? 'bg-gradient-to-r from-violet-500 to-purple-600 border-transparent text-white shadow-md shadow-violet-200/60'
+                      : 'bg-slate-50 border-slate-200/80 text-slate-500'
+                  }`}
+                >
+                  {newSession.shuffle_questions
+                    ? <><Shuffle className="w-4 h-4" /> Soal Diacak (ON)</>
+                    : <><ListOrdered className="w-4 h-4" /> Urutan Tetap (OFF)</>}
+                </button>
+                <p className="text-[9px] text-slate-400 font-bold px-1">
+                  {newSession.shuffle_questions
+                    ? '🔀 Tiap peserta mendapat urutan soal yang berbeda secara acak.'
+                    : '📋 Semua peserta mendapat soal dengan urutan yang sama persis.'}
+                </p>
+              </div>
 
               {/* Info Isolasi */}
               <div className="flex items-start gap-3 p-4 bg-violet-50 border border-violet-100 rounded-2xl">

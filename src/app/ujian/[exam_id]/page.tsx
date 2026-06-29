@@ -68,7 +68,7 @@ export default function ExamRoom() {
         // 1. Ambil durasi, status aktif, dan konfigurasi penilaian
         const { data: examData } = await supabase
           .from('cbt_exams')
-          .select('duration, duration_minutes, is_active, correct_point, penalty_point, empty_point, scoring_system')
+          .select('duration, duration_minutes, is_active, correct_point, penalty_point, empty_point, scoring_system, shuffle_questions')
           .eq('id', examId).maybeSingle();
         
         if (!examData || !examData.is_active) {
@@ -99,8 +99,14 @@ export default function ExamRoom() {
         if (qErr) {
           console.error("DATABASE ERROR SOAL:", qErr.message); 
         } else if (qData && qData.length > 0) {
-          const shuffled = [...qData].sort(() => Math.random() - 0.5);
-          setQuestions(shuffled);
+          // shuffle_questions default true jika null/undefined (backward compat)
+          const shouldShuffle = examData?.shuffle_questions !== false;
+          if (shouldShuffle) {
+            const shuffled = [...qData].sort(() => Math.random() - 0.5);
+            setQuestions(shuffled);
+          } else {
+            setQuestions(qData); // urutan tetap sesuai created_at
+          }
         }
 
         // 3. Lapor kehadiran CCTV
