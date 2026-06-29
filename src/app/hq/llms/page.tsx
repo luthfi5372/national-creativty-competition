@@ -51,21 +51,12 @@ export default function IntegratedLLMSDashboard() {
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' as 'success' | 'error' });
   const [entryCount, setEntryCount] = useState<number | null>(null);
   const [showShufflePopup, setShowShufflePopup] = useState(false);
-  const [shufflePopupProgress, setShufflePopupProgress] = useState(100);
 
-  // Auto-dismiss shuffle popup setelah 4 detik dengan progress bar
+  // Auto-dismiss shuffle popup — single setTimeout, zero interval re-renders
   useEffect(() => {
-    if (!showShufflePopup) { setShufflePopupProgress(100); return; }
-    setShufflePopupProgress(100);
-    const start = Date.now();
-    const duration = 4000;
-    const tick = setInterval(() => {
-      const elapsed = Date.now() - start;
-      const pct = Math.max(0, 100 - (elapsed / duration) * 100);
-      setShufflePopupProgress(pct);
-      if (pct <= 0) { clearInterval(tick); setShowShufflePopup(false); }
-    }, 30);
-    return () => clearInterval(tick);
+    if (!showShufflePopup) return;
+    const t = setTimeout(() => setShowShufflePopup(false), 4000);
+    return () => clearTimeout(t);
   }, [showShufflePopup]);
 
   useEffect(() => {
@@ -1130,36 +1121,38 @@ export default function IntegratedLLMSDashboard() {
 
       {/* ─── SHUFFLE POPUP ─── */}
       {showShufflePopup && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-6 bg-slate-950/70 backdrop-blur-xl" onClick={() => setShowShufflePopup(false)}>
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-6 bg-slate-950/60 backdrop-blur-md"
+          onClick={() => setShowShufflePopup(false)}
+        >
           <div
-            className="relative w-full max-w-sm rounded-[36px] overflow-hidden shadow-2xl shadow-violet-900/40 animate-in fade-in zoom-in-90 duration-300"
+            className="shuffle-popup-enter relative w-full max-w-sm rounded-[36px] overflow-hidden shadow-2xl shadow-violet-900/40"
             onClick={e => e.stopPropagation()}
           >
-            {/* ── Gradient Background ── */}
+            {/* ── Gradient Background (static, no animation) ── */}
             <div className="absolute inset-0 bg-gradient-to-br from-violet-600 via-purple-700 to-fuchsia-800" />
-            {/* ── Decorative blobs ── */}
-            <div className="absolute -top-12 -right-12 w-48 h-48 bg-white/10 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute -bottom-10 -left-10 w-36 h-36 bg-fuchsia-400/20 rounded-full blur-2xl pointer-events-none" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-violet-400/5 rounded-full blur-3xl pointer-events-none" />
+
+            {/* ── Floating blobs — CSS animated, GPU only ── */}
+            <div className="shuffle-blob absolute -top-12 -right-12 w-44 h-44 bg-white/8 rounded-full blur-2xl" />
+            <div className="shuffle-blob-2 absolute -bottom-10 -left-10 w-32 h-32 bg-fuchsia-400/15 rounded-full blur-xl" />
 
             {/* ── Content ── */}
             <div className="relative z-10 p-8">
               {/* Close button */}
               <button
                 onClick={() => setShowShufflePopup(false)}
-                className="absolute top-5 right-5 w-8 h-8 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl flex items-center justify-center text-white/70 hover:text-white transition-all duration-200 active:scale-90"
+                className="absolute top-5 right-5 w-8 h-8 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl flex items-center justify-center text-white/70 hover:text-white transition-colors duration-150 active:scale-90"
               >
                 <X size={14} className="stroke-[2.5px]" />
               </button>
 
-              {/* Icon */}
+              {/* Icon — CSS spin, no inline style */}
               <div className="flex justify-center mb-6">
                 <div className="relative">
-                  <div className="w-24 h-24 bg-white/10 border border-white/20 rounded-[28px] flex items-center justify-center shadow-inner backdrop-blur-sm">
-                    <Shuffle className="w-12 h-12 text-white drop-shadow-lg" style={{ animation: 'spin 3s linear infinite' }} />
+                  <div className="w-24 h-24 bg-white/10 border border-white/20 rounded-[28px] flex items-center justify-center shadow-inner">
+                    <Shuffle className="shuffle-icon-spin w-12 h-12 text-white drop-shadow-lg" />
                   </div>
-                  {/* Glow ring */}
-                  <div className="absolute inset-0 rounded-[28px] bg-violet-400/30 blur-xl -z-10 scale-110" />
+                  <div className="absolute inset-0 rounded-[28px] bg-violet-400/25 blur-xl -z-10 scale-110 pointer-events-none" />
                 </div>
               </div>
 
@@ -1172,35 +1165,27 @@ export default function IntegratedLLMSDashboard() {
                 </p>
               </div>
 
-              {/* Visual demo: shuffle cards */}
-              <div className="flex items-center justify-center gap-3 py-3.5 px-4 bg-white/10 border border-white/10 rounded-2xl mb-6 backdrop-blur-sm">
-                {['1','2','3'].map((n, i) => (
-                  <div key={n} className="w-9 h-12 bg-white/20 border border-white/20 rounded-xl flex items-center justify-center text-white font-black text-sm shadow-md"
-                    style={{ animationDelay: `${i * 0.15}s` }}>
-                    {n}
-                  </div>
+              {/* Visual demo — result cards use CSS cardReveal animation */}
+              <div className="flex items-center justify-center gap-2.5 py-3.5 px-4 bg-white/10 border border-white/10 rounded-2xl mb-6">
+                {['1','2','3'].map(n => (
+                  <div key={n} className="w-9 h-12 bg-white/20 border border-white/20 rounded-xl flex items-center justify-center text-white font-black text-sm">{n}</div>
                 ))}
-                <Shuffle className="w-4 h-4 text-white/60 mx-1" />
-                {['3','1','2'].map((n, i) => (
-                  <div key={`r${n}`} className="w-9 h-12 bg-violet-300/30 border border-white/30 rounded-xl flex items-center justify-center text-white font-black text-sm shadow-md">
-                    {n}
-                  </div>
+                <Shuffle className="w-4 h-4 text-white/50 mx-0.5 shrink-0" />
+                {['3','1','2'].map(n => (
+                  <div key={`r${n}`} className="shuffle-card-result w-9 h-12 bg-violet-300/25 border border-white/30 rounded-xl flex items-center justify-center text-white font-black text-sm">{n}</div>
                 ))}
               </div>
 
-              {/* Progress bar + button */}
+              {/* Button — progress bar is pure CSS, no JS state */}
               <button
                 onClick={() => setShowShufflePopup(false)}
-                className="relative w-full py-4 bg-white text-violet-700 font-black text-xs uppercase tracking-widest rounded-2xl shadow-xl hover:bg-white/90 transition-all duration-200 active:scale-95 overflow-hidden"
+                className="relative w-full py-4 bg-white text-violet-700 font-black text-xs uppercase tracking-widest rounded-2xl shadow-xl hover:bg-white/90 active:scale-95 overflow-hidden transition-colors duration-150"
               >
                 <span className="relative z-10 flex items-center justify-center gap-2">
                   <Check className="w-4 h-4 stroke-[3px]" /> Mengerti, Aktifkan!
                 </span>
-                {/* Progress sweep inside button */}
-                <div
-                  className="absolute inset-0 bg-violet-100/60 origin-left transition-none"
-                  style={{ transform: `scaleX(${shufflePopupProgress / 100})`, transformOrigin: 'left' }}
-                />
+                {/* Pure CSS progress sweep — zero JS re-render */}
+                <div className="shuffle-progress-bar absolute inset-0 bg-violet-100/50" />
               </button>
               <p className="text-center text-[10px] text-white/30 font-bold mt-3">Menutup otomatis dalam beberapa detik…</p>
             </div>
