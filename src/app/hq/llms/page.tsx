@@ -50,6 +50,23 @@ export default function IntegratedLLMSDashboard() {
 
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' as 'success' | 'error' });
   const [entryCount, setEntryCount] = useState<number | null>(null);
+  const [showShufflePopup, setShowShufflePopup] = useState(false);
+  const [shufflePopupProgress, setShufflePopupProgress] = useState(100);
+
+  // Auto-dismiss shuffle popup setelah 4 detik dengan progress bar
+  useEffect(() => {
+    if (!showShufflePopup) { setShufflePopupProgress(100); return; }
+    setShufflePopupProgress(100);
+    const start = Date.now();
+    const duration = 4000;
+    const tick = setInterval(() => {
+      const elapsed = Date.now() - start;
+      const pct = Math.max(0, 100 - (elapsed / duration) * 100);
+      setShufflePopupProgress(pct);
+      if (pct <= 0) { clearInterval(tick); setShowShufflePopup(false); }
+    }, 30);
+    return () => clearInterval(tick);
+  }, [showShufflePopup]);
 
   useEffect(() => {
     const fetchEntryCount = async () => {
@@ -919,7 +936,11 @@ export default function IntegratedLLMSDashboard() {
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Acak Urutan Soal</label>
                 <button
-                  onClick={() => setEditingSession({...editingSession, shuffle_questions: !(editingSession.shuffle_questions ?? true)})}
+                  onClick={() => {
+                    const newVal = !(editingSession.shuffle_questions ?? true);
+                    setEditingSession({...editingSession, shuffle_questions: newVal});
+                    if (newVal) setShowShufflePopup(true);
+                  }}
                   className={`w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all duration-300 border-2 ${
                     (editingSession.shuffle_questions ?? true)
                       ? 'bg-gradient-to-r from-violet-500 to-purple-600 border-transparent text-white shadow-md shadow-violet-200/60'
@@ -1050,7 +1071,11 @@ export default function IntegratedLLMSDashboard() {
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Acak Urutan Soal</label>
                 <button
-                  onClick={() => setNewSession({...newSession, shuffle_questions: !newSession.shuffle_questions})}
+                  onClick={() => {
+                    const newVal = !newSession.shuffle_questions;
+                    setNewSession({...newSession, shuffle_questions: newVal});
+                    if (newVal) setShowShufflePopup(true);
+                  }}
                   className={`w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all duration-300 border-2 ${
                     newSession.shuffle_questions
                       ? 'bg-gradient-to-r from-violet-500 to-purple-600 border-transparent text-white shadow-md shadow-violet-200/60'
@@ -1102,6 +1127,86 @@ export default function IntegratedLLMSDashboard() {
           New Session
         </button>
       </div>
+
+      {/* ─── SHUFFLE POPUP ─── */}
+      {showShufflePopup && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-6 bg-slate-950/70 backdrop-blur-xl" onClick={() => setShowShufflePopup(false)}>
+          <div
+            className="relative w-full max-w-sm rounded-[36px] overflow-hidden shadow-2xl shadow-violet-900/40 animate-in fade-in zoom-in-90 duration-300"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* ── Gradient Background ── */}
+            <div className="absolute inset-0 bg-gradient-to-br from-violet-600 via-purple-700 to-fuchsia-800" />
+            {/* ── Decorative blobs ── */}
+            <div className="absolute -top-12 -right-12 w-48 h-48 bg-white/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-10 -left-10 w-36 h-36 bg-fuchsia-400/20 rounded-full blur-2xl pointer-events-none" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-violet-400/5 rounded-full blur-3xl pointer-events-none" />
+
+            {/* ── Content ── */}
+            <div className="relative z-10 p-8">
+              {/* Close button */}
+              <button
+                onClick={() => setShowShufflePopup(false)}
+                className="absolute top-5 right-5 w-8 h-8 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl flex items-center justify-center text-white/70 hover:text-white transition-all duration-200 active:scale-90"
+              >
+                <X size={14} className="stroke-[2.5px]" />
+              </button>
+
+              {/* Icon */}
+              <div className="flex justify-center mb-6">
+                <div className="relative">
+                  <div className="w-24 h-24 bg-white/10 border border-white/20 rounded-[28px] flex items-center justify-center shadow-inner backdrop-blur-sm">
+                    <Shuffle className="w-12 h-12 text-white drop-shadow-lg" style={{ animation: 'spin 3s linear infinite' }} />
+                  </div>
+                  {/* Glow ring */}
+                  <div className="absolute inset-0 rounded-[28px] bg-violet-400/30 blur-xl -z-10 scale-110" />
+                </div>
+              </div>
+
+              {/* Text */}
+              <div className="text-center space-y-2 mb-6">
+                <p className="text-[10px] font-black text-white/50 uppercase tracking-[0.2em]">Mode Aktif</p>
+                <h3 className="text-2xl font-black text-white tracking-tight leading-tight">Soal Akan Diacak! 🔀</h3>
+                <p className="text-sm text-white/70 font-medium leading-relaxed">
+                  Setiap peserta mendapat <span className="text-white font-extrabold">urutan soal yang unik</span> dan berbeda satu sama lain untuk mencegah kecurangan.
+                </p>
+              </div>
+
+              {/* Visual demo: shuffle cards */}
+              <div className="flex items-center justify-center gap-3 py-3.5 px-4 bg-white/10 border border-white/10 rounded-2xl mb-6 backdrop-blur-sm">
+                {['1','2','3'].map((n, i) => (
+                  <div key={n} className="w-9 h-12 bg-white/20 border border-white/20 rounded-xl flex items-center justify-center text-white font-black text-sm shadow-md"
+                    style={{ animationDelay: `${i * 0.15}s` }}>
+                    {n}
+                  </div>
+                ))}
+                <Shuffle className="w-4 h-4 text-white/60 mx-1" />
+                {['3','1','2'].map((n, i) => (
+                  <div key={`r${n}`} className="w-9 h-12 bg-violet-300/30 border border-white/30 rounded-xl flex items-center justify-center text-white font-black text-sm shadow-md">
+                    {n}
+                  </div>
+                ))}
+              </div>
+
+              {/* Progress bar + button */}
+              <button
+                onClick={() => setShowShufflePopup(false)}
+                className="relative w-full py-4 bg-white text-violet-700 font-black text-xs uppercase tracking-widest rounded-2xl shadow-xl hover:bg-white/90 transition-all duration-200 active:scale-95 overflow-hidden"
+              >
+                <span className="relative z-10 flex items-center justify-center gap-2">
+                  <Check className="w-4 h-4 stroke-[3px]" /> Mengerti, Aktifkan!
+                </span>
+                {/* Progress sweep inside button */}
+                <div
+                  className="absolute inset-0 bg-violet-100/60 origin-left transition-none"
+                  style={{ transform: `scaleX(${shufflePopupProgress / 100})`, transformOrigin: 'left' }}
+                />
+              </button>
+              <p className="text-center text-[10px] text-white/30 font-bold mt-3">Menutup otomatis dalam beberapa detik…</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ─── TOAST ─── */}
       <div className={`fixed bottom-6 right-6 z-[99999] transition-all duration-500 transform ${toast.visible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0 pointer-events-none'}`}>
