@@ -14,7 +14,7 @@ import {
   ShieldCheck, AlertTriangle, FileDown, ChevronRight,
   Loader2, X, Save, Pencil, ToggleLeft, ToggleRight, Trash2,
   Zap, Activity, Radio, Lock, MoreHorizontal, MessageSquare, Info, Check, FolderOpen,
-  Shuffle, ListOrdered
+  Shuffle, ListOrdered, Target, Sliders, Award, HelpCircle
 } from "lucide-react";
 
 export default function IntegratedLLMSDashboard() {
@@ -981,50 +981,188 @@ export default function IntegratedLLMSDashboard() {
               </div>
 
               {/* SISTEM PENILAIAN CBT */}
-              <div className="p-4 bg-slate-50 border border-slate-200/60 rounded-2xl space-y-4">
-                <p className="text-[10px] font-black uppercase text-indigo-650 tracking-widest">Sistem Penilaian CBT</p>
-                
-                <div className="space-y-1.5">
-                  <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Sistem Skor</label>
-                  <select
-                    value={editingSession.scoring_system || 'Custom'}
-                    onChange={e => setEditingSession({...editingSession, scoring_system: e.target.value})}
-                    className="w-full bg-white border border-slate-200/80 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 rounded-xl px-3 py-2 text-xs font-semibold text-slate-850 outline-none transition-all"
-                  >
-                    <option value="Fixed">Fixed</option>
-                    <option value="Custom">Custom</option>
-                    <option value="Penalty">Penalty</option>
-                  </select>
+              <div className="p-5 bg-slate-50 border border-slate-200/60 rounded-3xl space-y-5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
+                      <Award size={14} className="stroke-[2.5]" />
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-black uppercase tracking-wider text-slate-800">Sistem Penilaian CBT</p>
+                      <p className="text-[9px] text-slate-400 font-semibold mt-0.5">Konfigurasi poin & mekanisme penilaian</p>
+                    </div>
+                  </div>
+                  <span className="text-[8px] font-black bg-indigo-105 text-indigo-600 px-2 py-0.5 rounded-full tracking-widest">ADVANCED</span>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="space-y-1.5">
-                    <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Benar</label>
-                    <input
-                      type="number"
-                      value={editingSession.correct_point ?? 4}
-                      onChange={e => setEditingSession({...editingSession, correct_point: parseInt(e.target.value) || 0})}
-                      className="w-full bg-white border border-slate-200/80 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 rounded-xl px-3 py-2 text-xs font-semibold text-slate-850 outline-none transition-all"
-                    />
+                {/* TABS SELECTOR UNTUK SISTEM SKOR */}
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest flex items-center gap-1">
+                    Skema Penilaian <HelpCircle size={10} className="text-slate-350" />
+                  </label>
+                  <div className="grid grid-cols-3 gap-2 p-1.5 bg-slate-200/50 border border-slate-200/30 rounded-2xl">
+                    <button
+                      type="button"
+                      onClick={() => setEditingSession({...editingSession, scoring_system: 'Fixed'})}
+                      className={`flex flex-col items-center justify-center py-2.5 rounded-xl transition-all duration-200 gap-1.5 ${
+                        (editingSession.scoring_system || 'Custom') === 'Fixed'
+                          ? 'bg-white text-indigo-600 shadow-sm border border-slate-150/40'
+                          : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      <Target size={14} className={(editingSession.scoring_system || 'Custom') === 'Fixed' ? 'text-indigo-600' : 'text-slate-400'} />
+                      <span className="text-[10px] font-black uppercase tracking-wider">Fixed</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setEditingSession({...editingSession, scoring_system: 'Custom'})}
+                      className={`flex flex-col items-center justify-center py-2.5 rounded-xl transition-all duration-200 gap-1.5 ${
+                        (editingSession.scoring_system || 'Custom') === 'Custom'
+                          ? 'bg-white text-indigo-600 shadow-sm border border-slate-150/40'
+                          : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      <Sliders size={14} className={(editingSession.scoring_system || 'Custom') === 'Custom' ? 'text-indigo-600' : 'text-slate-400'} />
+                      <span className="text-[10px] font-black uppercase tracking-wider">Custom</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingSession({
+                          ...editingSession, 
+                          scoring_system: 'Penalty',
+                          correct_point: 4,
+                          penalty_point: -1,
+                          empty_point: 0
+                        });
+                      }}
+                      className={`flex flex-col items-center justify-center py-2.5 rounded-xl transition-all duration-200 gap-1.5 ${
+                        (editingSession.scoring_system || 'Custom') === 'Penalty'
+                          ? 'bg-white text-indigo-600 shadow-sm border border-slate-150/40'
+                          : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      <ShieldAlert size={14} className={(editingSession.scoring_system || 'Custom') === 'Penalty' ? 'text-indigo-600' : 'text-slate-400'} />
+                      <span className="text-[10px] font-black uppercase tracking-wider">Penalty</span>
+                    </button>
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Salah</label>
-                    <input
-                      type="number"
-                      value={editingSession.penalty_point ?? 0}
-                      onChange={e => setEditingSession({...editingSession, penalty_point: parseInt(e.target.value) || 0})}
-                      className="w-full bg-white border border-slate-200/80 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 rounded-xl px-3 py-2 text-xs font-semibold text-slate-850 outline-none transition-all"
-                    />
+                </div>
+
+                {/* HELPER BOX YANG DILENGKAPI INFO SISTEM SKOR */}
+                <div className="p-3 bg-white/70 border border-slate-200/50 rounded-2xl flex gap-2.5 animate-in fade-in duration-200">
+                  <div className="w-5 h-5 bg-white border border-slate-150 rounded-lg flex items-center justify-center text-slate-500 shrink-0 shadow-sm mt-0.5">
+                    <Info size={10} />
                   </div>
+                  <p className="text-[10px] text-slate-500 font-semibold leading-relaxed">
+                    {(editingSession.scoring_system || 'Custom') === 'Fixed' && (
+                      <>🎯 <b>Skema Fixed:</b> Seluruh soal menggunakan nilai poin seragam di bawah ini. Sangat cocok untuk kuis atau ujian standar non-seleksi.</>
+                    )}
+                    {(editingSession.scoring_system || 'Custom') === 'Custom' && (
+                      <>⚙️ <b>Skema Custom:</b> Poin diatur terpisah per-soal di Bank Soal (PG bisa beda poin tiap opsi, Isian/Essay diset manual). Memberikan fleksibilitas penuh.</>
+                    )}
+                    {(editingSession.scoring_system || 'Custom') === 'Penalty' && (
+                      <>🛡️ <b>Skema Penalty (SBMPTN/Olimpiade):</b> Mengurangi poin bila salah untuk menghindari tebakan acak. Default: Benar (+4), Salah (-1), Kosong (0).</>
+                    )}
+                  </p>
+                </div>
+
+                {/* DYNAMIC POIN CONTROLS */}
+                <div className={`grid grid-cols-3 gap-3 transition-all duration-300 ${
+                  (editingSession.scoring_system || 'Custom') === 'Custom' ? 'opacity-40 pointer-events-none' : ''
+                }`}>
+                  {/* Benar */}
                   <div className="space-y-1.5">
-                    <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Kosong</label>
-                    <input
-                      type="number"
-                      step="any"
-                      value={editingSession.empty_point ?? 0}
-                      onChange={e => setEditingSession({...editingSession, empty_point: parseFloat(e.target.value) || 0})}
-                      className="w-full bg-white border border-slate-200/80 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 rounded-xl px-3 py-2 text-xs font-semibold text-slate-850 outline-none transition-all"
-                    />
+                    <div className="flex items-center justify-between px-0.5">
+                      <label className="text-[9px] font-black uppercase text-emerald-600 tracking-wider flex items-center gap-1">
+                        <Check size={10} className="stroke-[3]" /> Benar
+                      </label>
+                    </div>
+                    <div className="relative flex items-center bg-white border border-slate-200 rounded-2xl overflow-hidden focus-within:border-emerald-400 focus-within:ring-4 focus-within:ring-emerald-50 transition-all duration-200">
+                      <input
+                        type="number"
+                        disabled={(editingSession.scoring_system || 'Custom') === 'Custom'}
+                        value={editingSession.correct_point ?? 4}
+                        onChange={e => setEditingSession({...editingSession, correct_point: parseInt(e.target.value) || 0})}
+                        className="w-full bg-transparent px-3 py-3 text-center text-sm font-black text-slate-800 outline-none pr-7"
+                      />
+                      <span className="absolute right-2.5 text-[9px] font-black text-slate-350">pts</span>
+                    </div>
+                  </div>
+
+                  {/* Salah */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between px-0.5">
+                      <label className="text-[9px] font-black uppercase text-rose-600 tracking-wider flex items-center gap-1">
+                        <X size={10} className="stroke-[3]" /> Salah
+                      </label>
+                    </div>
+                    <div className="relative flex items-center bg-white border border-slate-200 rounded-2xl overflow-hidden focus-within:border-rose-400 focus-within:ring-4 focus-within:ring-rose-50 transition-all duration-200">
+                      <input
+                        type="number"
+                        disabled={(editingSession.scoring_system || 'Custom') === 'Custom'}
+                        value={editingSession.penalty_point ?? 0}
+                        onChange={e => setEditingSession({...editingSession, penalty_point: parseInt(e.target.value) || 0})}
+                        className="w-full bg-transparent px-3 py-3 text-center text-sm font-black text-slate-800 outline-none pr-7"
+                      />
+                      <span className="absolute right-2.5 text-[9px] font-black text-slate-350">pts</span>
+                    </div>
+                  </div>
+
+                  {/* Kosong */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between px-0.5">
+                      <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider flex items-center gap-1">
+                        <Info size={10} /> Kosong
+                      </label>
+                    </div>
+                    <div className="relative flex items-center bg-white border border-slate-200 rounded-2xl overflow-hidden focus-within:border-slate-400 focus-within:ring-4 focus-within:ring-slate-100 transition-all duration-200">
+                      <input
+                        type="number"
+                        step="any"
+                        disabled={(editingSession.scoring_system || 'Custom') === 'Custom'}
+                        value={editingSession.empty_point ?? 0}
+                        onChange={e => setEditingSession({...editingSession, empty_point: parseFloat(e.target.value) || 0})}
+                        className="w-full bg-transparent px-3 py-3 text-center text-sm font-black text-slate-800 outline-none pr-7"
+                      />
+                      <span className="absolute right-2.5 text-[9px] font-black text-slate-350">pts</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ADVANCED CBT PARAMETERS TOGGLES */}
+                <div className="pt-4 border-t border-slate-200/50 space-y-3">
+                  <p className="text-[8px] font-black uppercase text-slate-450 tracking-widest">Parameter Lanjutan (Otomatis)</p>
+                  
+                  <div className="flex items-center justify-between p-2.5 bg-white/40 border border-slate-200/30 rounded-xl transition-all duration-200">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-5 h-5 bg-indigo-50 border border-indigo-100/50 rounded-lg flex items-center justify-center text-indigo-650 shrink-0">
+                        <Check size={10} className="stroke-[3]" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black text-slate-700">Toleransi Case-Insensitive</p>
+                        <p className="text-[8px] text-slate-400 font-semibold mt-0.5">Jawaban isian otomatis mengabaikan huruf besar/kecil</p>
+                      </div>
+                    </div>
+                    <div className="w-8 h-4.5 bg-emerald-500 rounded-full p-0.5 flex items-center justify-end cursor-not-allowed">
+                      <div className="w-3.5 h-3.5 bg-white rounded-full shadow-sm"></div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between p-2.5 bg-white/40 border border-slate-200/30 rounded-xl transition-all duration-200">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-5 h-5 bg-indigo-50 border border-indigo-100/50 rounded-lg flex items-center justify-center text-indigo-650 shrink-0">
+                        <Zap size={10} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black text-slate-700">Realtime Leaderboard Update</p>
+                        <p className="text-[8px] text-slate-400 font-semibold mt-0.5">Nilai ujian langsung masuk rekapitulasi saat disubmit</p>
+                      </div>
+                    </div>
+                    <div className="w-8 h-4.5 bg-emerald-500 rounded-full p-0.5 flex items-center justify-end cursor-not-allowed">
+                      <div className="w-3.5 h-3.5 bg-white rounded-full shadow-sm"></div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1176,50 +1314,188 @@ export default function IntegratedLLMSDashboard() {
               </div>
 
               {/* SISTEM PENILAIAN CBT */}
-              <div className="p-4 bg-slate-50 border border-slate-200/60 rounded-2xl space-y-4">
-                <p className="text-[10px] font-black uppercase text-indigo-650 tracking-widest">Sistem Penilaian CBT</p>
-                
-                <div className="space-y-1.5">
-                  <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Sistem Skor</label>
-                  <select
-                    value={newSession.scoring_system || 'Custom'}
-                    onChange={e => setNewSession({...newSession, scoring_system: e.target.value})}
-                    className="w-full bg-white border border-slate-200/80 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 rounded-xl px-3 py-2 text-xs font-semibold text-slate-850 outline-none transition-all"
-                  >
-                    <option value="Fixed">Fixed</option>
-                    <option value="Custom">Custom</option>
-                    <option value="Penalty">Penalty</option>
-                  </select>
+              <div className="p-5 bg-slate-50 border border-slate-200/60 rounded-3xl space-y-5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
+                      <Award size={14} className="stroke-[2.5]" />
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-black uppercase tracking-wider text-slate-800">Sistem Penilaian CBT</p>
+                      <p className="text-[9px] text-slate-400 font-semibold mt-0.5">Konfigurasi poin & mekanisme penilaian</p>
+                    </div>
+                  </div>
+                  <span className="text-[8px] font-black bg-indigo-105 text-indigo-600 px-2 py-0.5 rounded-full tracking-widest">ADVANCED</span>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="space-y-1.5">
-                    <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Benar</label>
-                    <input
-                      type="number"
-                      value={newSession.correct_point ?? 4}
-                      onChange={e => setNewSession({...newSession, correct_point: parseInt(e.target.value) || 0})}
-                      className="w-full bg-white border border-slate-200/80 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 rounded-xl px-3 py-2 text-xs font-semibold text-slate-850 outline-none transition-all"
-                    />
+                {/* TABS SELECTOR UNTUK SISTEM SKOR */}
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest flex items-center gap-1">
+                    Skema Penilaian <HelpCircle size={10} className="text-slate-350" />
+                  </label>
+                  <div className="grid grid-cols-3 gap-2 p-1.5 bg-slate-200/50 border border-slate-200/30 rounded-2xl">
+                    <button
+                      type="button"
+                      onClick={() => setNewSession({...newSession, scoring_system: 'Fixed'})}
+                      className={`flex flex-col items-center justify-center py-2.5 rounded-xl transition-all duration-200 gap-1.5 ${
+                        (newSession.scoring_system || 'Custom') === 'Fixed'
+                          ? 'bg-white text-indigo-600 shadow-sm border border-slate-150/40'
+                          : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      <Target size={14} className={(newSession.scoring_system || 'Custom') === 'Fixed' ? 'text-indigo-600' : 'text-slate-400'} />
+                      <span className="text-[10px] font-black uppercase tracking-wider">Fixed</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setNewSession({...newSession, scoring_system: 'Custom'})}
+                      className={`flex flex-col items-center justify-center py-2.5 rounded-xl transition-all duration-200 gap-1.5 ${
+                        (newSession.scoring_system || 'Custom') === 'Custom'
+                          ? 'bg-white text-indigo-600 shadow-sm border border-slate-150/40'
+                          : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      <Sliders size={14} className={(newSession.scoring_system || 'Custom') === 'Custom' ? 'text-indigo-600' : 'text-slate-400'} />
+                      <span className="text-[10px] font-black uppercase tracking-wider">Custom</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNewSession({
+                          ...newSession, 
+                          scoring_system: 'Penalty',
+                          correct_point: 4,
+                          penalty_point: -1,
+                          empty_point: 0
+                        });
+                      }}
+                      className={`flex flex-col items-center justify-center py-2.5 rounded-xl transition-all duration-200 gap-1.5 ${
+                        (newSession.scoring_system || 'Custom') === 'Penalty'
+                          ? 'bg-white text-indigo-600 shadow-sm border border-slate-150/40'
+                          : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      <ShieldAlert size={14} className={(newSession.scoring_system || 'Custom') === 'Penalty' ? 'text-indigo-600' : 'text-slate-400'} />
+                      <span className="text-[10px] font-black uppercase tracking-wider">Penalty</span>
+                    </button>
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Salah</label>
-                    <input
-                      type="number"
-                      value={newSession.penalty_point ?? 0}
-                      onChange={e => setNewSession({...newSession, penalty_point: parseInt(e.target.value) || 0})}
-                      className="w-full bg-white border border-slate-200/80 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 rounded-xl px-3 py-2 text-xs font-semibold text-slate-850 outline-none transition-all"
-                    />
+                </div>
+
+                {/* HELPER BOX YANG DILENGKAPI INFO SISTEM SKOR */}
+                <div className="p-3 bg-white/70 border border-slate-200/50 rounded-2xl flex gap-2.5 animate-in fade-in duration-200">
+                  <div className="w-5 h-5 bg-white border border-slate-150 rounded-lg flex items-center justify-center text-slate-500 shrink-0 shadow-sm mt-0.5">
+                    <Info size={10} />
                   </div>
+                  <p className="text-[10px] text-slate-500 font-semibold leading-relaxed">
+                    {(newSession.scoring_system || 'Custom') === 'Fixed' && (
+                      <>🎯 <b>Skema Fixed:</b> Seluruh soal menggunakan nilai poin seragam di bawah ini. Sangat cocok untuk kuis atau ujian standar non-seleksi.</>
+                    )}
+                    {(newSession.scoring_system || 'Custom') === 'Custom' && (
+                      <>⚙️ <b>Skema Custom:</b> Poin diatur terpisah per-soal di Bank Soal (PG bisa beda poin tiap opsi, Isian/Essay diset manual). Memberikan fleksibilitas penuh.</>
+                    )}
+                    {(newSession.scoring_system || 'Custom') === 'Penalty' && (
+                      <>🛡️ <b>Skema Penalty (SBMPTN/Olimpiade):</b> Mengurangi poin bila salah untuk menghindari tebakan acak. Default: Benar (+4), Salah (-1), Kosong (0).</>
+                    )}
+                  </p>
+                </div>
+
+                {/* DYNAMIC POIN CONTROLS */}
+                <div className={`grid grid-cols-3 gap-3 transition-all duration-300 ${
+                  (newSession.scoring_system || 'Custom') === 'Custom' ? 'opacity-40 pointer-events-none' : ''
+                }`}>
+                  {/* Benar */}
                   <div className="space-y-1.5">
-                    <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Kosong</label>
-                    <input
-                      type="number"
-                      step="any"
-                      value={newSession.empty_point ?? 0}
-                      onChange={e => setNewSession({...newSession, empty_point: parseFloat(e.target.value) || 0})}
-                      className="w-full bg-white border border-slate-200/80 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 rounded-xl px-3 py-2 text-xs font-semibold text-slate-850 outline-none transition-all"
-                    />
+                    <div className="flex items-center justify-between px-0.5">
+                      <label className="text-[9px] font-black uppercase text-emerald-600 tracking-wider flex items-center gap-1">
+                        <Check size={10} className="stroke-[3]" /> Benar
+                      </label>
+                    </div>
+                    <div className="relative flex items-center bg-white border border-slate-200 rounded-2xl overflow-hidden focus-within:border-emerald-400 focus-within:ring-4 focus-within:ring-emerald-50 transition-all duration-200">
+                      <input
+                        type="number"
+                        disabled={(newSession.scoring_system || 'Custom') === 'Custom'}
+                        value={newSession.correct_point ?? 4}
+                        onChange={e => setNewSession({...newSession, correct_point: parseInt(e.target.value) || 0})}
+                        className="w-full bg-transparent px-3 py-3 text-center text-sm font-black text-slate-800 outline-none pr-7"
+                      />
+                      <span className="absolute right-2.5 text-[9px] font-black text-slate-350">pts</span>
+                    </div>
+                  </div>
+
+                  {/* Salah */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between px-0.5">
+                      <label className="text-[9px] font-black uppercase text-rose-600 tracking-wider flex items-center gap-1">
+                        <X size={10} className="stroke-[3]" /> Salah
+                      </label>
+                    </div>
+                    <div className="relative flex items-center bg-white border border-slate-200 rounded-2xl overflow-hidden focus-within:border-rose-400 focus-within:ring-4 focus-within:ring-rose-50 transition-all duration-200">
+                      <input
+                        type="number"
+                        disabled={(newSession.scoring_system || 'Custom') === 'Custom'}
+                        value={newSession.penalty_point ?? 0}
+                        onChange={e => setNewSession({...newSession, penalty_point: parseInt(e.target.value) || 0})}
+                        className="w-full bg-transparent px-3 py-3 text-center text-sm font-black text-slate-800 outline-none pr-7"
+                      />
+                      <span className="absolute right-2.5 text-[9px] font-black text-slate-350">pts</span>
+                    </div>
+                  </div>
+
+                  {/* Kosong */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between px-0.5">
+                      <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider flex items-center gap-1">
+                        <Info size={10} /> Kosong
+                      </label>
+                    </div>
+                    <div className="relative flex items-center bg-white border border-slate-200 rounded-2xl overflow-hidden focus-within:border-slate-400 focus-within:ring-4 focus-within:ring-slate-100 transition-all duration-200">
+                      <input
+                        type="number"
+                        step="any"
+                        disabled={(newSession.scoring_system || 'Custom') === 'Custom'}
+                        value={newSession.empty_point ?? 0}
+                        onChange={e => setNewSession({...newSession, empty_point: parseFloat(e.target.value) || 0})}
+                        className="w-full bg-transparent px-3 py-3 text-center text-sm font-black text-slate-800 outline-none pr-7"
+                      />
+                      <span className="absolute right-2.5 text-[9px] font-black text-slate-350">pts</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ADVANCED CBT PARAMETERS TOGGLES */}
+                <div className="pt-4 border-t border-slate-200/50 space-y-3">
+                  <p className="text-[8px] font-black uppercase text-slate-450 tracking-widest">Parameter Lanjutan (Otomatis)</p>
+                  
+                  <div className="flex items-center justify-between p-2.5 bg-white/40 border border-slate-200/30 rounded-xl transition-all duration-200">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-5 h-5 bg-indigo-50 border border-indigo-100/50 rounded-lg flex items-center justify-center text-indigo-650 shrink-0">
+                        <Check size={10} className="stroke-[3]" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black text-slate-700">Toleransi Case-Insensitive</p>
+                        <p className="text-[8px] text-slate-400 font-semibold mt-0.5">Jawaban isian otomatis mengabaikan huruf besar/kecil</p>
+                      </div>
+                    </div>
+                    <div className="w-8 h-4.5 bg-emerald-500 rounded-full p-0.5 flex items-center justify-end cursor-not-allowed">
+                      <div className="w-3.5 h-3.5 bg-white rounded-full shadow-sm"></div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between p-2.5 bg-white/40 border border-slate-200/30 rounded-xl transition-all duration-200">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-5 h-5 bg-indigo-50 border border-indigo-100/50 rounded-lg flex items-center justify-center text-indigo-650 shrink-0">
+                        <Zap size={10} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black text-slate-700">Realtime Leaderboard Update</p>
+                        <p className="text-[8px] text-slate-400 font-semibold mt-0.5">Nilai ujian langsung masuk rekapitulasi saat disubmit</p>
+                      </div>
+                    </div>
+                    <div className="w-8 h-4.5 bg-emerald-500 rounded-full p-0.5 flex items-center justify-end cursor-not-allowed">
+                      <div className="w-3.5 h-3.5 bg-white rounded-full shadow-sm"></div>
+                    </div>
                   </div>
                 </div>
               </div>
