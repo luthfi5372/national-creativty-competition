@@ -37,12 +37,16 @@ export default function IntegratedLLMSDashboard() {
   const [newSession, setNewSession] = useState({
     title: "", token: "", duration_minutes: 90, scoring_system: "Custom",
     correct_point: 0, penalty_point: 0, empty_point: 0, is_active: false,
-    shuffle_questions: true
+    shuffle_questions: true, description: ""
   });
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingSession, setEditingSession] = useState<any>(null);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
+
+  const [showDescModal, setShowDescModal] = useState(false);
+  const [descSession, setDescSession] = useState<any>(null);
+  const [isSavingDesc, setIsSavingDesc] = useState(false);
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingSession, setDeletingSession] = useState<any>(null);
@@ -79,6 +83,11 @@ export default function IntegratedLLMSDashboard() {
     setShowEditModal(true);
   };
 
+  const openEditDescModal = (session: any) => {
+    setDescSession({ ...session });
+    setShowDescModal(true);
+  };
+
   const handleUpdateSession = async () => {
     if (!editingSession) return;
     setIsSavingEdit(true);
@@ -87,6 +96,11 @@ export default function IntegratedLLMSDashboard() {
       duration_minutes: editingSession.duration_minutes,
       is_active: editingSession.is_active,
       shuffle_questions: editingSession.shuffle_questions ?? true,
+      scoring_system: editingSession.scoring_system || 'Custom',
+      correct_point: parseInt(editingSession.correct_point) ?? 0,
+      penalty_point: parseInt(editingSession.penalty_point) ?? 0,
+      empty_point: parseFloat(editingSession.empty_point) ?? 0,
+      description: editingSession.description || '',
     }).eq('id', editingSession.id);
     if (!error) {
       setShowEditModal(false);
@@ -96,6 +110,22 @@ export default function IntegratedLLMSDashboard() {
       showToast('Gagal memperbarui sesi.', 'error');
     }
     setIsSavingEdit(false);
+  };
+
+  const handleUpdateDesc = async () => {
+    if (!descSession) return;
+    setIsSavingDesc(true);
+    const { error } = await supabase.from('cbt_exams').update({
+      description: descSession.description || '',
+    }).eq('id', descSession.id);
+    if (!error) {
+      setShowDescModal(false);
+      fetchTelemetryData();
+      showToast('Deskripsi ujian berhasil diperbarui!', 'success');
+    } else {
+      showToast('Gagal memperbarui deskripsi ujian.', 'error');
+    }
+    setIsSavingDesc(false);
   };
 
   const openDeleteModal = (session: any) => {
@@ -296,16 +326,17 @@ export default function IntegratedLLMSDashboard() {
         title: newSession.title.trim(),
         token: finalToken,
         duration_minutes: newSession.duration_minutes,
-        scoring_system: 'Custom',
-        correct_point: 0,
-        penalty_point: 0,
-        empty_point: 0,
+        scoring_system: newSession.scoring_system || 'Custom',
+        correct_point: Number(newSession.correct_point) || 0,
+        penalty_point: Number(newSession.penalty_point) || 0,
+        empty_point: Number(newSession.empty_point) || 0,
         is_active: (newSession as any).is_active ?? false,
         shuffle_questions: newSession.shuffle_questions ?? true,
+        description: newSession.description || '',
       }]);
       if (error) throw error;
       setShowAddModal(false);
-      setNewSession({ title: '', token: '', duration_minutes: 90, scoring_system: 'Custom', correct_point: 0, penalty_point: 0, empty_point: 0, is_active: false, shuffle_questions: true });
+      setNewSession({ title: '', token: '', duration_minutes: 90, scoring_system: 'Custom', correct_point: 0, penalty_point: 0, empty_point: 0, is_active: false, shuffle_questions: true, description: '' });
       fetchTelemetryData();
       showToast((newSession as any).is_active ? 'Sesi ujian baru langsung aktif!' : 'Sesi ujian baru berhasil dibuat!', 'success');
     } catch (err: any) {
@@ -949,6 +980,55 @@ export default function IntegratedLLMSDashboard() {
                 </p>
               </div>
 
+              {/* SISTEM PENILAIAN CBT */}
+              <div className="p-4 bg-slate-50 border border-slate-200/60 rounded-2xl space-y-4">
+                <p className="text-[10px] font-black uppercase text-indigo-650 tracking-widest">Sistem Penilaian CBT</p>
+                
+                <div className="space-y-1.5">
+                  <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Sistem Skor</label>
+                  <select
+                    value={editingSession.scoring_system || 'Custom'}
+                    onChange={e => setEditingSession({...editingSession, scoring_system: e.target.value})}
+                    className="w-full bg-white border border-slate-200/80 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 rounded-xl px-3 py-2 text-xs font-semibold text-slate-850 outline-none transition-all"
+                  >
+                    <option value="Fixed">Fixed</option>
+                    <option value="Custom">Custom</option>
+                    <option value="Penalty">Penalty</option>
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Benar</label>
+                    <input
+                      type="number"
+                      value={editingSession.correct_point ?? 4}
+                      onChange={e => setEditingSession({...editingSession, correct_point: parseInt(e.target.value) || 0})}
+                      className="w-full bg-white border border-slate-200/80 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 rounded-xl px-3 py-2 text-xs font-semibold text-slate-850 outline-none transition-all"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Salah</label>
+                    <input
+                      type="number"
+                      value={editingSession.penalty_point ?? 0}
+                      onChange={e => setEditingSession({...editingSession, penalty_point: parseInt(e.target.value) || 0})}
+                      className="w-full bg-white border border-slate-200/80 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 rounded-xl px-3 py-2 text-xs font-semibold text-slate-850 outline-none transition-all"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Kosong</label>
+                    <input
+                      type="number"
+                      step="any"
+                      value={editingSession.empty_point ?? 0}
+                      onChange={e => setEditingSession({...editingSession, empty_point: parseFloat(e.target.value) || 0})}
+                      className="w-full bg-white border border-slate-200/80 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 rounded-xl px-3 py-2 text-xs font-semibold text-slate-850 outline-none transition-all"
+                    />
+                  </div>
+                </div>
+              </div>
+
               <button onClick={handleUpdateSession} disabled={isSavingEdit}
                 className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/35 transition-all duration-300 flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50">
                 {isSavingEdit ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save size={16} /> Simpan Perubahan</>}
@@ -1082,6 +1162,66 @@ export default function IntegratedLLMSDashboard() {
                     ? '🔀 Tiap peserta mendapat urutan soal yang berbeda secara acak.'
                     : '📋 Semua peserta mendapat soal dengan urutan yang sama persis.'}
                 </p>
+              </div>
+
+              {/* Deskripsi Ujian */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Deskripsi / Peraturan Ujian</label>
+                <textarea
+                  value={newSession.description || ''}
+                  onChange={e => setNewSession({...newSession, description: e.target.value})}
+                  className="w-full bg-slate-50 border border-slate-200/80 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 rounded-2xl px-4 py-3 text-sm font-semibold text-slate-800 outline-none transition-all duration-200 placeholder-slate-300 min-h-[80px]"
+                  placeholder="Petunjuk pengerjaan ujian, tata tertib, dsb."
+                />
+              </div>
+
+              {/* SISTEM PENILAIAN CBT */}
+              <div className="p-4 bg-slate-50 border border-slate-200/60 rounded-2xl space-y-4">
+                <p className="text-[10px] font-black uppercase text-indigo-650 tracking-widest">Sistem Penilaian CBT</p>
+                
+                <div className="space-y-1.5">
+                  <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Sistem Skor</label>
+                  <select
+                    value={newSession.scoring_system || 'Custom'}
+                    onChange={e => setNewSession({...newSession, scoring_system: e.target.value})}
+                    className="w-full bg-white border border-slate-200/80 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 rounded-xl px-3 py-2 text-xs font-semibold text-slate-850 outline-none transition-all"
+                  >
+                    <option value="Fixed">Fixed</option>
+                    <option value="Custom">Custom</option>
+                    <option value="Penalty">Penalty</option>
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Benar</label>
+                    <input
+                      type="number"
+                      value={newSession.correct_point ?? 4}
+                      onChange={e => setNewSession({...newSession, correct_point: parseInt(e.target.value) || 0})}
+                      className="w-full bg-white border border-slate-200/80 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 rounded-xl px-3 py-2 text-xs font-semibold text-slate-850 outline-none transition-all"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Salah</label>
+                    <input
+                      type="number"
+                      value={newSession.penalty_point ?? 0}
+                      onChange={e => setNewSession({...newSession, penalty_point: parseInt(e.target.value) || 0})}
+                      className="w-full bg-white border border-slate-200/80 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 rounded-xl px-3 py-2 text-xs font-semibold text-slate-850 outline-none transition-all"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Kosong</label>
+                    <input
+                      type="number"
+                      step="any"
+                      value={newSession.empty_point ?? 0}
+                      onChange={e => setNewSession({...newSession, empty_point: parseFloat(e.target.value) || 0})}
+                      className="w-full bg-white border border-slate-200/80 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 rounded-xl px-3 py-2 text-xs font-semibold text-slate-850 outline-none transition-all"
+                    />
+                  </div>
+                </div>
               </div>
 
               {/* Info Isolasi */}
